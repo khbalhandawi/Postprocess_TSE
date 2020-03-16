@@ -615,12 +615,6 @@ def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
         dFF = scaling(dFF_lhs,lob_req,upb_req,2) # unscale latin hypercube points to req
         dFF_n = scaling(dFF,lob,upb,1) # scale requirement to full space
         
-        #=======================================================================
-        # # Sample full space
-        # dFF = scaling(dFF_lhs,lob,upb,2) # unscale latin hypercube points to req
-        # dFF_n = dFF_lhs # scale requirement to full space
-        #=======================================================================
-        
         [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n);
          
         # capability constraints
@@ -654,12 +648,6 @@ def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
         dFF = scaling(dFF_lhs,lob_req,upb_req,2) # unscale latin hypercube points to req
         dFF_n = scaling(dFF,lob,upb,1) # scale requirement to full space
             
-        #=======================================================================
-        # # sample the requirements set only !!! (FULL FACTORIAL)
-        # dFF = gridsamp(bounds_req.T, np.array([res])) # sample the requirements space
-        # dFF_n = scaling(dFF,lob,upb,1); # scale by bounds of parameter space
-        #=======================================================================
-        
         [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n);
         cond_req_feas = (YX - threshold) > 0
         
