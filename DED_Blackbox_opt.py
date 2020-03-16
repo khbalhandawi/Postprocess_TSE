@@ -660,8 +660,8 @@ def integrand_multivariate_gaussian(*arg):
     """Return the multivariate Gaussian distribution on array pos.
     """
     # Mean vector and covariance matrix
-#    mu = np.array([0., 1.])
-#    Sigma = np.array([[ 1. , -0.5], [-0.5,  1.5]])
+    # mu = np.array([0., 1.])
+    # Sigma = np.array([[ 1. , -0.5], [-0.5,  1.5]])
     
     x = arg[0:-4] 
     
@@ -858,10 +858,7 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
         fig_file_name = os.path.join(current_path,'Job_results','Results_log',fig_name)
         fig.savefig(fig_file_name, bbox_inches='tight')
         plt.close()
-    
-    print("ANALYSIS COMPLETE")
-    print("+================================================================+") 
-    
+        
     return resiliance 
 
 def postprocess_nominal(index,base_name,current_path,permutation_index,concept,process_DOE,S_hoop_res_line,press_hoop_res_line):
@@ -1019,7 +1016,6 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     
     req_list = [[req_type_1, req_type_2], [mu_nominal], [Sigma_nominal] ]
     req_combinations = list(itertools.product(*req_list)) 
-    print(req_combinations)
     
     req_index = 0; resiliance_ip_vec_nominal = [];
     for req in req_combinations: # iterate over all combinations of requirements
@@ -1073,7 +1069,6 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
             line = [req_type,mu_lhs,Sigma_lhs_2]
             req_combinations += [line]
     
-    print(req_combinations)
     req_index = 0; resiliance_ip_vec = [];
     for req in req_combinations: # iterate over all combinations of requirements
         
@@ -1094,6 +1089,9 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
         server.sgtelib_server_stop()
         server.server_print(server.server_process) # print console output
         
+    print("ANALYSIS COMPLETE")
+    print("+================================================================+") 
+       
     process_TH = True
     #--------------------------------------------------------------------------#
     # Thermal loadcase
@@ -1138,7 +1136,6 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     req_list = [[req_type_1, req_type_2], [mu_nominal], [Sigma_nominal] ]
     req_combinations = list(itertools.product(*req_list)) 
     
-    print(req_combinations)
     req_index = 0; resiliance_th_vec_nominal = [];
     for req in req_combinations: # iterate over all combinations of requirements
         
@@ -1191,7 +1188,6 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
             line = [req_type,mu_lhs,Sigma_lhs_2]
             req_combinations += [line]
         
-    print(req_combinations)
     req_index = 0; resiliance_th_vec = [];
     for req in req_combinations: # iterate over all combinations of requirements
         
@@ -1211,7 +1207,10 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     if process_TH:
         server.sgtelib_server_stop()
         server.server_print(server.server_process) # print console output
-        
+    
+    print("ANALYSIS COMPLETE")
+    print("+================================================================+")   
+      
     #--------------------------------------------------------------------------#
     # Get volume results
     print("------------------------- %s -------------------------\n" %('VOLUME'))
