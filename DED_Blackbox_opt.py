@@ -605,19 +605,6 @@ def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
         
     if req_type == "guassian":
         
-        #=======================================================================
-        # limits = len(lob) * [[0,1]]
-        # resiliance = integrate.nquad(integrand_multivariate_gaussian, limits, args=(mu,Sigma,threshold,server), opts = {"limit":50})
-        #=======================================================================
-        # sample the parameter space only !!!
-        
-        #=======================================================================
-        # # full-factorial distribution
-        # dFF = gridsamp(bounds.T, np.array([res])) # sample the requirements space
-        # dFF_n = scaling(dFF,lob,upb,1); # scale by bounds of parameter space
-        # print(dFF_n.shape)
-        #=======================================================================
-        
         # LHS distribution
         dFF_n = lhs(len(lob), samples=res**(len(lob)), criterion='center')
         dFF = scaling(dFF_n,lob,upb,2) # unscale latin hypercube points
@@ -647,18 +634,6 @@ def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
              
             Z = multivariate_gaussian(pos, mu, Sigma)
             Z = np.reshape(Z, np.shape(dFF)[0]);
-
-            #===================================================================
-            # pos = np.empty((res,1) + (len(lob),))
-            #   
-            # for i in range(len(lob)):
-            #     X_norm = np.reshape(dFF_n[:,i],(res,1));
-            #     # Pack X1, X2 ... Xk into a single 3-dimensional array
-            #     pos[:, :, i] = X_norm
-            # 
-            # Z = multivariate_gaussian(pos, mu, Sigma)
-            # Z = np.reshape(Z, np.shape(dFF)[0]);
-            #===================================================================
             
         Z_feasible = copy.deepcopy(Z);
         Z_feasible[YX_cstr < 0] = 0.0 # eliminate infeasible regions from MCS
@@ -677,52 +652,6 @@ def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
         
         # Design space volume
         resiliance = len(cond_req_feas[cond_req_feas])/np.shape(dFF)[0];
-        
-        #=======================================================================
-        # # LHS distribution
-        # dFF_n = lhs(len(lob), samples=res, criterion='maximin')
-        # dFF = scaling(dFF_n,lob,upb,2) # unscale latin hypercube points
-        #=======================================================================
-        
-        #=======================================================================
-        # # full-factorial distribution
-        # dFF = gridsamp(bounds.T, np.array([res])) # sample the requirements space
-        # dFF_n = scaling(dFF,lob,upb,1); # scale by bounds of parameter space
-        #=======================================================================
-        
-        #=======================================================================
-        # [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n);
-        # 
-        # cond_req_set = np.array([True]*np.shape(dFF)[0])
-        # for n in range(len(lob)):
-        # 
-        #     cond_n = (dFF[:,n] >= bounds_req[n,0]) & (dFF[:,n] <= bounds_req[n,1]) # nth-axis
-        #     cond_req_set = np.logical_and(cond_req_set, cond_n)
-        # 
-        # cond_req = (YX - threshold) > 0
-        # cond_req_feas = (cond_req_set) & (cond_req.flatten()) # flatten to convert to 1D array
-        # 
-        # # Design space volume
-        # resiliance = len(cond_req_feas[cond_req_feas])/len(cond_req_set[cond_req_set]);
-        #=======================================================================
-        
-        #=======================================================================
-        # # sample the requirements set only !!!
-        # dFF = gridsamp(bounds_req.T, np.array([res])) # sample the requirements space
-        # dFF_n = scaling(dFF,lob,upb,1); # scale by bounds of parameter space
-        #
-        # [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n);
-        # YX_req = np.zeros(X1.shape)
-        #
-        # YX_req[cond] = 1
-        #     
-        # cond = np.ones(np.shape(dFF)[0]); # initialize decision vector
-        # 
-        # # capability constraints
-        # YX_cstr = np.reshape(YX - threshold, np.shape(dFF)[0]);
-        # cond[YX_cstr > 0] = 0.0;
-        #resiliance = len(cond[cond==0])/np.shape(dFF)[0];
-        #=======================================================================
         
     return resiliance
 
@@ -1061,7 +990,6 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     
     process_DOE = False;
     resolution = 100; # sampling resolution for capability calculation (must be a square number)!
-    # threshold = 80000 # cutoff threshold for capability calculation
     threshold = 4.0 # cutoff threshold for capability calculation
     threshold = 2.6 # cutoff threshold for capability calculation
     
@@ -1114,30 +1042,6 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     # IP loadcase guassian parameters (DOE values)
     req_type_1 = "uniform"
     req_type_2 = "guassian"
-    #===========================================================================
-    # # IP loadcase guassian parameters
-    # mu_1 = np.array([0.250])
-    # mu_2 = np.array([0.625])
-    # Sigma_1 = np.array([ 0.167 ])
-    # Sigma_2 = np.array([ 0.375 ])
-    # 
-    # # linearly interpolate between two vectors
-    # from scipy.interpolate import interp1d
-    # 
-    # linfit = interp1d([1,2], np.vstack([mu_1, mu_2]), axis=0)
-    # mus = list(linfit([1,2]))
-    # linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
-    # Sigmas = list(linfit([1,2]))
-    # 
-    # Sigma_2s = []
-    # for Sigma in Sigmas:
-    #     Sigma_2 = (Sigma/3)**2
-    #     Sigma_2s += [Sigma_2]
-    # 
-    # req_list = [[req_type_1, req_type_2], mus, Sigma_2s ]
-    # req_combinations = list(itertools.product(*req_list)) 
-    # print(req_combinations)
-    #===========================================================================
     
     # Thermal loadcase guassian parameters
     mu_lob = np.array([0.250])
@@ -1203,15 +1107,6 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                             [-25 , 25 ],
                             [-50 , 100 ]] ) # unused
     
-    #===========================================================================
-    # bounds_req = bounds_th
-    #===========================================================================
-    #===========================================================================
-    # bounds_req = np.array( [[75   , 100 ],
-    #                         [75   , 100 ],
-    #                         [-100 , -75 ],
-    #                         [-100 , -75 ]] )
-    #===========================================================================
     process_DOE = False;
     resolution = 10; # sampling resolution for capability calculation (must be a square number)!
     # threshold = 100000 # cutoff threshold for capability calculation
@@ -1265,25 +1160,6 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     # Thermal loadcase guassian parameters (DOE values)
     req_type_1 = 'uniform'
     req_type_2 = 'guassian'
-    
-    #===========================================================================
-    # # Thermal loadcase guassian parameters
-    # mu_1 = np.array([0.375, 0.80, 0.80, 0.625])
-    # mu_2 = np.array([0.625, 0.20, 0.20, 0.375])
-    # 
-    # Sigma_1 = np.array([0.1875, 0.125, 0.125, 0.1875]) # sigma^2
-    # Sigma_2 = np.array([0.375 , 0.250, 0.250, 0.375]) # sigma^2
-    # 
-    # # linearly interpolate between two vectors
-    # from scipy.interpolate import interp1d
-    # 
-    # linfit = interp1d([1,2], np.vstack([mu_1, mu_2]), axis=0)
-    # mus = list(linfit([1,2]))
-    # linfit = interp1d([1,2], np.vstack([Sigma_1, Sigma_2]), axis=0)
-    # Sigmas = list(linfit([1,2]))
-    # req_list = [[req_type_1, req_type_2], mus, Sigma_2s ]
-    # req_combinations = list(itertools.product(*req_list)) 
-    #===========================================================================
     
     # Thermal loadcase guassian parameters
     mu_lob = np.array([0.375, 0.80, 0.80, 0.625])
@@ -1348,8 +1224,6 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     volume = float(InputText)
     fileID.close()
     
-    #===========================================================================
-    # volume = 797383.26
     #===========================================================================
     density = 8.19e-06;
     print('Volume: %f mm^3' %(volume))
