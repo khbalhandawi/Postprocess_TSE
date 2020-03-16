@@ -1039,23 +1039,9 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     req_type_1 = "uniform"
     req_type_2 = "guassian"
     
-    # Thermal loadcase guassian parameters
-    mu_lob = np.array([0.250])
-    mu_upb = np.array([0.625])
-     
-    Sigma_lob = np.array([ 0.167 ])
-    Sigma_upb = np.array([ 0.375 ])
-    
-    lob_req = np.append(mu_lob,Sigma_lob)
-    upb_req = np.append(mu_upb,Sigma_upb)
-    
-    # LHS distribution
-    points = lhs(len(lob_req), samples=100, criterion='maximin')
-    points_us = scaling(points,lob_req,upb_req,2) # unscale latin hypercube points
-    
     DOE_full_name = 'req_distribution_IP_LHS'+'.npy'
     DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
-    np.save(DOE_filepath, points) # save DOE array
+    points_us = np.load(DOE_filepath) # load DOE array
     
     req_combinations = []
     for point in points_us:
@@ -1158,23 +1144,9 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     req_type_1 = 'uniform'
     req_type_2 = 'guassian'
     
-    # Thermal loadcase guassian parameters
-    mu_lob = np.array([0.375, 0.80, 0.80, 0.625])
-    mu_upb = np.array([0.625, 0.20, 0.20, 0.375])
-     
-    Sigma_lob = np.array([0.1875, 0.125, 0.125, 0.1875]) # sigma^2
-    Sigma_upb = np.array([0.375 , 0.250, 0.250, 0.375]) # sigma^2
-    
-    lob_req = np.append(mu_lob,Sigma_lob)
-    upb_req = np.append(mu_upb,Sigma_upb)
-    
-    # LHS distribution
-    points = lhs(len(lob_req), samples=800, criterion='maximin')
-    points_us = scaling(points,lob_req,upb_req,2) # unscale latin hypercube points
-    
     DOE_full_name = 'req_distribution_TH_LHS'+'.npy'
     DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
-    np.save(DOE_filepath, points) # save DOE array
+    points_us = np.load(DOE_filepath) # load DOE array
     
     req_combinations = []
     for point in points_us:
@@ -1319,6 +1291,8 @@ def main():
     import sys, os
     import numpy as np
     from scipy.io import loadmat
+    from pyDOE import lhs
+    import pickle
     
     current_path = os.getcwd() # Working directory of file
     
@@ -1358,14 +1332,79 @@ def main():
     b_thick = float(paramText[19])
     
     run_base = 1; run_nominal = 1;
+  
+# %% Sampling
+#========================== REQUIREMENTS SPACE LHS ============================#
+    
+    # IP loadcase guassian parameters
+    mu_lob = np.array([0.250])
+    mu_upb = np.array([0.625])
+     
+    Sigma_lob = np.array([ 0.167 ])
+    Sigma_upb = np.array([ 0.375 ])
+    
+    lob_req = np.append(mu_lob,Sigma_lob)
+    upb_req = np.append(mu_upb,Sigma_upb)
+    
+    # LHS distribution
+    points = lhs(len(lob_req), samples=100, criterion='maximin')
+    points_us = scaling(points,lob_req,upb_req,2) # unscale latin hypercube points
+    
+    DOE_full_name = 'req_distribution_IP_LHS'+'.npy'
+    DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
+    np.save(DOE_filepath, points_us) # save DOE array
+    
+    DOE_full_name = 'req_distribution_IP_LHS_data'+'.pkl'
+    DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
+    
+    resultsfile=open(DOE_filepath,'wb')
+    
+    pickle.dump(lob_req, resultsfile)
+    pickle.dump(upb_req, resultsfile)
+    pickle.dump(points, resultsfile)
+    pickle.dump(points_us, resultsfile)
+
+    resultsfile.close()
+    
+    # Thermal loadcase guassian parameters
+    mu_lob = np.array([0.375, 0.80, 0.80, 0.625])
+    mu_upb = np.array([0.625, 0.20, 0.20, 0.375])
+     
+    Sigma_lob = np.array([0.1875, 0.125, 0.125, 0.1875]) # sigma^2
+    Sigma_upb = np.array([0.375 , 0.250, 0.250, 0.375]) # sigma^2
+    
+    lob_req = np.append(mu_lob,Sigma_lob)
+    upb_req = np.append(mu_upb,Sigma_upb)
+    
+    # LHS distribution
+    points = lhs(len(lob_req), samples=800, criterion='maximin')
+    points_us = scaling(points,lob_req,upb_req,2) # unscale latin hypercube points
+    
+    DOE_full_name = 'req_distribution_TH_LHS'+'.npy'
+    DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
+    np.save(DOE_filepath, points_us) # save DOE array
+    
+    DOE_full_name = 'req_distribution_TH_LHS_data'+'.pkl'
+    DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
+    
+    resultsfile=open(DOE_filepath,'wb')
+    
+    pickle.dump(lob_req, resultsfile)
+    pickle.dump(upb_req, resultsfile)
+    pickle.dump(points, resultsfile)
+    pickle.dump(points_us, resultsfile)
+
+    resultsfile.close()
+    
+    np.save(DOE_filepath, points) # save DOE array
     
 # %% Processing
 #============================= MAIN EXECUTION =================================#
     
-    #index = 74
     index = 0
-    P_analysis = [P_analysis[0]] # for testing
-    #P_analysis = P_analysis[74::] # for testing
+    #index = 74
+    # P_analysis = [P_analysis[0]] # for testing
+    # P_analysis = P_analysis[74::] # for testing
     for P_i in P_analysis:
         index += 1;  
         
