@@ -602,38 +602,42 @@ def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
     
     lob = bounds[:,0]
     upb = bounds[:,1]
+    
+    lob_req = bounds_req[:,0]
+    upb_req = bounds_req[:,1]
         
     if req_type == "guassian":
         
         # LHS distribution
-        dFF_n = lhs(len(lob), samples=res**(len(lob)), criterion='center')
-        dFF = scaling(dFF_n,lob,upb,2) # unscale latin hypercube points
+        dFF_lhs = lhs(len(lob), samples=res, criterion='center')
+        
+        # Sample the requirements space only
+        dFF = scaling(dFF_lhs,lob_req,upb_req,2) # unscale latin hypercube points to req
+        dFF_n = scaling(dFF,lob,upb,1) # scale requirement to full space
+        
+        #=======================================================================
+        # # Sample full space
+        # dFF = scaling(dFF_lhs,lob,upb,2) # unscale latin hypercube points to req
+        # dFF_n = dFF_lhs # scale requirement to full space
+        #=======================================================================
         
         [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n);
          
         # capability constraints
          
-        YX_cstr = np.reshape(YX - threshold, np.shape(dFF)[0]);
+        YX_cstr = np.reshape(YX - threshold, np.shape(dFF_n)[0]);
          
-        if len(lob) == 10: # one dimensional gaussian distribution
-              
-            mu = mu[0]
-            Sigma = 0.5*Sigma[0][0];
-            Z = ( 1 / ( Sigma * np.sqrt(2*np.pi) ) ) * np.exp(-0.5 * ( ( (dFF_n - mu) / ( Sigma ) ) ** 2 ) )
-              
-        else: # multi dimensional gaussian distribution
-             
-            # for FULL-FACTORIAL sampling
-            res_sq = np.ceil(res**(0.5*len(lob))).astype(int) # size of equivalent square matrix
-            pos = np.empty((res_sq,res_sq) + (len(lob),))
-               
-            for i in range(len(lob)):
-                X_norm = np.reshape(dFF_n[:,i],(res_sq,res_sq));
-                # Pack X1, X2 ... Xk into a single 3-dimensional array
-                pos[:, :, i] = X_norm
-             
-            Z = multivariate_gaussian(pos, mu, Sigma)
-            Z = np.reshape(Z, np.shape(dFF)[0]);
+        # Evaluate multivariate guassian
+        res_sq = np.ceil(res**(0.5*len(lob))).astype(int) # size of equivalent square matrix
+        pos = np.empty((res,1) + (len(lob),))
+           
+        for i in range(len(lob)):
+            X_norm = np.reshape(dFF_n[:,i],(res,1));
+            # Pack X1, X2 ... Xk into a single 3-dimensional array
+            pos[:, :, i] = X_norm
+         
+        Z = multivariate_gaussian(pos, mu, Sigma)
+        Z = np.reshape(Z, np.shape(dFF_n)[0]);
             
         Z_feasible = copy.deepcopy(Z);
         Z_feasible[YX_cstr < 0] = 0.0 # eliminate infeasible regions from MCS
@@ -642,10 +646,19 @@ def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
         resiliance = np.sum(Z_feasible)/np.sum(Z);
     
     elif req_type == "uniform":
+           
+        # LHS distribution
+        dFF_lhs = lhs(len(lob), samples=res, criterion='center')
+        
+        # Sample the requirements set only
+        dFF = scaling(dFF_lhs,lob_req,upb_req,2) # unscale latin hypercube points to req
+        dFF_n = scaling(dFF,lob,upb,1) # scale requirement to full space
             
-        # sample the requirements set only !!!
-        dFF = gridsamp(bounds_req.T, np.array([res])) # sample the requirements space
-        dFF_n = scaling(dFF,lob,upb,1); # scale by bounds of parameter space
+        #=======================================================================
+        # # sample the requirements set only !!! (FULL FACTORIAL)
+        # dFF = gridsamp(bounds_req.T, np.array([res])) # sample the requirements space
+        # dFF_n = scaling(dFF,lob,upb,1); # scale by bounds of parameter space
+        #=======================================================================
         
         [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n);
         cond_req_feas = (YX - threshold) > 0
@@ -1092,7 +1105,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                             [-50 , 100 ]] ) # unused
     
     process_DOE = False;
-    resolution = 10; # sampling resolution for capability calculation (must be a square number)!
+    resolution = 1296; # sampling resolution for capability calculation (must be a square number)!
     # threshold = 100000 # cutoff threshold for capability calculation
     threshold = 4.2 # cutoff threshold for capability calculation
     threshold = 2.8 # cutoff threshold for capability calculation
@@ -1331,7 +1344,7 @@ def main():
     T_ref = float(paramText[18])
     b_thick = float(paramText[19])
     
-    run_base = 1; run_nominal = 1;
+    run_base = 1; run_nominal = 1; new_LHS = False;
   
 # %% Sampling
 #========================== REQUIREMENTS SPACE LHS ============================#
@@ -1347,24 +1360,30 @@ def main():
     upb_req = np.append(mu_upb,Sigma_upb)
     
     # LHS distribution
-    points = lhs(len(lob_req), samples=100, criterion='maximin')
-    points_us = scaling(points,lob_req,upb_req,2) # unscale latin hypercube points
+    if new_LHS:
+        points = lhs(len(lob_req), samples=100, criterion='maximin')
+        points_us = scaling(points,lob_req,upb_req,2) # unscale latin hypercube points
+        
+        DOE_full_name = 'req_distribution_IP_LHS'+'.npy'
+        DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
+        np.save(DOE_filepath, points_us) # save DOE array
+        
+        DOE_full_name = 'req_distribution_IP_LHS_data'+'.pkl'
+        DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
+        
+        resultsfile=open(DOE_filepath,'wb')
+        
+        pickle.dump(lob_req, resultsfile)
+        pickle.dump(upb_req, resultsfile)
+        pickle.dump(points, resultsfile)
+        pickle.dump(points_us, resultsfile)
     
-    DOE_full_name = 'req_distribution_IP_LHS'+'.npy'
-    DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
-    np.save(DOE_filepath, points_us) # save DOE array
-    
-    DOE_full_name = 'req_distribution_IP_LHS_data'+'.pkl'
-    DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
-    
-    resultsfile=open(DOE_filepath,'wb')
-    
-    pickle.dump(lob_req, resultsfile)
-    pickle.dump(upb_req, resultsfile)
-    pickle.dump(points, resultsfile)
-    pickle.dump(points_us, resultsfile)
-
-    resultsfile.close()
+        resultsfile.close()
+        
+    else:
+        DOE_full_name = 'req_distribution_IP_LHS'+'.npy'
+        DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
+        points_us = np.load(DOE_filepath) # load DOE array
     
     # Thermal loadcase guassian parameters
     mu_lob = np.array([0.375, 0.80, 0.80, 0.625])
@@ -1377,24 +1396,31 @@ def main():
     upb_req = np.append(mu_upb,Sigma_upb)
     
     # LHS distribution
-    points = lhs(len(lob_req), samples=800, criterion='maximin')
-    points_us = scaling(points,lob_req,upb_req,2) # unscale latin hypercube points
+    if new_LHS:
+        points = lhs(len(lob_req), samples=800, criterion='maximin')
+        points_us = scaling(points,lob_req,upb_req,2) # unscale latin hypercube points
+        
+        DOE_full_name = 'req_distribution_TH_LHS'+'.npy'
+        DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
+        np.save(DOE_filepath, points_us) # save DOE array
+        
+            
+        DOE_full_name = 'req_distribution_TH_LHS_data'+'.pkl'
+        DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
+        
+        resultsfile=open(DOE_filepath,'wb')
+        
+        pickle.dump(lob_req, resultsfile)
+        pickle.dump(upb_req, resultsfile)
+        pickle.dump(points, resultsfile)
+        pickle.dump(points_us, resultsfile)
     
-    DOE_full_name = 'req_distribution_TH_LHS'+'.npy'
-    DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
-    np.save(DOE_filepath, points_us) # save DOE array
-    
-    DOE_full_name = 'req_distribution_TH_LHS_data'+'.pkl'
-    DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
-    
-    resultsfile=open(DOE_filepath,'wb')
-    
-    pickle.dump(lob_req, resultsfile)
-    pickle.dump(upb_req, resultsfile)
-    pickle.dump(points, resultsfile)
-    pickle.dump(points_us, resultsfile)
-
-    resultsfile.close()
+        resultsfile.close()
+        
+    else:
+        DOE_full_name = 'req_distribution_TH_LHS'+'.npy'
+        DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
+        points_us = np.load(DOE_filepath) # load DOE array
     
 # %% Processing
 #============================= MAIN EXECUTION =================================#
