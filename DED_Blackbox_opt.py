@@ -781,8 +781,8 @@ def postprocess_DOE(index,base_name,current_path,DOE_folder,bounds,variable_lbls
     
     Y = outputs; S_n = scaling(DOE_inputs, lob, upb, 1);
     # fitting_names = ['KRIGING','LOWESS','KS','RBF','PRS','ENSEMBLE'];
-    fit_type = 1; run_type = 2; # use pre-optimized hyperparameters
-    # fit_type = 5; run_type = 1; # optimize all hyperparameters
+    # fit_type = 1; run_type = 2; # use pre-optimized hyperparameters
+    fit_type = 5; run_type = 1; # optimize all hyperparameters
     model,sgt_file = define_SGTE_model(fit_type,run_type)
     server = SGTE_server(model)
     p = server.sgtelib_server_start()
@@ -1395,8 +1395,6 @@ def main():
     pickle.dump(points_us, resultsfile)
 
     resultsfile.close()
-    
-    np.save(DOE_filepath, points) # save DOE array
     
 # %% Processing
 #============================= MAIN EXECUTION =================================#
