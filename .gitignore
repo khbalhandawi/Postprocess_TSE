@@ -44,3 +44,10 @@ SGTE_matlab_server/.project
 flag_pong
 flag_predict_finished
 *.vsdx
+*.log
+*.log
+*.log
+SBD_opt/MADS_output/weight_design.log
+SBD_opt/DOE_results/req_opt_log.log
+SBD_opt/MADS_output/eval_point_out.log
+SBD_opt/MADS_output/mads_bb_calls.log
