@@ -41,7 +41,7 @@ def plot_tradespace(attribute,plot_true):
     dictionary = dict(zip(list_names, data))
     #==========================================================================
     # read resiliance data
-    filename = 'resiliance_th_V1.log'
+    filename = 'resiliance_th.log'
     current_path = os.getcwd()
     filepath = os.path.join(current_path,'Input_files',filename)
     
@@ -69,7 +69,7 @@ def plot_tradespace(attribute,plot_true):
     dictionary_res = dict(zip(list_names, data))
     #==========================================================================
     # read weight data
-    filename = 'varout_opt_log_V1.log'
+    filename = 'varout_opt_log.log'
     current_path = os.getcwd()
     filepath = os.path.join(current_path,'Input_files',filename)
     
@@ -155,7 +155,7 @@ def plot_tradespace(attribute,plot_true):
             
             branch_id += 1
             
-            if branch_id == 1000 + 1:
+            if branch_id == 100000 + 1:
                 break
       
     if plot_true:
@@ -171,14 +171,30 @@ def plot_tradespace(attribute,plot_true):
         return dictionary,dictionary_res,dictionary_weight,designs,designs_padded
 
 #==============================================================================
+# Call MADS and get Pareto optimal solutions from MADS
+def NOMAD_call_BIOBJ(req_index,P_analysis_strip,attribute,cost,evaluate):
+    
+    from sample_requirements import system_command
+    import os
+    
+    if evaluate: # run bi-objective optimization
+        command = "categorical_biobj %i" %(req_index)
+        print(command)
+        system_command(command)
+    
+    [x_data, y_data] = get_pareto(P_analysis_strip,attribute,cost)
+
+    return x_data, y_data
+
+#==============================================================================
 # Get Pareto optimal solutions from MADS
-def get_pareto(P_analysis_strip,dictionary_res,dictionary_weight):
+def get_pareto(P_analysis_strip,attribute,cost):
     import os
     import csv
     
     filename = 'mads_x_opt_pareto.log'
     current_path = os.getcwd()
-    filepath = os.path.join(current_path,'DOE_results',filename)
+    filepath = os.path.join(current_path,'MADS_output',filename)
     
     # %% read MADS log file
     opt_points = []
@@ -195,17 +211,17 @@ def get_pareto(P_analysis_strip,dictionary_res,dictionary_weight):
     # iterate through MADS bb evals
     current_path = os.getcwd()
     print('\nNumber of pareto points: %i' %(line_count))
+    print(opt_points)
     
     x_data = []; y_data = []
     for point in opt_points:
         ind = P_analysis_strip.index(point)
+
+        attribute_Pareto = attribute[ind]
+        cost_Pareto = cost[ind]
         
-        res = dictionary_res['req_index_8'][ind]
-        res = dictionary_weight['n_f_th'][ind]
-        weight = dictionary_weight['weight'][ind]
-        
-        x_data += [weight]
-        y_data += [res]
+        x_data += [cost_Pareto]
+        y_data += [attribute_Pareto]
         
     return x_data, y_data
 
@@ -313,16 +329,26 @@ if __name__ == "__main__":
     sorted_designs = [x for _,x in sorted(zip(y,design_list),reverse = False)]
     
     print(sorted_designs[:5])
-    
-    # data for constructing tradespace
-    res = dictionary_res['req_index_8'][indices]
-    res = dictionary_weight['n_f_th'][indices]
-    weight = dictionary_weight['weight'][indices]
-    
-    # data for plotting histogram
+
+    # data for plotting histogram SBD
     x = x[:20]
     y = y[:20]
+
+    # data for constructing tradespace of feasible designs
+    req_index = 50
+    attribute = dictionary_res['req_index_%i' %(req_index)]
+    # req_index = 0
+    # attribute = dictionary_weight['n_f_th']
+
+    cost = dictionary_weight['weight']
+
+    # Data for plotting SBD designs
+    attribute_SBD = attribute[indices]
+    cost_SBD = cost[indices]
     
+    # data for plotting Pareto front
+    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,P_analysis_strip,attribute,cost,True) # get Pareto optimal points
+
     #==========================================================================
     # Histogram plot
     # This is not necessary if `text.usetex : True` is already set in `matplotlibrc`.    
@@ -337,17 +363,11 @@ if __name__ == "__main__":
     plt.xticks(list(range(20)), list(map(str,list(range(1,21)))))
     #==========================================================================
     # Tradespace plot
-        
-    [x_data, y_data] = get_pareto(P_analysis_strip,dictionary_res,dictionary_weight)
-    
     my_dpi = 100
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
+
     pareto, = plt.plot(x_data, y_data, '-d', color = 'm', linewidth = 4.0, markersize = 10.0 )
-    SBD_design, = plt.plot(weight[:5], res[:5], '.', color = [1,0,0], linewidth = 2, markersize = 20 )
-    
-    cost = dictionary_weight['weight']
-    attribute = dictionary_res['req_index_6']
-    attribute = dictionary_weight['n_f_th']
+    SBD_design, = plt.plot(cost_SBD[:5], attribute_SBD[:5], '.', color = [1,0,0], linewidth = 2, markersize = 20 )
     feasible, = plt.plot(cost, attribute, 'x', color = [0,0,0], linewidth = 1, markersize = 6 )
     
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14)

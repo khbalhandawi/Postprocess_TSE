@@ -76,7 +76,7 @@ def lhs_function(n_points,n_var,lb,ub,DOE_dir):
     import os
     # Outputs a latin hypercube that is augmentables via R lhs package
     
-    command = 'RScript --vanilla lhs_int.R %i %i %i %i' %(n_points, n_var, lb, ub);
+    command = 'RScript --vanilla lhs_int.R %i %i %i %i' %(n_points, n_var, lb, ub)
     print(command)
     system_command(command)
     
@@ -103,7 +103,7 @@ def DOE_generator(index,n_points,n_var,lb,ub,DOE_dir,DOE_filename,regenerate):
         points = lhs_function(n_points,n_var,lb,ub,DOE_dir)
         np.save(DOE_filepath, points) # save DOE array
         
-        i_prev = [];
+        i_prev = []
         for f in os.listdir(DOE_dir):
             if f.find('%i_%s' %(index,DOE_filename)) == 0: # make sure string is at beginning
                 i_prev += [int(f.split('_')[-1][:-4])]
@@ -131,7 +131,7 @@ def scaling(x,l,u,operation):
         x_out=(x-l)/(u-l)
     elif operation == 2:
         # unscale
-        x_out = l + x*(u-l);
+        x_out = l + x*(u-l)
     
     return x_out
 
@@ -142,10 +142,10 @@ def main():
     import numpy as np
     import os
     
-    index = 1;
+    index = 1
     n_points = 100000
-    lb = 1; ub = 50;
-    n_var = 6;
+    lb = 1; ub = 50
+    n_var = 6
     
     current_path = os.getcwd()
     DOE_filename = 'req_DOE'
@@ -184,14 +184,14 @@ def main():
         
         req_thresh = [ 0.01, 0.1, 0.3, 0.3, 0.3, 0.8 ]
         eval_point = []
-        call_type = 0;
+        call_type = 0
         req_vec = point
         [opt] = NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir)
         print(opt)
         
         eval_point = [ 6 , 1 , 3 , -1 , -1 , -1 , -1 , 2]
         eval_point = opt
-        call_type = 1;
+        call_type = 1
         [outs,weights] = NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir)
         
         resiliance = [thresh - item  for thresh,item in zip(req_thresh,outs[1::])]
