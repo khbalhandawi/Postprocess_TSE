@@ -24,7 +24,7 @@ def plot_tradespace(attribute,plot_true):
     current_path = os.getcwd()
     filepath = os.path.join(current_path,'DOE_results',filename)
     
-    data = [];
+    data = []
     
     attribute_label = attribute[0]
     
@@ -45,7 +45,7 @@ def plot_tradespace(attribute,plot_true):
     current_path = os.getcwd()
     filepath = os.path.join(current_path,'Input_files',filename)
     
-    data = [];
+    data = []
     
     attribute_label = attribute[0]
     
@@ -73,7 +73,7 @@ def plot_tradespace(attribute,plot_true):
     current_path = os.getcwd()
     filepath = os.path.join(current_path,'Input_files',filename)
     
-    data = [];
+    data = []
     
     attribute_label = attribute[0]
     
@@ -103,10 +103,10 @@ def plot_tradespace(attribute,plot_true):
         mpl.rc('text', usetex = True)
         rcParams['font.family'] = 'serif'
         my_dpi = 100
-        fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi);
+        fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
     
     branch_id = 1
-    designs = []; designs_padded = [];
+    designs = []; designs_padded = []
     # loop over data points
     for data in zip(dictionary['concept'],
                     dictionary['s1'],dictionary['s2'],dictionary['s3'],
@@ -124,8 +124,8 @@ def plot_tradespace(attribute,plot_true):
             weight = [w1,w2,w3,w4,w5,w6]
             
             # Get design index
-            i = 0;
-            design_index = [int(c),]; x_data = []; y_data = [];
+            i = 0
+            design_index = [int(c),]; x_data = []; y_data = []
             for arg in [s1,s2,s3,s4,s5,s6]:
                 if not int(arg) == -1:
                     design_index += [int(arg)] # populate permutation index
@@ -149,9 +149,9 @@ def plot_tradespace(attribute,plot_true):
             rgb = [r,g,b]
             
             if plot_true:
-                plt.plot(x_data, y_data, ':', color = rgb, linewidth = 2.5 );
-                # plt.plot(x_data, y_data, 'o', markersize=10, markevery=len(x_data), color = [0,0,0]);
-                plot_h, = plt.plot(x_data, y_data, 'o', color = [0,0,1], markersize=6 );
+                plt.plot(x_data, y_data, ':', color = rgb, linewidth = 2.5 )
+                # plt.plot(x_data, y_data, 'o', markersize=10, markevery=len(x_data), color = [0,0,0])
+                plot_h, = plt.plot(x_data, y_data, 'o', color = [0,0,1], markersize=6 )
             
             branch_id += 1
             
@@ -162,7 +162,7 @@ def plot_tradespace(attribute,plot_true):
         ax = plt.gca() 
         ax.tick_params(axis='both', which='major', labelsize=14) 
         
-        plt.title("Tradespace", fontsize=20);
+        plt.title("Tradespace", fontsize=20)
         plt.xlabel('Design stage number', fontsize=14)
         plt.ylabel(attribute_label, fontsize=14)
     
@@ -181,7 +181,7 @@ def get_pareto(P_analysis_strip,dictionary_res,dictionary_weight):
     filepath = os.path.join(current_path,'DOE_results',filename)
     
     # %% read MADS log file
-    opt_points = [];
+    opt_points = []
     with open(filepath) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=' ')
         line_count = 0
@@ -196,7 +196,7 @@ def get_pareto(P_analysis_strip,dictionary_res,dictionary_weight):
     current_path = os.getcwd()
     print('\nNumber of pareto points: %i' %(line_count))
     
-    x_data = []; y_data = [];
+    x_data = []; y_data = []
     for point in opt_points:
         ind = P_analysis_strip.index(point)
         
@@ -255,7 +255,7 @@ def rank_designs(designs):
             if design == permutation_index:
                 histogram[index] += int(1)     
         
-        index += 1; 
+        index += 1 
             
     return histogram,P_analysis_strip
 
@@ -265,7 +265,7 @@ def get_dstribution(d_types,k,design_list):
     
     dist = np.zeros(len(d_types), dtype = int) 
     
-    index = 0;  
+    index = 0  
     for d_type in d_types:
         
         # loop over data points
@@ -329,7 +329,7 @@ if __name__ == "__main__":
     mpl.rc('text', usetex = True)
     rcParams['font.family'] = 'serif'
     my_dpi = 100
-    fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi);
+    fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
     
     plt.bar(x, y, width=0.8, bottom=None, align='center', data=None )
     plt.xlabel('Design index', fontsize=14)
@@ -341,14 +341,14 @@ if __name__ == "__main__":
     [x_data, y_data] = get_pareto(P_analysis_strip,dictionary_res,dictionary_weight)
     
     my_dpi = 100
-    fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi);
-    pareto, = plt.plot(x_data, y_data, '-d', color = 'm', linewidth = 4.0, markersize = 10.0 );
-    SBD_design, = plt.plot(weight[:5], res[:5], '.', color = [1,0,0], linewidth = 2, markersize = 20 );
+    fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
+    pareto, = plt.plot(x_data, y_data, '-d', color = 'm', linewidth = 4.0, markersize = 10.0 )
+    SBD_design, = plt.plot(weight[:5], res[:5], '.', color = [1,0,0], linewidth = 2, markersize = 20 )
     
     cost = dictionary_weight['weight']
     attribute = dictionary_res['req_index_6']
     attribute = dictionary_weight['n_f_th']
-    feasible, = plt.plot(cost, attribute, 'x', color = [0,0,0], linewidth = 1, markersize = 6 );
+    feasible, = plt.plot(cost, attribute, 'x', color = [0,0,0], linewidth = 1, markersize = 6 )
     
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14)
     # plt.ylabel('Requirement satisfaction ratio ($V_{{C}\cap{R}}/V_{R}$)', fontsize=14)
@@ -364,13 +364,13 @@ if __name__ == "__main__":
     # Pie chart plot   
     import matplotlib.gridspec as gridspec
 
-    d_types = [0,1,2,3];
+    d_types = [0,1,2,3]
     i1 = get_dstribution(d_types,1,designs_padded)
     i2 = get_dstribution(d_types,2,designs_padded)
     i3 = get_dstribution(d_types,3,designs_padded)
     i4 = get_dstribution(d_types,4,designs_padded)
     
-    d_types = [0,1];
+    d_types = [0,1]
     c = get_dstribution(d_types,0,designs_padded)
     
     gs = gridspec.GridSpec(2,2, 
@@ -378,7 +378,7 @@ if __name__ == "__main__":
                            height_ratios = np.ones(2,dtype=int))
     
     my_dpi = 100
-    fig = plt.figure(figsize=(1400/my_dpi, 1000/my_dpi), dpi=my_dpi);
+    fig = plt.figure(figsize=(1400/my_dpi, 1000/my_dpi), dpi=my_dpi)
     
     iteraton = -1
     for item in [i1,i2,i3,i4]:
@@ -390,14 +390,14 @@ if __name__ == "__main__":
         sizes = item
         explode = (0, 0, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
         
-        ax = fig.add_subplot(gs[iteraton]); # subplot
+        ax = fig.add_subplot(gs[iteraton]) # subplot
         ax.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
                 shadow=True, startangle=90)
         ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         
     
     my_dpi = 100
-    fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi);
+    fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
         
     # Pie chart, where the slices will be ordered and plotted counter-clockwise:
     labels = 'concept 1', 'concept 2'
