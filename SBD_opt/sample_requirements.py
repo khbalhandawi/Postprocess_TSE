@@ -91,29 +91,33 @@ def lhs_function(n_points,n_var,lb,ub,DOE_dir):
 
 #==============================================================================#
 # %% DOE FOR LOADCASE LOADS
-def DOE_generator(index,n_points,n_var,lb,ub,DOE_dir,DOE_filename):
+def DOE_generator(index,n_points,n_var,lb,ub,DOE_dir,DOE_filename,regenerate):
     import os
     import numpy as np
     
-    points = lhs_function(n_points,n_var,lb,ub,DOE_dir)
-    
+        
     DOE_full_name = DOE_filename+'.npy'
-    
     DOE_filepath = os.path.join(DOE_dir,DOE_full_name)
-    np.save(DOE_filepath, points) # save DOE array
     
-    i_prev = [];
-    for f in os.listdir(DOE_dir):
-        if f.find('%i_%s' %(index,DOE_filename)) == 0: # make sure string is at beginning
-            i_prev += [int(f.split('_')[-1][:-4])]
-
-    if i_prev:
-        i_prev = max(i_prev)
+    if regenerate:
+        points = lhs_function(n_points,n_var,lb,ub,DOE_dir)
+        np.save(DOE_filepath, points) # save DOE array
+        
+        i_prev = [];
+        for f in os.listdir(DOE_dir):
+            if f.find('%i_%s' %(index,DOE_filename)) == 0: # make sure string is at beginning
+                i_prev += [int(f.split('_')[-1][:-4])]
+    
+        if i_prev:
+            i_prev = max(i_prev)
+        else:
+            i_prev = 0
+        
+        DOE_copy_filepath = os.path.join(DOE_dir,'%i_%s_%i.npy' %(index,DOE_filename,i_prev+1))
+        np.save(DOE_copy_filepath, points) # save DOE array
+        
     else:
-        i_prev = 0
-    
-    DOE_copy_filepath = os.path.join(DOE_dir,'%i_%s_%i.npy' %(index,DOE_filename,i_prev+1))
-    np.save(DOE_copy_filepath, points) # save DOE array
+        points = np.load(DOE_filepath) # save DOE array
     
     return points
 
@@ -153,7 +157,7 @@ def main():
     DOE_dir = os.path.join(current_path,DOE_folder)
     DOE_out_dir = os.path.join(current_path,DOE_out_folder)
     
-    points = DOE_generator(index,n_points,n_var,lb,ub,DOE_dir,DOE_filename)
+    points = DOE_generator(index,n_points,n_var,lb,ub,DOE_dir,DOE_filename,False)
     print(points)
     
     # req_vec = [ 2 , 1 , 4 , 5 , 6 , 8 ]
@@ -171,13 +175,8 @@ def main():
     filename = "req_opt_log.log"
     full_filename = os.path.join(DOE_out_dir,filename)
     
-    resultsfile=open(full_filename,'w')
-    resultsfile.write('index'+','+'n_stages'+','+'concept'+','+'s1'+','+'s2'+','+'s3'+','+'s4'+','+'s5'+','+'s6'+','
-                      +'w1'+','+'w2'+','+'w3'+','+'w4'+','+'w5'+','+'w6'+','
-                      +'R1'+','+'R2'+','+'R3'+','+'R4'+','+'R5'+','+'R6'+','
-                      +'Total_weight'+'\n')
-    
-    index = 0
+    index = 19499
+    points = points[19499::]
     
     for point in points:
         
@@ -198,6 +197,13 @@ def main():
         resiliance = [thresh - item  for thresh,item in zip(req_thresh,outs[1::])]
         
         f = outs[0]
+        
+        if index == 1: # initialize log file for writing
+            resultsfile=open(full_filename,'w')
+            resultsfile.write('index'+','+'n_stages'+','+'concept'+','+'s1'+','+'s2'+','+'s3'+','+'s4'+','+'s5'+','+'s6'+','
+                              +'w1'+','+'w2'+','+'w3'+','+'w4'+','+'w5'+','+'w6'+','
+                              +'R1'+','+'R2'+','+'R3'+','+'R4'+','+'R5'+','+'R6'+','
+                              +'Total_weight'+'\n')
         
         resultsfile=open(full_filename,'a+')
         resultsfile.write(str(index)+','+','.join(map(str,opt))+','
