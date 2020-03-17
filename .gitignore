@@ -66,3 +66,4 @@ SBD_opt/DOE_results/req_opt_log_4.log
 SBD_opt/MADS_output/eval_point_out.log
 SBD_opt/MADS_output/mads_bb_calls.log
 SBD_opt/MADS_output/weight_design.log
+*.dll
