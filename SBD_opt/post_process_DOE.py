@@ -20,7 +20,7 @@ def plot_tradespace(attribute,plot_true):
         from matplotlib import rcParams
         plt.close('all')
     
-    filename = 'req_opt_log_2.log'
+    filename = 'req_opt_log_4.log'
     current_path = os.getcwd()
     filepath = os.path.join(current_path,'DOE_results',filename)
     

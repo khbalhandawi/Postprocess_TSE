@@ -175,8 +175,8 @@ def main():
     filename = "req_opt_log.log"
     full_filename = os.path.join(DOE_out_dir,filename)
     
-    index = 19499
-    points = points[19499::]
+    index = 82949
+    points = points[82949::]
     
     for point in points:
         
