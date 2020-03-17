@@ -20,7 +20,7 @@ def plot_tradespace(attribute,plot_true):
         from matplotlib import rcParams
         plt.close('all')
     
-    filename = 'req_opt_log_4.log'
+    filename = 'req_opt_log_2.log'
     current_path = os.getcwd()
     filepath = os.path.join(current_path,'DOE_results',filename)
     
@@ -335,10 +335,10 @@ if __name__ == "__main__":
     y = y[:20]
 
     # data for constructing tradespace of feasible designs
-    req_index = 50
-    attribute = dictionary_res['req_index_%i' %(req_index)]
-    # req_index = 0
-    # attribute = dictionary_weight['n_f_th']
+    # req_index = 50
+    # attribute = dictionary_res['req_index_%i' %(req_index)]
+    req_index = 0
+    attribute = dictionary_weight['n_f_th']
 
     cost = dictionary_weight['weight']
 
@@ -347,7 +347,7 @@ if __name__ == "__main__":
     cost_SBD = cost[indices]
     
     # data for plotting Pareto front
-    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,P_analysis_strip,attribute,cost,True) # get Pareto optimal points
+    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,P_analysis_strip,attribute,cost,False) # get Pareto optimal points
 
     #==========================================================================
     # Histogram plot
