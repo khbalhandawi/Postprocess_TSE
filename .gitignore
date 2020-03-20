@@ -1,0 +1,6 @@
+
+*.db
+.vs/basic_lib_single_obj/v15/.suo
+*.log
+*.in
+Makefile
