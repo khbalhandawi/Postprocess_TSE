@@ -367,7 +367,8 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
 
     pareto, = plt.plot(x_data, y_data, '-d', color = 'm', linewidth = 4.0, markersize = 10.0 )
-    SBD_design, = plt.plot(cost_SBD[:5], attribute_SBD[:5], '.', color = [1,0,0], linewidth = 2, markersize = 20 )
+    markersizes = [ (1/20)*(n**4) for n in reversed(range(3,len(cost_SBD[:10])+3)) ]
+    SBD_design = plt.scatter( cost_SBD[:10], attribute_SBD[:10], s = markersizes, color = [1,0,0], marker = '.' )
     feasible, = plt.plot(cost, attribute, 'x', color = [0,0,0], linewidth = 1, markersize = 6 )
     
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14)

@@ -11,18 +11,18 @@ def fatigue_parameters(S_ut,S_y,compression):
     
     import numpy as np
     
-    a = 4.51;
-    b = -0.265;
+    a = 4.51
+    b = -0.265
     ka = a*(S_ut**(b)) # surface condition modification factor
-    kb = 1.0; # size modification factor
-    kc  = 0.85; # load modification factor
-    kd = 0.8; # temperature modification factor
-    ke = 0.7; # reliability factor
-    kf = 1.0; # miscellaneous-effects modification factor
+    kb = 1.0 # size modification factor
+    kc  = 0.85 # load modification factor
+    kd = 0.8 # temperature modification factor
+    ke = 0.7 # reliability factor
+    kf = 1.0 # miscellaneous-effects modification factor
     
     K_f = 1.0 # Stress concentration factors (SAME SIZE AS HIST REGIONS)
     
-    S_e = ka*kb*kc*kd*ke*kf*S_ut;
+    S_e = ka*kb*kc*kd*ke*kf*S_ut
     
     f = 0.76 # Fig 6-18 fatigue strength fraction
     a = ((f*S_ut)**2)/S_e
@@ -39,38 +39,38 @@ def fatigue_life_calc(sa,sm):
     import numpy as np
     from numpy import pi
     
-    smax = sa + sm;
-    smin = sm - sa;
+    smax = sa + sm
+    smin = sm - sa
     
-    sopen = max([smin,0.0]); # to account for crack closure effects
-    smax = max([smax,1.0]); # to make sure there is no division by zero or inf
+    sopen = max([smin,0.0]) # to account for crack closure effects
+    smax = max([smax,1.0]) # to make sure there is no division by zero or inf
     
     K1c = 30 # MPa/sqrt(m)
     
     # it_integral = 5.0
     # C = 4e-10; # From J. M. Barsom and S. T. Rolfe
     it_integral = 100.0
-    C = 2e-7; # From J. M. Barsom and S. T. Rolfe
-    m = 1; # From J. M. Barsom and S. T. Rolfe
+    C = 2e-7 # From J. M. Barsom and S. T. Rolfe
+    m = 1 # From J. M. Barsom and S. T. Rolfe
     # it_integral = 100.0
     # C = 2e-9; # From J. M. Barsom and S. T. Rolfe
     # m = 3; # From J. M. Barsom and S. T. Rolfe
-    ai = 5e-4; # m
-    beta = 1.00;
-    af = ( 1/pi ) * ( ( K1c / (beta*smax) ) ** 2 );
+    ai = 5e-4 # m
+    beta = 1.00
+    af = ( 1/pi ) * ( ( K1c / (beta*smax) ) ** 2 )
     # print('critical crack size: %f mm' %(af*1000.0))
     
     dN_j = (af - ai)*100*500
     
-    a_j = ai; N_j = 0.0; a_j_plot = []; N_j_plot = [];
+    a_j = ai; N_j = 0.0; a_j_plot = []; N_j_plot = []
     
     while a_j < af:
     
-        Kmax = beta*smax*np.sqrt(pi*a_j);
-        Kmin = beta*sopen*np.sqrt(pi*a_j);
+        Kmax = beta*smax*np.sqrt(pi*a_j)
+        Kmin = beta*sopen*np.sqrt(pi*a_j)
         R = Kmin/Kmax
     
-        dK_1 = Kmax - Kmin;
+        dK_1 = Kmax - Kmin
         da_j = ( ( C * ( (dK_1) ** m ) ) / ( ((1 - R) * K1c) - dK_1) ) * dN_j # Foreman relation
         # da_j = ( ( C * ( (dK_1) ** m ) ) / ( 1.0 ) ) * dN_j # Paris law
         dN_j = ((af - ai)/da_j) * it_integral
@@ -99,15 +99,15 @@ def fatigue_calculation( s1,s2,p1,p2 ):
     
     import numpy as np
     
-    s1 = np.array(s1); s2 = np.array(s2);
-    p1 = np.array(p1); p2 = np.array(p2);
+    s1 = np.array(s1); s2 = np.array(s2)
+    p1 = np.array(p1); p2 = np.array(p2)
     
     # Find sign of Mises stress (-: comp, +: tension)
     s1 = s1*np.sign(p1)
     s2 = s2*np.sign(p2)
     
     # Find sign of Mises stress (-: comp, +: tension)
-    s1 = s1* -1.0; s2 = s2* -1.0; 
+    s1 = s1* -1.0; s2 = s2* -1.0
     s_m0 = ((s1+s2)/2.0)
     s_a0 = abs(s2-s1)/2.0
     
@@ -116,17 +116,17 @@ def fatigue_calculation( s1,s2,p1,p2 ):
     s_m = np.asarray(s_m0) * K_f
     s_a = np.asarray(s_a0) * K_f
     
-    i = -1;
+    i = -1
     N = np.empty(len(s_a))
     n_f = np.empty(len(s_a))
     S_rev = np.empty(len(s_a))
     for s_an,s_mn in zip(s_a,s_m):
-        i += 1;
+        i += 1
         S_ut = 1332.0 # Ultimate strength
         S_y = 1100.0 # Yield strength
         compression = True
         [f,a,b,S_e] = fatigue_parameters(S_ut,S_y,compression)
-        N[i] = fatigue_life_calc(s_an,s_mn);
+        N[i] = fatigue_life_calc(s_an,s_mn)
     
         if s_mn <= 0: # Compressive mean stress  
             if abs(s_mn) > S_ut or s_an > S_y: # Mean stress or Amplitude stress greater than ultimate stress
@@ -160,7 +160,7 @@ def scaling(x,l,u,operation):
         x_out=(x-l)/(u-l)
     elif operation == 2:
         # unscale
-        x_out = l + x*(u-l);
+        x_out = l + x*(u-l)
     
     return x_out
 
@@ -301,16 +301,16 @@ def plot_AM_process_line_data(index,current_path,plot_true):
     resultsfile.close()
 
     # Initialize variables and obtain distance plotting vector
-    x_prev = x_p[0]; y_prev = y_p[0]; z_prev = z_p[0]; d_vec = []; d_prev = 0;
+    x_prev = x_p[0]; y_prev = y_p[0]; z_prev = z_p[0]; d_vec = []; d_prev = 0
     for x,y,z in zip(x_p,y_p,z_p):
-        dx = x - x_prev; dy = y - y_prev; dz = z - z_prev; # obtain consecutive distance
-        d_i = np.linalg.norm([dx,dy,dz]); # obtain magnitude
+        dx = x - x_prev; dy = y - y_prev; dz = z - z_prev # obtain consecutive distance
+        d_i = np.linalg.norm([dx,dy,dz]) # obtain magnitude
         d_prev = d_prev + d_i
-        d_vec += [d_prev]; # iterate distance vector
-        x_prev = x; y_prev = y; z_prev = z;
+        d_vec += [d_prev] # iterate distance vector
+        x_prev = x; y_prev = y; z_prev = z
 
     # Plot displacement data
-    U_p_line = [];
+    U_p_line = []
     for U_p_e in U_p:
         U_p_line += [U_p_e[-1]] # extract last time entry for data type
     
@@ -374,17 +374,17 @@ def plot_AM_process_line_data(index,current_path,plot_true):
     resultsfile.close()
 
     # Initialize variables and obtain distance plotting vector
-    x_prev = x_p[0]; y_prev = y_p[0]; z_prev = z_p[0]; d_vec = []; d_prev = 0;
+    x_prev = x_p[0]; y_prev = y_p[0]; z_prev = z_p[0]; d_vec = []; d_prev = 0
     for x,y,z in zip(x_p,y_p,z_p):
-        dx = x - x_prev; dy = y - y_prev; dz = z - z_prev; # obtain consecutive distance
-        d_i = np.linalg.norm([dx,dy,dz]); # obtain magnitude
+        dx = x - x_prev; dy = y - y_prev; dz = z - z_prev # obtain consecutive distance
+        d_i = np.linalg.norm([dx,dy,dz]) # obtain magnitude
         d_prev = d_prev + d_i
-        d_vec += [d_prev]; # iterate distance vector
-        x_prev = x; y_prev = y; z_prev = z;
+        d_vec += [d_prev] # iterate distance vector
+        x_prev = x; y_prev = y; z_prev = z
 
     # Plot stress data
-    S_line = []; SP1_line = []; SP2_line = []; SP3_line = []; pressure_line = [];
-    S_hoop_line= []; pressure_hoop_line = [];
+    S_line = []; SP1_line = []; SP2_line = []; SP3_line = []; pressure_line = []
+    S_hoop_line= []; pressure_hoop_line = []
     for S_e,SP1_e,SP2_e,SP3_e,S11_e,S22_e,S33_e,S12_e,S13_e,S23_e,Press_e,S_hoop_e,Press_hoop_e in zip(stress_p,SP1_p,SP2_p,SP3_p,S11_p,S22_p,S33_p,S12_p,S13_p,S23_p,Press_p,stress_hoop_p,Press_hoop_p):
         S_line += [S_e[-1]] # extract last time entry for data type
         SP1_line += [SP1_e[-1]] # extract last time entry for data type
@@ -407,7 +407,7 @@ def plot_AM_process_line_data(index,current_path,plot_true):
     
         fig_name = '%i_stress_profile.pdf' %(int(index))
         fige_file_name = os.path.join(current_path,'Job_results','Results_log',fig_name)
-        plt.savefig(fige_file_name, bbox_inches='tight'); 
+        plt.savefig(fige_file_name, bbox_inches='tight')
     
         plt.figure()
         plt.plot(angle_p, pressure_line, '-k', label='$Pressure$')
@@ -418,7 +418,7 @@ def plot_AM_process_line_data(index,current_path,plot_true):
     
         fig_name = '%i_pressure_profile.pdf' %(int(index))
         fige_file_name = os.path.join(current_path,'Job_results','Results_log',fig_name)
-        plt.savefig(fige_file_name, bbox_inches='tight'); 
+        plt.savefig(fige_file_name, bbox_inches='tight')
     
         # Plot temperature timeseries data
         plt.figure()
@@ -430,7 +430,7 @@ def plot_AM_process_line_data(index,current_path,plot_true):
     
         fig_name = '%i_temperature_timeseries.pdf' %(int(index))
         fige_file_name = os.path.join(current_path,'Job_results','Results_log',fig_name)
-        plt.savefig(fige_file_name, bbox_inches='tight'); 
+        plt.savefig(fige_file_name, bbox_inches='tight')
     
         # Plot mises timeseries data
         plt.figure()
@@ -478,7 +478,7 @@ def plot_loadcase_line_data(index,filename_e,filename_n,DOE_folder,current_path,
     resultsfile.close()
 
     # Plot displacement data
-    U_p_line = [];
+    U_p_line = []
     for U_p_e in U_p:
         U_p_line += [U_p_e[-1]] # extract last time entry for data type
     
@@ -533,9 +533,9 @@ def plot_loadcase_line_data(index,filename_e,filename_n,DOE_folder,current_path,
     resultsfile.close()
     
     # Plot stress data
-    S_line = []; S_M_line = []; S_A_line = []; pressure_line = []; n_f_line = []; N_line = [];
-    S_hoop_line= []; Press_hoop_line = [];
-    plot_data = zip(stress_p,S_M_p,S_A_p,Press_p,N_p,n_f_p,stress_hoop_p,Press_hoop_p);
+    S_line = []; S_M_line = []; S_A_line = []; pressure_line = []; n_f_line = []; N_line = []
+    S_hoop_line= []; Press_hoop_line = []
+    plot_data = zip(stress_p,S_M_p,S_A_p,Press_p,N_p,n_f_p,stress_hoop_p,Press_hoop_p)
     for S_e,S_M_e,S_A_e,Press_e,N_e,n_f_e,S_hoop_e,Press_hoop_e in plot_data:
         S_line += [S_e[-1]] # extract last time entry for data type
         S_M_line += [S_M_e[-1]] # extract last time entry for data type
@@ -562,7 +562,7 @@ def plot_loadcase_line_data(index,filename_e,filename_n,DOE_folder,current_path,
     
         fig_name = '%i_stress_profile.pdf' %(int(index))
         fig_file_name = os.path.join(current_path,'Job_results',DOE_folder,fig_name)
-        plt.savefig(fig_file_name, bbox_inches='tight'); 
+        plt.savefig(fig_file_name, bbox_inches='tight')
     
         plt.figure()
         plt.plot(angle_p, pressure_line, '-k', label='$Pressure$')
@@ -573,7 +573,7 @@ def plot_loadcase_line_data(index,filename_e,filename_n,DOE_folder,current_path,
     
         fig_name = '%i_pressure_profile.pdf' %(int(index))
         fig_file_name = os.path.join(current_path,'Job_results',DOE_folder,fig_name)
-        plt.savefig(fig_file_name, bbox_inches='tight');
+        plt.savefig(fig_file_name, bbox_inches='tight')
         
         plt.figure()
         plt.plot(angle_p, n_f_line, '-k', label='$Safety Factor$')
@@ -585,74 +585,89 @@ def plot_loadcase_line_data(index,filename_e,filename_n,DOE_folder,current_path,
     
         fig_name = '%i_safety_factor_profile.pdf' %(int(index))
         fig_file_name = os.path.join(current_path,'Job_results',DOE_folder,fig_name)
-        plt.savefig(fig_file_name, bbox_inches='tight');
+        plt.savefig(fig_file_name, bbox_inches='tight')
     
     # plt.show()
     return S_line, N_line, n_f_line, U_p_line
 
 #==============================================================================#
 # %% POSTPROCESS DOE DATA TO GET CAPABILITY
-def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,threshold):
+def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,threshold,
+                           new_LHS_MCI,LHS_MCI_file):
     
     from abaqus_postprocess import gridsamp
     import numpy as np
     import copy 
     from scipy import integrate
     from pyDOE import lhs
+    import pickle
+    import os
     
     lob = bounds[:,0]
     upb = bounds[:,1]
     
     lob_req = bounds_req[:,0]
     upb_req = bounds_req[:,1]
-        
-    if req_type == "guassian":
-        
+
+    # LHS distribution
+    DOE_full_name = LHS_MCI_file +'.pkl'
+    DOE_filepath = os.path.join(os.getcwd(),'Optimization_studies',DOE_full_name)
+
+    if new_LHS_MCI: # generate new LHS for each Monte-Carlo Integration operation
         # LHS distribution
         dFF_lhs = lhs(len(lob), samples=res, criterion='center')
-        
         # Sample the requirements space only
         dFF = scaling(dFF_lhs,lob_req,upb_req,2) # unscale latin hypercube points to req
         dFF_n = scaling(dFF,lob,upb,1) # scale requirement to full space
         
-        [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n);
+        resultsfile=open(DOE_filepath,'wb')
+        
+        pickle.dump(dFF, resultsfile)
+        pickle.dump(dFF_n, resultsfile)
+    
+        resultsfile.close()
+        
+    else:
+        resultsfile=open(DOE_filepath,'rb')
+        
+        dFF = pickle.load(resultsfile)
+        dFF_n = pickle.load(resultsfile)
+    
+        resultsfile.close()
+
+    if req_type == "guassian":
+        
+        [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n)
          
         # capability constraints
          
-        YX_cstr = np.reshape(YX - threshold, np.shape(dFF_n)[0]);
+        YX_cstr = np.reshape(YX - threshold, np.shape(dFF_n)[0])
          
         # Evaluate multivariate guassian
         res_sq = np.ceil(res**(0.5*len(lob))).astype(int) # size of equivalent square matrix
         pos = np.empty((res,1) + (len(lob),))
            
         for i in range(len(lob)):
-            X_norm = np.reshape(dFF_n[:,i],(res,1));
+            X_norm = np.reshape(dFF_n[:,i],(res,1))
             # Pack X1, X2 ... Xk into a single 3-dimensional array
             pos[:, :, i] = X_norm
          
         Z = multivariate_gaussian(pos, mu, Sigma)
-        Z = np.reshape(Z, np.shape(dFF_n)[0]);
+        Z = np.reshape(Z, np.shape(dFF_n)[0])
             
-        Z_feasible = copy.deepcopy(Z);
+        Z_feasible = copy.deepcopy(Z)
         Z_feasible[YX_cstr < 0] = 0.0 # eliminate infeasible regions from MCS
  
         # Design space volume
-        resiliance = np.sum(Z_feasible)/np.sum(Z);
+        resiliance = np.sum(Z_feasible)/np.sum(Z)
     
     elif req_type == "uniform":
-           
-        # LHS distribution
-        dFF_lhs = lhs(len(lob), samples=res, criterion='center')
-        
-        # Sample the requirements set only
-        dFF = scaling(dFF_lhs,lob_req,upb_req,2) # unscale latin hypercube points to req
-        dFF_n = scaling(dFF,lob,upb,1) # scale requirement to full space
             
-        [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n);
+        [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n)
         cond_req_feas = (YX - threshold) > 0
         
         # Design space volume
-        resiliance = len(cond_req_feas[cond_req_feas])/np.shape(dFF)[0];
+        resiliance = len(cond_req_feas[cond_req_feas])/np.shape(dFF)[0]
         
     return resiliance
 
@@ -675,7 +690,7 @@ def integrand_multivariate_gaussian(*arg):
     pos = np.empty((1,1) + (len(x),))
     X_eval = np.ones((1,len(x)))
     
-    i = 0;
+    i = 0
     for value in x:
         X_eval[0,i] = value
         pos[:, :, i] = value
@@ -684,9 +699,9 @@ def integrand_multivariate_gaussian(*arg):
     #===========================================================================
     # [YX, std, ei, cdf] = server.sgtelib_server_predict(X_eval);
     #===========================================================================
-    YX = 1000;
+    YX = 1000
     if YX - threshold < 0:
-        Z = 0.0;
+        Z = 0.0
     else:
         Z = multivariate_gaussian(pos, mu, Sigma)
 
@@ -710,7 +725,9 @@ def multivariate_gaussian(pos, mu, Sigma):
     # way across all the input variables.
     fac = np.einsum('...k,kl,...l->...', pos-mu, Sigma_inv, pos-mu)
 
-    return np.exp(-fac / 2)
+    Z = np.exp(-fac / 2)
+
+    return Z
 
 #==============================================================================#
 # %% POSTPROCESS DOE DATA
@@ -729,11 +746,11 @@ def postprocess_DOE(index,base_name,current_path,DOE_folder,bounds,variable_lbls
         DOE_inputs = np.load(os.path.join(current_path,'Job_results','Results_log',DOE_filename))
         # DOE_inputs = [DOE_inputs[7]]
         
-        index_DOE = 0; outputs = np.array([]); backup_results = [];
+        index_DOE = 0; outputs = np.array([]); backup_results = []
         print("+================================================================+")
         print("ANALYSIS START")
         for point in DOE_inputs: # conduct DOE         
-            index_DOE += 1;
+            index_DOE += 1
             
             filename_n = "%i_%i_%s_n_file.pkl" %(index,index_DOE,base_name[1])
             filename_e = "%i_%i_%s_e_file.pkl" %(index,index_DOE,base_name[1])
@@ -764,11 +781,11 @@ def postprocess_DOE(index,base_name,current_path,DOE_folder,bounds,variable_lbls
         backupfile.close()
         
         # Load results as outputs
-        index_DOE = 0; outputs = np.array([]);
+        index_DOE = 0; outputs = np.array([])
         print("+================================================================+")
         print("ANALYSIS START")
         for results in backup_results: # conduct DOE         
-            index_DOE += 1;
+            index_DOE += 1
             [s,N,n_f,U] = results
             result = results[metric[1]][0] # choose type of output [s,N,n_f,U]
             outputs = np.append(outputs,[result])
@@ -780,13 +797,13 @@ def postprocess_DOE(index,base_name,current_path,DOE_folder,bounds,variable_lbls
     lob = bounds[:,0]
     upb = bounds[:,1]
     
-    Y = outputs; S_n = scaling(DOE_inputs, lob, upb, 1);
+    Y = outputs; S_n = scaling(DOE_inputs, lob, upb, 1)
     # fitting_names = ['KRIGING','LOWESS','KS','RBF','PRS','ENSEMBLE'];
     # fit_type = 1; run_type = 2; # use pre-optimized hyperparameters
-    fit_type = 5; run_type = 1; # optimize all hyperparameters
+    fit_type = 5; run_type = 1 # optimize all hyperparameters
     model,sgt_file = define_SGTE_model(fit_type,run_type)
     server = SGTE_server(model)
-    p = server.sgtelib_server_start()
+    server.sgtelib_server_start()
     server.sgtelib_server_ping()
     server.sgtelib_server_newdata(S_n,Y)    
     #===========================================================================
@@ -806,10 +823,10 @@ def postprocess_DOE(index,base_name,current_path,DOE_folder,bounds,variable_lbls
     return server, DOE_inputs, outputs
 
 def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,variable_lbls,
-                         threshold,resolution,plot_R_space,req_index,server,DOE_inputs,outputs):
+                         threshold,resolution,plot_R_space,new_LHS_MCI,LHS_MCI_file,
+                         req_index,server,DOE_inputs,outputs,plt):
     
     from abaqus_postprocess import hyperplane_SGTE_vis_norm
-    import matplotlib.pyplot as plt
     from matplotlib import rc
     import os
     import numpy as np
@@ -823,11 +840,11 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
     lob_req = mu - (3 * np.sqrt(Sigma))
     upb_req = mu + (3 * np.sqrt(Sigma))
     
-    bounds_uniform_lob = lob_req; # Sigma^2
-    bounds_uniform_upb = upb_req; # Sigma^2
+    bounds_uniform_lob = lob_req # Sigma^2
+    bounds_uniform_upb = upb_req # Sigma^2
     
     bounds_uniform = np.array( [bounds_uniform_lob, bounds_uniform_upb] )
-    bounds_uniform = bounds_uniform.T;
+    bounds_uniform = bounds_uniform.T
     # unscale requirement bounds for plotting and resiliance calculation
     bounds_req_lob = scaling(bounds_uniform_lob,bounds[:,0],bounds[:,1],2)
     bounds_req_upb = scaling(bounds_uniform_upb,bounds[:,0],bounds[:,1],2)
@@ -838,27 +855,27 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
     bounds_req_upb[check] = copy.deepcopy(bounds[check,1])
     
     bounds_req = np.array( [bounds_req_lob, bounds_req_upb] )
-    bounds_req = bounds_req.T;
+    bounds_req = bounds_req.T
     #===========================================================================
 
-    Sigma = np.diag(Sigma);
+    Sigma = np.diag(Sigma)
     
     resiliance = capability_calculation(server, bounds_req, mu, Sigma, req_type, 
-                                        bounds, resolution, threshold)
+                                        bounds, resolution, threshold, new_LHS_MCI, 
+                                        LHS_MCI_file)
     
     #===========================================================================
     # Plot 2D projections
     if plot_R_space:
-        nominal = [0.5]*len(variable_lbls); nn = 50;
+        nominal = [0.5]*len(variable_lbls); nn = 150
         fig = plt.figure()  # create a figure object
         
-        hyperplane_SGTE_vis_norm(server,DOE_inputs,bounds,bounds_req,mu,Sigma,req_type,variable_lbls,
+        hyperplane_SGTE_vis_norm(server,DOE_inputs,bounds,bounds_req,LHS_MCI_file,mu,Sigma,req_type,variable_lbls,
                                  nominal,threshold,outputs,nn,fig,plt)
         
         fig_name = '%i_req_%i_%s_RS.pdf' %(index,req_index,base_name[1])
         fig_file_name = os.path.join(current_path,'Job_results','Results_log',fig_name)
         fig.savefig(fig_file_name, bbox_inches='tight')
-        plt.close()
         
     return resiliance 
 
@@ -867,7 +884,7 @@ def postprocess_nominal(index,base_name,current_path,permutation_index,concept,p
     import pickle, os
     import numpy as np
     
-    outputs = np.array([]);
+    outputs = np.array([])
     print("+================================================================+")
     print("ANALYSIS START")        
     
@@ -899,7 +916,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                             ax_pos, st_thick, st_width, laser_power, scanning_speed,
                             power_density, layer_length, layer_width, layer_thick,
                             n_layers, n_deposit, mesh_size, mesh_AM_size,
-                            melting_T, b_thick, index):
+                            melting_T, b_thick, process_DOE_requirements,index):
 
     import os, time
     import numpy as np
@@ -907,6 +924,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     import matplotlib.pyplot as plt
     import itertools
     from pyDOE import lhs
+    import pickle
     
     # plt.rc('text', usetex=True)
 
@@ -928,7 +946,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     [s_res,s_res,s_11_res,s_33_res,U_res] = get_AM_results(index, current_path)
     [U_p_res_line,S_res_line,S_hoop_res_line,press_hoop_res_line] = plot_AM_process_line_data(index,current_path,False)
          
-    process_DOE = False;
+    process_DOE = False
     # Get Loadcase results
     #--------------------------------------------------------------------------#
     # Baseline case
@@ -979,15 +997,15 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
         ip_results = [0.0, 0.0, 0.0, 0.0]
         th_results = [0.0, 0.0, 0.0, 0.0]
         
-    process_IP = False
+    process_IP = False; new_LHS_MCI = False; LHS_MCI_file = 'LHS_MCI_IP'
     #--------------------------------------------------------------------------#
     # IP loadcase
     bounds_ip = np.array( [[-1.0, 1.0]] )
     bounds_req = np.array( [[-0.25, 0.25]] ) # unused
     # bounds_req = bounds_ip
     
-    process_DOE = False;
-    resolution = 100; # sampling resolution for capability calculation (must be a square number)!
+    process_DOE = False
+    resolution = 100 # sampling resolution for capability calculation (must be a square number)!
     threshold = 4.0 # cutoff threshold for capability calculation
     threshold = 2.6 # cutoff threshold for capability calculation
     
@@ -1000,6 +1018,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     metric = [0,2]
     
     if process_IP:
+        # Train surrogate model for use in subsequent capability calculation and plotting
         [server,DOE_inputs,outputs] = postprocess_DOE(index,base_name,current_path,DOE_folder,bounds_ip,
                                               variable_lbls_pc,design_variables,concept,process_DOE,
                                               S_hoop_res_line,press_hoop_res_line,metric,True)
@@ -1018,23 +1037,26 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     req_list = [[req_type_1, req_type_2], [mu_nominal], [Sigma_nominal] ]
     req_combinations = list(itertools.product(*req_list)) 
     
-    req_index = 0; resiliance_ip_vec_nominal = [];
+    req_index = 0; resiliance_ip_vec_nominal = []
     for req in req_combinations: # iterate over all combinations of requirements
         
-        req_index += 1;
+        req_index += 1
         [req_type, mu, Sigma] = req
         
         if process_IP:
             resiliance_ip = process_requirements(index,['DOE_ip_inputs','static_out_nominal'],
                                                  current_path,bounds_ip,
                                                  mu,Sigma,req_type,variable_lbls,threshold,
-                                                 resolution,False,req_index,server,DOE_inputs,outputs)
+                                                 resolution,False,new_LHS_MCI,LHS_MCI_file,
+                                                 req_index,server,DOE_inputs,outputs,plt)
         else:
             resiliance_ip = 0.0
         
         resiliance_ip_vec_nominal += [resiliance_ip]
         print('Nominal resiliance against pressure loads: %f' %(resiliance_ip))
     
+    plt.show()
+
     #===========================================================================
     # IP loadcase guassian parameters (DOE values)
     req_type_1 = "uniform"
@@ -1056,30 +1078,37 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
             line = [req_type,mu_lhs,Sigma_lhs_2]
             req_combinations += [line]
     
-    req_index = 0; resiliance_ip_vec = [];
-    for req in req_combinations: # iterate over all combinations of requirements
-        
-        req_index += 1;
-        [req_type, mu, Sigma] = req
-        
+    if process_DOE_requirements:
+
+        req_index = 0; resiliance_ip_vec = []
+        for req in req_combinations: # iterate over all combinations of requirements
+            
+            req_index += 1
+            [req_type, mu, Sigma] = req
+            
+            if process_IP:
+                resiliance_ip = process_requirements(index,base_name,current_path,bounds_ip,
+                                                    mu,Sigma,req_type,variable_lbls,threshold,
+                                                    resolution,False,new_LHS_MCI,LHS_MCI_file,
+                                                    req_index,server,DOE_inputs,outputs,plt)
+            else:
+                resiliance_ip = 0.0
+            
+            resiliance_ip_vec += [resiliance_ip]
+            print('Resiliance against pressure loads: %f' %(resiliance_ip))
+            
         if process_IP:
-            resiliance_ip = process_requirements(index,base_name,current_path,bounds_ip,
-                                                 mu,Sigma,req_type,variable_lbls,threshold,
-                                                 resolution,False,req_index,server,DOE_inputs,outputs)
-        else:
-            resiliance_ip = 0.0
-        
-        resiliance_ip_vec += [resiliance_ip]
-        print('Resiliance against pressure loads: %f' %(resiliance_ip))
-        
-    if process_IP:
-        server.sgtelib_server_stop()
-        server.server_print(server.server_process) # print console output
+            server.sgtelib_server_stop()
+            server.server_print(server.server_process) # print console output
+    
+        plt.show()
+    else:
+        resiliance_ip_vec = [0.0] * len(req_combinations)
         
     print("ANALYSIS COMPLETE")
     print("+================================================================+") 
        
-    process_TH = True
+    process_TH = True; new_LHS_MCI = True; LHS_MCI_file = 'LHS_MCI_TH'
     #--------------------------------------------------------------------------#
     # Thermal loadcase
     bounds_th = np.array( [[-100, 100],
@@ -1092,10 +1121,11 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                             [-25 , 25 ],
                             [-50 , 100 ]] ) # unused
     
-    process_DOE = False;
-    resolution = 1296; # sampling resolution for capability calculation (must be a square number)!
+    process_DOE = False
+    # resolution = 1296 # sampling resolution for capability calculation (must be a square number)!
+    resolution = 50 # sampling resolution for capability calculation (must be a square number)!
     # threshold = 100000 # cutoff threshold for capability calculation
-    threshold = 4.2 # cutoff threshold for capability calculation
+    # threshold = 4.2 # cutoff threshold for capability calculation
     threshold = 2.8 # cutoff threshold for capability calculation
     
     DOE_folder = 'Thermal_DOE_results'; base_name = ['DOE_th_inputs','thermal_out']
@@ -1107,6 +1137,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     metric = [0,2]
     
     if process_TH:
+        # Train surrogate model for use in subsequent capability calculation and plotting
         [server,DOE_inputs,outputs] = postprocess_DOE(index,base_name,current_path,DOE_folder,bounds_th,
                                               variable_lbls_pc,design_variables,concept,process_DOE,
                                               S_hoop_res_line,press_hoop_res_line,metric,True)
@@ -1123,64 +1154,108 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     req_list = [[req_type_1, req_type_2], [mu_nominal], [Sigma_nominal] ]
     req_combinations = list(itertools.product(*req_list)) 
     
-    req_index = 0; resiliance_th_vec_nominal = [];
+    req_index = 0; resiliance_th_vec_nominal = []
     for req in req_combinations: # iterate over all combinations of requirements
         
-        req_index += 1;
+        req_index += 1
         [req_type, mu, Sigma] = req
         
         if process_TH:
             resiliance_th = process_requirements(index,['DOE_th_inputs','thermal_out_nominal'],
                                                  current_path,bounds_th,
                                                  mu,Sigma,req_type,variable_lbls,threshold,
-                                                 resolution,False,req_index,server,DOE_inputs,outputs)
+                                                 resolution,True,new_LHS_MCI,LHS_MCI_file,
+                                                 req_index,server,DOE_inputs,outputs,plt)
         else:
             resiliance_th = 0.0
             
         resiliance_th_vec_nominal += [resiliance_th]
         print('Nominal resiliance against thermal loads: %f' %(resiliance_th))
-        
+    
+    plt.show()
     #===========================================================================
     # Thermal loadcase guassian parameters (DOE values)
+    DOE_full_name = 'req_distribution_TH_LHS_data'+'.pkl'
+    DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
+    
+    resultsfile=open(DOE_filepath,'rb')
+    
+    lob_req = pickle.load(resultsfile)
+    upb_req = pickle.load(resultsfile)
+    points = pickle.load(resultsfile)
+    points_us = pickle.load(resultsfile)
+
+    resultsfile.close()
+
     req_type_1 = 'uniform'
     req_type_2 = 'guassian'
+
+    #===========================================================================
+    # Thermal loadcase guassian parameters full factorial
+    mu_1 = lob_req[:4]
+    mu_2 = upb_req[:4]
     
-    DOE_full_name = 'req_distribution_TH_LHS'+'.npy'
-    DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
-    points_us = np.load(DOE_filepath) # load DOE array
-    
-    req_combinations = []
-    for point in points_us:
+    Sigma_1 = lob_req[4::] # Sigma^2
+    Sigma_2 = upb_req[4::] # Sigma^2
+
+    # linearly interpolate between two vectors
+    from scipy.interpolate import interp1d
+
+    linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
+    mus = list(linfit([1,2,3,4,5]))
+    linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
+    Sigmas = list(linfit([1,2,3,4,5]))
+
+    Sigma_2s = []
+    for Sigma in Sigmas:
+        Sigma_2 = (Sigma/3)**2
+        Sigma_2s += [Sigma_2]
+
+    req_list = [[req_type_1, req_type_2], mus, Sigma_2s ]
+    req_combinations = list(itertools.product(*req_list)) 
+    #===========================================================================
+
+    #===========================================================================
+    # Thermal loadcase guassian parameters LHS sampling
+    # req_combinations = []
+    # for point in points_us:
         
-        for req_type in [req_type_1,req_type_2]:
+    #     for req_type in [req_type_1,req_type_2]:
             
-            mu_lhs = point[0:4]
-            Sigma_lhs = point[4::]
-            Sigma_lhs_2 = (Sigma_lhs/3)**2
+    #         mu_lhs = point[0:4]
+    #         Sigma_lhs = point[4::]
+    #         Sigma_lhs_2 = (Sigma_lhs/3)**2
             
-            line = [req_type,mu_lhs,Sigma_lhs_2]
-            req_combinations += [line]
-        
-    req_index = 0; resiliance_th_vec = [];
-    for req in req_combinations: # iterate over all combinations of requirements
-        
-        req_index += 1;
-        [req_type, mu, Sigma] = req
-        
+    #         line = [req_type,mu_lhs,Sigma_lhs_2]
+    #         req_combinations += [line]
+    #=========================================================================== 
+
+    if process_DOE_requirements:
+        req_index = 0; resiliance_th_vec = []
+        for req in req_combinations: # iterate over all combinations of requirements
+            
+            req_index += 1
+            [req_type, mu, Sigma] = req
+            
+            if process_TH:
+                resiliance_th = process_requirements(index,base_name,current_path,bounds_th,
+                                                mu,Sigma,req_type,variable_lbls,threshold,
+                                                resolution,True,new_LHS_MCI,LHS_MCI_file,
+                                                req_index,server,DOE_inputs,outputs,plt)
+            else:
+                resiliance_th = 0.0
+                
+            resiliance_th_vec += [resiliance_th]
+            print('Resiliance against thermal loads: %f' %(resiliance_th))
+            
         if process_TH:
-            resiliance_th = process_requirements(index,base_name,current_path,bounds_th,
-                                             mu,Sigma,req_type,variable_lbls,threshold,
-                                             resolution,False,req_index,server,DOE_inputs,outputs)
-        else:
-            resiliance_th = 0.0
-            
-        resiliance_th_vec += [resiliance_th]
-        print('Resiliance against thermal loads: %f' %(resiliance_th))
+            server.sgtelib_server_stop()
+            server.server_print(server.server_process) # print console output
         
-    if process_TH:
-        server.sgtelib_server_stop()
-        server.server_print(server.server_process) # print console output
-    
+        plt.show()
+    else:
+        resiliance_th_vec = [0.0] * len(req_combinations)
+        
     print("ANALYSIS COMPLETE")
     print("+================================================================+")   
       
@@ -1191,13 +1266,13 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     body_full_name = os.path.join(current_path,'Job_results','Results_log',filename)
      
     # Read data from fatigue analysis result and output minimum fatigue life
-    fileID = open(body_full_name,'r'); # Open file
-    InputText = np.loadtxt(fileID, delimiter = '\n', dtype=np.str); # \n is the delimiter
+    fileID = open(body_full_name,'r') # Open file
+    InputText = np.loadtxt(fileID, delimiter = '\n', dtype=np.str) # \n is the delimiter
     volume = float(InputText)
     fileID.close()
     
     #===========================================================================
-    density = 8.19e-06;
+    density = 8.19e-06
     print('Volume: %f mm^3' %(volume))
     print('Weight: %f kg\n' %(volume*density))
 
@@ -1209,10 +1284,10 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
 
     InputText = np.loadtxt(inputfile,
                            delimiter = ',',
-                           dtype=np.float); # \n is the delimiter
+                           dtype=np.float) # \n is the delimiter
     InputText = np.atleast_1d(InputText) # convert to 1d array
 
-    t_max = [];
+    t_max = []
     for value in InputText:
         t_max += [float(value)]
 
@@ -1224,10 +1299,10 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     temp_full_name = os.path.join(current_path,'Job_results','Results_log',filename)
     inputfile=open(temp_full_name,'r') # Read temperature file
 
-    InputText = np.loadtxt(inputfile,delimiter = ',',dtype=np.float); # \n is the delimiter
+    InputText = np.loadtxt(inputfile,delimiter = ',',dtype=np.float) # \n is the delimiter
     InputText = np.atleast_1d(InputText) # convert to 1d array
 
-    p_n = [];
+    p_n = []
     for value in InputText:
         p_n += [float(value)]
 
@@ -1239,10 +1314,10 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     temp_full_name = os.path.join(current_path,'Job_results','Results_log',filename)
     inputfile=open(temp_full_name,'r') # Read temperature file
 
-    InputText = np.loadtxt(inputfile,delimiter = ',',dtype=np.float); # \n is the delimiter
+    InputText = np.loadtxt(inputfile,delimiter = ',',dtype=np.float) # \n is the delimiter
     InputText = np.atleast_1d(InputText) # convert to 1d array
 
-    a_n = [];
+    a_n = []
     for value in InputText:
         a_n += [float(value)]
 
@@ -1256,8 +1331,8 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     btime_full_name = os.path.join(current_path,'Job_results','Results_log',filename)
 
     # Read data from fatigue analysis result and output minumum fatigue life
-    fileID = open(btime_full_name,'r'); # Open file
-    InputText = np.loadtxt(fileID, delimiter = '\n', dtype=np.str); # \n is the delimiter
+    fileID = open(btime_full_name,'r') # Open file
+    InputText = np.loadtxt(fileID, delimiter = '\n', dtype=np.str) # \n is the delimiter
     btime = float(InputText)
     fileID.close()
 
@@ -1286,9 +1361,9 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
 
     return design_data, resiliance_data
 
-def main():
 #------------------------------------------------------------------------------#
 # %% MAIN FILE
+def main():
     import sys, os
     import numpy as np
     from scipy.io import loadmat
@@ -1297,12 +1372,12 @@ def main():
     
     current_path = os.getcwd() # Working directory of file
     
-#=============================== VARIABLES ====================================#
+    #=============================== VARIABLES ====================================#
     
     # one-liner to read a single variable
     P_analysis = loadmat('DOE_permutations.mat')['P_analysis']
     
-#=============================== PARAMETERS ===================================#
+    #=============================== PARAMETERS ===================================#
     para_file_name = 'DED_parameters.log'
     
     Ipara_full_name = os.path.join(current_path,'Optimization_studies',para_file_name)
@@ -1310,21 +1385,21 @@ def main():
     
     paramText = np.loadtxt(paramfile,
         delimiter = ' ',
-        dtype=np.str); # \n is the delimiter
+        dtype=np.str) # \n is the delimiter
     
-    ax_pos = float(paramText[1]);
-    st_height = float(paramText[2]);
-    st_width = float(paramText[3]);
-    st_thick = float(paramText[4]);
-    laser_power = float(paramText[5]);
-    scanning_speed = float(paramText[6]);
-    power_density = float(paramText[7]);
-    layer_length = float(paramText[8]);
-    layer_width = float(paramText[9]);
-    layer_thick = float(paramText[10]);
-    max_T_pool = float(paramText[11]);
-    n_layers = int(float(paramText[12]));
-    n_deposit = int(float(paramText[13]));
+    ax_pos = float(paramText[1])
+    st_height = float(paramText[2])
+    st_width = float(paramText[3])
+    st_thick = float(paramText[4])
+    laser_power = float(paramText[5])
+    scanning_speed = float(paramText[6])
+    power_density = float(paramText[7])
+    layer_length = float(paramText[8])
+    layer_width = float(paramText[9])
+    layer_thick = float(paramText[10])
+    max_T_pool = float(paramText[11])
+    n_layers = int(float(paramText[12]))
+    n_deposit = int(float(paramText[13]))
     mesh_size = float(paramText[14])
     mesh_AM_size = float(paramText[15])
     melting_T = float(paramText[16])
@@ -1332,11 +1407,11 @@ def main():
     T_ref = float(paramText[18])
     b_thick = float(paramText[19])
     
-    run_base = 1; run_nominal = 1; new_LHS = False;
+    run_base = 1; run_nominal = 1; new_LHS = False; process_DOE_requirements = False
   
-# %% Sampling
-#========================== REQUIREMENTS SPACE LHS ============================#
-    
+    # %% Sampling
+    #========================== REQUIREMENTS SPACE LHS ============================#
+        
     # IP loadcase guassian parameters
     mu_lob = np.array([0.250])
     mu_upb = np.array([0.625])
@@ -1410,15 +1485,15 @@ def main():
         DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
         points_us = np.load(DOE_filepath) # load DOE array
     
-# %% Processing
-#============================= MAIN EXECUTION =================================#
-    
-    index = 0
+    # %% Processing
+    #============================= MAIN EXECUTION =================================#
+        
+    index = 63
+    P_analysis = [P_analysis[63]] # for testing
     #index = 74
-    # P_analysis = [P_analysis[0]] # for testing
     # P_analysis = P_analysis[74::] # for testing
     for P_i in P_analysis:
-        index += 1;  
+        index += 1
         
         concept = P_i[0]
         permutation_index = P_i[1::]
@@ -1431,7 +1506,7 @@ def main():
                                               ax_pos, st_thick, st_width, laser_power, scanning_speed, 
                                               power_density, layer_length, layer_width, layer_thick, 
                                               n_layers, n_deposit, mesh_size, mesh_AM_size, 
-                                              melting_T, b_thick, index)
+                                              melting_T, b_thick, process_DOE_requirements, index)
         
         [resiliance_ip_vec,resiliance_th_vec,n_reqs] = resiliance_data
         

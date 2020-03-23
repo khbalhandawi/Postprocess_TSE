@@ -270,33 +270,42 @@ def define_SGTE_model(fit_type,run_type):
 		
 	return model,out_file
 
-def plot_countour_code(q,bounds,bounds_n,bounds_req,mu,Sigma,req_type,lob,upb,LHS_f,d,
+def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_type,lob,upb,LHS_f,d,
 					   nominal,threshold,nn,S,server,variable_lbls,gs,plt,fig):
 	
 	from DED_Blackbox_opt import scaling
 	from DED_Blackbox_opt import multivariate_gaussian
 	import matplotlib.patches as patches
 	import numpy as np
+	import os, pickle
 	
-	iteraton = -1;
+	# get LHS_MCI points distribution
+	DOE_full_name = LHS_MCI_file + '.pkl'
+	DOE_filepath = os.path.join(os.getcwd(),'Optimization_studies',DOE_full_name)
+	resultsfile=open(DOE_filepath,'rb')
+	dFF = pickle.load(resultsfile)
+	dFF_n = pickle.load(resultsfile)
+	resultsfile.close()
+
+	iteraton = -1
 	for par in q:
-		iteraton += 1;
+		iteraton += 1
 		# Plot points
 		i = par; # plot variable indices
-		bounds_p = np.zeros(bounds.shape);
-		bounds_p_n = np.zeros(bounds_n.shape);
-		nn_vec = nn*np.ones(len(LHS_f[0,:]),dtype=int);
-		fixed_value_lc = np.zeros((d,));
+		bounds_p = np.zeros(bounds.shape)
+		bounds_p_n = np.zeros(bounds_n.shape)
+		nn_vec = nn*np.ones(len(LHS_f[0,:]),dtype=int)
+		fixed_value_lc = np.zeros((d,))
 		for n in range(len(bounds)):
 		    if n not in i:
-		        lm = nominal[n];
-		        fixed_value = scaling(lm,lob[n],upb[n],2); # Assign lambdas
+		        lm = nominal[n]
+		        fixed_value = scaling(lm,lob[n],upb[n],2) # Assign lambdas
 		        
-		        bounds_p[n,0] = fixed_value-0.0000001; # Set bounds equal to each other
-		        bounds_p[n,1] = fixed_value+0.0000001; # Set bounds equal to each other
-		        bounds_p_n[n,0] = lm; # Nomalized bounds
-		        bounds_p_n[n,1] = lm+0.01; # Nomalized bounds
-		        nn_vec[n] = 1;
+		        bounds_p[n,0] = fixed_value-0.0000001 # Set bounds equal to each other
+		        bounds_p[n,1] = fixed_value+0.0000001 # Set bounds equal to each other
+		        bounds_p_n[n,0] = lm # Nomalized bounds
+		        bounds_p_n[n,1] = lm+0.01 # Nomalized bounds
+		        nn_vec[n] = 1
 		        
 		        fixed_value_lc[n] = scaling(lm,lob[n],upb[n],2); # Assign lambdas
 		    else:
@@ -305,50 +314,67 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,mu,Sigma,req_type,lob,upb,LH
 		        bounds_p_n[n,0] = bounds_n[n,0]
 		        bounds_p_n[n,1] = bounds_n[n,1]
 		
-		X = gridsamp(bounds_p_n.T, nn_vec);
+		X = gridsamp(bounds_p_n.T, nn_vec)
 		# Prediction
 		# YX = sm.predict_values(X)
 		[YX, std, ei, cdf] = server.sgtelib_server_predict(X)
 		
 	#========================= DATA VISUALIZATION =============================#
 	# %% Sensitivity plots
-		YX_obj = YX[:,0];
-		X = X[:,i];
-		X1_norm = np.reshape(X[:,0],(nn,nn)); X2_norm = np.reshape(X[:,1],(nn,nn));
-		X1 = scaling(X1_norm, lob[i[0]], upb[i[0]], 2); # Scale up plot variable
-		X2 = scaling(X2_norm, lob[i[1]], upb[i[1]], 2); # Scale up plot variable
-		YX_obj = np.reshape(YX_obj, np.shape(X1));
+		YX_obj = YX[:,0]
+		X = X[:,i]
+		X1_norm = np.reshape(X[:,0],(nn,nn)); X2_norm = np.reshape(X[:,1],(nn,nn))
+		X1 = scaling(X1_norm, lob[i[0]], upb[i[0]], 2) # Scale up plot variable
+		X2 = scaling(X2_norm, lob[i[1]], upb[i[1]], 2) # Scale up plot variable
+		YX_obj = np.reshape(YX_obj, np.shape(X1))
 		
-		cmax = 100000; cmin = 0; # set colorbar limits
+		cmax = 6; cmin = 1 # set colorbar limits
+		# cmax = 100000; cmin = 0 # set colorbar limits
 		# cmax = 4.4; cmin = 1.2; # set colorbar limits
 		
-		ax = fig.add_subplot(gs[iteraton]); # subplot
-		cf = ax.contourf( X1, X2, YX_obj, cmap=plt.cm.jet); # plot contour
+		ax = fig.add_subplot(gs[iteraton]) # subplot
+		cf = ax.contourf( X1, X2, YX_obj, cmap=plt.cm.jet) # plot contour
 		# cf = ax.contourf( X1, X2, YX_obj, vmin = cmin, vmax = cmax, cmap=plt.cm.jet); # plot contour
 		ax.contour(cf, colors='k')
 		
 		cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
 		cbar.set_array(YX_obj)
 		# cbar.set_clim(cmin, cmax)
-		fig.colorbar(cbar)
-		# fig.colorbar(cbar, boundaries=np.linspace(cmin, cmax, 10))
+		# cbar_h = fig.colorbar(cbar)
+		cbar_h = fig.colorbar(cbar, boundaries=np.linspace(cmin, cmax, 51))
+		cbar_h.set_label('$n_{safety}(\mathbf{T})$', rotation=90, labelpad=3)
 		
 		artists, labels = cf.legend_elements()
-		af = artists[0];
+		af = artists[0]
 		
 	#======================== NONLINEAR CONSTRAINTS ============================#	
 	# %% Nonlinear constraints
-		YX_cstr = YX - threshold;
-		YX_cstr = np.reshape(YX_cstr, np.shape(X1));
-		c1 = ax.contourf( X1, X2, YX_cstr, levels=[-20, 0, 20], colors=['#FF0000','None'], 
-						  hatches=['//', None], alpha=0.0);
-		ax.contour(c1, colors='r', linewidths = 2.0)
-		a1 = patches.Rectangle((20,20), 20, 20, linewidth=0, color='#FF0000', fill='#FF0000', hatch='//')
+		YX_cstr = YX - threshold
+		YX_cstr = np.reshape(YX_cstr, np.shape(X1))
+		c1 = ax.contourf( X1, X2, YX_cstr, alpha=0.0, levels=[-20, 0, 20], colors=['#FF0000','#FF0000'], 
+						  hatches=['//', None])
+		ax.contour(c1, colors='#FF0000', linewidths = 2.0)
+		a1 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#FF0000', facecolor='none', fill='None', hatch='//')
 		
 	#====================== REQUIREMENTS CONSTRAINTS ==========================#	
-	# %% Requirements
+	# %% Requirements bounds
 		
-		if req_type == 'guassian':
+		if req_type == 'uniform':	
+
+			YX_req = np.zeros(X1.shape)
+			
+			cond1 = (X1 >= bounds_req[i[0],0]) & (X1 <= bounds_req[i[0],1]) # x-axis
+			cond2 = (X2 >= bounds_req[i[1],0]) & (X2 <= bounds_req[i[1],1]) # y-axis
+			cond = (cond1) & (cond2)
+			
+			YX_req[cond] = 1
+			
+			c2 = ax.contourf( X1, X2, YX_req, alpha=0.1, levels=[-10, 0, 10], colors=['#39FFF2','#39FFF2'], 
+								hatches=[None, None])
+			ax.contour(c2, colors='#39FFF2', linewidths = 2.0)
+			a2 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#39FFF2', facecolor='none', fill='None', hatch=None)
+				
+		elif req_type == 'guassian':
 			
 			# Mean vector and covariance matrix
 			mu_sp = np.array([ mu[i[0]], mu[i[1]] ])
@@ -363,14 +389,14 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,mu,Sigma,req_type,lob,upb,LH
 			Z = multivariate_gaussian(pos, mu_sp, Sigma_sp)
 			
 			# 1,2,3 Sigma level contour
-			L = [];
+			L = []
 			for n in range(3):
 				# Pack X and Y into a single 3-dimensional array
 				pos = np.empty((1,1) + (2,))
 				x_l = [ mu_sp[0] + ((n+1) * np.sqrt(Sigma_sp[0,0])), # evaluate at Sigma not Sigma^2
 						mu_sp[1]                                   ]
 				
-				level_index = 0;
+				level_index = 0
 				for value in x_l:
 					pos[:, :, level_index] = value
 					level_index += 1
@@ -379,59 +405,90 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,mu,Sigma,req_type,lob,upb,LH
 				L += [LN]
 
 			# c2 = ax.contourf( X1, X2, Z, colors=['#39FFF2'], alpha=0.0);
-			c2 = ax.contourf( X1, X2, Z, alpha=0.55, cmap=plt.cm.Blues);
+			c2 = ax.contourf( X1, X2, Z, alpha=0.25, cmap=plt.cm.Blues)
 			
-			ax.contour(c2, colors='#39FFF2', levels=L, linewidths = 1.0)
-			a2 = patches.Rectangle((20,20), 20, 20, linewidth=0, color='#39FFF2', fill='#39FFF2', hatch='..')
-			
-		elif req_type == 'uniform':	
-		
+			ax.contour(c2, colors='#39FFF2', levels=L, linewidths = 1.5)
+			a2 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#39FFF2', facecolor='none', fill='None', hatch=None)
+
+	#========================= REGION OF INTEREST =============================#	
+	# %% Requirements
+
+		if req_type == 'uniform':	
+
 			YX_req = np.zeros(X1.shape)
-			
+
 			cond1 = (X1 >= bounds_req[i[0],0]) & (X1 <= bounds_req[i[0],1]) # x-axis
 			cond2 = (X2 >= bounds_req[i[1],0]) & (X2 <= bounds_req[i[1],1]) # y-axis
-			cond = (cond1) & (cond2)
+			cond3 = (YX_cstr >= 0) # z-axis
+			cond = (cond1) & (cond2) & (cond3)
 			
 			YX_req[cond] = 1
 			
-			c2 = ax.contourf( X1, X2, YX_req, levels=[-10, 0, 10], colors=['None','#39FFF2'], 
-							  hatches=[None, '..'], alpha=0.0);
-			ax.contour(c2, colors='#39FFF2', linewidths = 2.0)
-			a2 = patches.Rectangle((20,20), 20, 20, linewidth=0, color='#39FFF2', fill='#39FFF2', hatch='..')
-			
-	#========================= REGION OF INTEREST =============================#	
-	# %% Requirements
-		YX_req = np.zeros(X1.shape)
+			c3 = ax.contourf( X1, X2, YX_req, alpha=0.0, levels=[-10, 0, 10], colors=['#1E7C37','#1E7C37'], 
+							hatches=[None, '+'])
+			ax.contour(c3, colors='#1E7C37', alpha=0.1, linewidths = 2.0)
 
-		cond1 = (X1 >= bounds_req[i[0],0]) & (X1 <= bounds_req[i[0],1]) # x-axis
-		cond2 = (X2 >= bounds_req[i[1],0]) & (X2 <= bounds_req[i[1],1]) # y-axis
-		cond3 = (YX_cstr >= 0) # z-axis
-		cond = (cond1) & (cond2) & (cond3)
-		
-		YX_req[cond] = 1
-		
-		c3 = ax.contourf( X1, X2, YX_req, levels=[-10, 0, 10], colors=['None','#6AFF39'], 
-						  hatches=[None, '+'], alpha=0.0);
-		ax.contour(c3, colors='#6AFF39', linewidths = 2.0)
-		
-		#=======================================================================
-		# artists, labels = c3.legend_elements()
-		# a3 = artists[1];
-		#=======================================================================
-		a3 = patches.Rectangle((20,20), 20, 20, linewidth=0, color='#6AFF39', fill='#6AFF39', hatch='+')
-		
-	#============================ AXIS LABELS =================================#	
+			#=======================================================================
+			# artists, labels = c3.legend_elements()
+			# a3 = artists[1];
+			#=======================================================================
+			a3 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#1E7C37', facecolor='none', fill='None', hatch='+')
+
+		elif req_type == 'guassian':
+			
+			# Mean vector and covariance matrix
+			mu_sp = np.array([ mu[i[0]], mu[i[1]] ])
+			Sigma_sp = Sigma[np.ix_([i[0],i[1]],[i[0],i[1]])] # pick corresponding row and column
+			Sigma_sp = Sigma_sp
+			
+			# Pack X1 and X2 into a single 3-dimensional array
+			pos = np.empty(X1_norm.shape + (2,))
+			pos[:, :, 0] = X1_norm
+			pos[:, :, 1] = X2_norm
+			
+			Z = multivariate_gaussian(pos, mu_sp, Sigma_sp)
+			cond = (YX_cstr < 0) # z-axis
+			Z[cond] = 0.0
+
+			# c2 = ax.contourf( X1, X2, Z, colors=['#39FFF2'], alpha=0.0);
+			c3 = ax.contourf( X1, X2, Z, alpha=0.25, cmap=plt.cm.Greens)
+			
+			ax.contour(c3, colors='#1E7C37', levels=L, linewidths = 1.5)
+			a3 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#1E7C37', facecolor='none', fill='None', hatch=None)
+
+	#========================= MONTE CARLO POINTS =============================#
+
+		import matplotlib.lines as mlines
+
 		ax.axis([lob[i[0]],upb[i[0]],lob[i[1]],upb[i[1]]]) # fix the axis limits
 		
-		ax.plot(S[:,i[0]],S[:,i[1]],'.k')
-		ax.set_xlabel(variable_lbls[i[0]])
-		ax.set_ylabel(variable_lbls[i[1]])
+		ax.plot(dFF[:,i[0]],dFF[:,i[1]],'.k', markersize = 3) # plot DOE points for surrogate
+		a_MCI = mlines.Line2D([], [], color='black', marker='.', markersize=5, linestyle='')
+		# ax.plot(S[:,i[0]],S[:,i[1]],'.k') # plot DOE points for surrogate
 	
-	handles, labels = [[af,a1,a2,a3], ["$F(\mathbf{T})$", 
-									   "$\{C^\prime:F(\mathbf{T})<F_{th}\}$", 
-								   	   "$R$","${C}\cap{R}$"]]
+	#============================ AXIS LABELS =================================#	
+
+		ax.set_xlabel(variable_lbls[i[0]], labelpad=-1)
+		ax.set_ylabel(variable_lbls[i[1]], labelpad=-16)
+	
+	# handles, labels = [[a1], ["$n_{safety}(\mathbf{T})<n_{th}$"]]
+	# fig.legend(handles, labels, loc='upper center', ncol=1, fontsize = 14)
+
+	# handles, labels = [[a1,a2], ["$n_{safety}(\mathbf{T})<n_{th}$", 
+	# 							 "Joint PDF $F_{\mathbf{X}}(\mathbf{T})$"]]
+	# fig.legend(handles, labels, loc='upper center', ncol=2, fontsize = 14)
+
+	# handles, labels = [[a1,a2,a3], ["$n_{safety}(\mathbf{T})<n_{th}$", 
+	# 								"Joint PDF $F_{\mathbf{X}}(\mathbf{T})$",
+	# 								"$F_{\mathbf{X}}(\mathbf{T})$ and $n_{safety}(\mathbf{T}) \ge n_{th}$"]]
+	# fig.legend(handles, labels, loc='upper center', ncol=3, fontsize = 14)
+
+	handles, labels = [[a1,a2,a3,a_MCI], ["$n_{safety}(\mathbf{T})<n_{th}$", 
+										  "Joint PDF $F_{\mathbf{X}}(\mathbf{T})$",
+										  "$F_{\mathbf{X}}(\mathbf{T})$ and $n_{safety}(\mathbf{T}) \ge n_{th}$",
+										  "Monte Carlo samples" ]]
 	fig.legend(handles, labels, loc='upper center', ncol=4, fontsize = 14)
-		
+
 def plot_line_code(bounds,bounds_n,bounds_req,mu,Sigma,req_type,lob,upb,LHS_f,d,threshold,
 				   nn,S,Y,server,variable_lbls,gs,plt,fig):
 	
@@ -515,13 +572,12 @@ def plot_line_code(bounds,bounds_n,bounds_req,mu,Sigma,req_type,lob,upb,LHS_f,d,
 	ax.set_xlabel(variable_lbls[0])
 	ax.set_ylabel('$n_{safety}$')
 
-def hyperplane_SGTE_vis_norm(server,LHS_f,bounds,bounds_req,mu,Sigma,req_type,variable_lbls,
+def hyperplane_SGTE_vis_norm(server,LHS_f,bounds,bounds_req,LHS_MCI_file,mu,Sigma,req_type,variable_lbls,
 							 nominal,threshold,objs,nn,fig,plt):
 	import numpy as np
 	from scipy.special import comb
 	from DED_Blackbox_opt import scaling
 	from itertools import combinations
-	import matplotlib.pyplot as plt
 	import matplotlib.gridspec as gridspec
 	from matplotlib import cm
 	from shutil import copyfile
@@ -557,14 +613,15 @@ def hyperplane_SGTE_vis_norm(server,LHS_f,bounds,bounds_req,mu,Sigma,req_type,va
 	
 	gs = gridspec.GridSpec(sp_shape[0],sp_shape[1], 
 						width_ratios = np.ones(sp_shape[1],dtype=int), 
-						height_ratios = np.ones(sp_shape[0],dtype=int))
+						height_ratios = np.ones(sp_shape[0],dtype=int),
+						left=0.15, right=0.85, wspace=0.2)
 	
 	
 	q = combinations(range(d),2); # choose 2 out d variables
 	ss = comb(d,2,exact=True)
 	
 	if d != 1:
-		plot_countour_code(q,bounds,bounds_n,bounds_req,mu,Sigma,req_type,lob,upb,LHS_f,d,
+		plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_type,lob,upb,LHS_f,d,
 						   nominal,threshold,nn,S,server,variable_lbls,gs,plt,fig)
 	else:
 		plot_line_code(bounds,bounds_n,bounds_req,mu,Sigma,req_type,lob,upb,LHS_f,d,

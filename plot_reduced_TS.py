@@ -20,12 +20,12 @@ def plot_tradespace_reduced(attribute):
     attribute_name = attribute[0]
     attribute_label = attribute[1]
     
-    [fig, ax, dictionary, start, wave, cross] = plot_tradespace(attribute);
+    [fig, ax, dictionary, start, wave, cross] = plot_tradespace(attribute)
     
     # Append initial base design to dictionary
     
     # Creating a Dictionary  
-    new_dict = dict();
+    new_dict = dict()
     for key in dictionary.keys():
         if key == 'n_f_th':
             new_key = np.append( dictionary[key], np.array([2.378925]) )
@@ -112,8 +112,8 @@ def plot_tradespace_reduced(attribute):
         
     ax = plt.gca() 
     ax.tick_params(axis='both', which='major', labelsize=14) 
-#    ax.set_xlim([-4.9,32])
-#    ax.set_ylim([1.25,5.0])
+    # ax.set_xlim([-4.9,32])
+    # ax.set_ylim([1.25,5.0])
     
     plt.title("Tradespace", fontsize=20 * magnify);
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14 * magnify)
