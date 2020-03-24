@@ -76,7 +76,7 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id):
         legend_h_f2 += [plot_h1]
         
         # legend label generation
-        label = ''.join(['$C = %i' %(ds[1]),
+        label = ''.join(['$c = %i' %(ds[1]),
                          '~S = \{', 
                          ',~'.join(map(str,s_data)),'\}$'])
 
@@ -102,7 +102,7 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id):
     # Figure 1 settings
     req_thresh = [0.0] + req_thresh # design stage 0
     plot_req, = ax1.plot(x_data, req_thresh, '-', color = [0,1,0], linewidth = 2.5 )
-    legend_h_f1 += [plot_req]; legend_labels += ['Requirement threshold']
+    legend_h_f1 += [plot_req]; legend_labels += ['Probability threshold $P_{th}$']
 
     # ax1.fill_between(x_data, 0.0, req_thresh, facecolor="none", hatch="XX", edgecolor="g", linewidth=0.0)
     ax1.tick_params(axis='both', which='major', labelsize=14) 
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     MADS_output_folder = 'MADS_output'
     MADS_output_dir = os.path.join(current_path,MADS_output_folder)
 
-    attribute = ['$P(n_{safety}(\mathbf{T}) \ge n_{th})$']
+    attribute = ['$P(\mathbf{T} \in C)$']
 
     # plot 1
     plot_id = 1

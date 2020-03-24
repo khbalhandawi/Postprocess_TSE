@@ -48,7 +48,7 @@ def plot_tradespace_reduced(attribute):
                 permutation_index += [int(arg)] # populate permutation index
         
         P_analysis_strip += [permutation_index]
-    
+
     # Get sorted design points wrt attribute
     i = np.argsort(dictionary[attribute[0]])
     
@@ -75,22 +75,24 @@ def plot_tradespace_reduced(attribute):
     mpl.rc('text', usetex = True)
     rcParams['font.family'] = 'serif'
     my_dpi = 100
-    magnify = 1.25
+    magnify = 1.75
     fig = plt.figure(figsize=(magnify * 700/my_dpi, magnify * 500/my_dpi), dpi=my_dpi);
     
     #reduced_designs = [sorted_designs[n] for n in [60, 58,-1, 3]]
     #pt_labels = ['d', 'o', '+', 's']
     #marker_sizes = [ 8, 8, 22, 8 ]
     #marker_widths = [ 2, 2, 3, 2 ]
-    reduced_designs = [[1,0,3,1,2],[1,0,1,2,3],[0,0,1,2]]
-    pt_labels = ['+', 's', 'o']
-    marker_sizes = [ 16, 8, 8]
-    marker_widths = [ 3, 2, 2]
+    reduced_designs = [[1,0,3,1,2],[1,0,1,2],[0,0,1,2]]
+    # reduced_designs = [[1,2,1,0],[1,3,2],[1,1,2,0]]
+    pt_labels = ['+', 's', 'o', 'x']
+    marker_sizes = [ 16, 8, 8, 8]
+    marker_widths = [ 3, 2, 2, 2]
     
-    legend_labels = []
+    legend_handles = []
     for design,pt_label,e_width,e_size in zip(reduced_designs,pt_labels,marker_widths,marker_sizes):
     
-        x_data = [0.0]; y_data = [2.378925];
+        # x_data = [0.0]; y_data = [2.378925]
+        x_data = [0.0]; y_data = [0.0]
         print(design)
         for it in range(len(design[1::])):
             ind = P_analysis_strip.index(design[0:it+2])
@@ -107,31 +109,40 @@ def plot_tradespace_reduced(attribute):
         design_lg, = plt.plot( x_data[-1], y_data[-1], pt_label, markersize = e_size, markeredgewidth = e_width, color = rgb );
         
         
-        legend_labels += [design_lg]
+        legend_handles += [design_lg]
         #fig.savefig(os.path.join(current_path,'progress','tradespace_%i.png' %(optproblem.n_fcalls)), format='png', dpi=100,bbox_inches='tight')
         
     ax = plt.gca() 
-    ax.tick_params(axis='both', which='major', labelsize=14) 
+    ax.tick_params(axis='both', which='major', labelsize=14 * magnify) 
     # ax.set_xlim([-4.9,32])
     # ax.set_ylim([1.25,5.0])
     
     plt.title("Tradespace", fontsize=20 * magnify);
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14 * magnify)
     plt.ylabel(attribute_label, fontsize=14 * magnify)
-    plt.ylabel('Safety factor ($n_{safety}$)', fontsize=14 * magnify)
     
-    ax.legend((legend_labels[0], legend_labels[1], legend_labels[2]), 
-              ('$n = 4,~C = 1,~D = \{0, 3, 1, 2\}$', 
-               '$n = 4,~C = 1,~D = \{0, 1, 2, 3\}$',
-               '$n = 3,~C = 0,~D = \{0, 1, 2\}$'), loc = 2)
+    legend_labels = []
+    for r_design in reduced_designs:
+        # legend label generation
+        label = ''.join(['$n = %i,' %(len(r_design[1::])),
+                         '~c = %i,' %(r_design[0]),
+                         '~D = \{', 
+                         ',~'.join(map(str,r_design[1::])),'\}$'])
+
+        legend_labels += [label]
+
+    ax.legend(legend_handles, legend_labels, loc = 'right', fontsize=18 )
     
     return fig, ax, dictionary, P_analysis_strip
 
 if __name__ == "__main__":
     import os
-    
-    attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-    #attribute = ['resiliance_th','Requirement satisfaction ratio ($V_{{C}\cap{R}}/V_{R}$)']
+    import matplotlib.pyplot as plt
+
+    # attribute = ['n_f_th','Safety factor ($n_{safety}$)']
+    attribute = ['resiliance_th','Probability of satisfying requirement $P(\mathbf{T} \in C)$']
     
     [fig, ax, dictionary, P_analysis_strip] = plot_tradespace_reduced(attribute)
     fig.savefig(os.path.join(os.getcwd(),'tradespace_pareto_reduced.svg'), format='svg')
+
+    plt.show()

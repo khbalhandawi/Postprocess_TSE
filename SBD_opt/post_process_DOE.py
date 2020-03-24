@@ -269,7 +269,7 @@ def rank_designs(designs):
 
             # check if permutation index contained within branch
             if design == permutation_index:
-                histogram[index] += int(1)     
+                histogram[index] += 1
         
         index += 1 
             
@@ -299,6 +299,8 @@ def get_dstribution(d_types,k,design_list):
 if __name__ == "__main__":
     
     import os
+    import random
+    import pickle
     import numpy as np
     import matplotlib as mpl
     import matplotlib.pyplot as plt
@@ -330,10 +332,6 @@ if __name__ == "__main__":
     
     print(sorted_designs[:5])
 
-    # data for plotting histogram SBD
-    x = x[:20]
-    y = y[:20]
-
     # data for constructing tradespace of feasible designs
     # req_index = 50
     # attribute = dictionary_res['req_index_%i' %(req_index)]
@@ -351,16 +349,46 @@ if __name__ == "__main__":
 
     #==========================================================================
     # Histogram plot
-    # This is not necessary if `text.usetex : True` is already set in `matplotlibrc`.    
+    # data for plotting histogram SBD
+    new_colors = False
+    color_file = 'colors_histogram.pkl'
+    
+    if new_colors:
+        colors = []
+        for i in range(0,len(histogram)):
+            r = random.random()
+            g = random.random()
+            b = random.random()
+            rgb = [r,g,b]
+            colors += [rgb]
+        
+        with open(color_file, 'wb') as pickle_file:
+            pickle.dump(colors,pickle_file)
+    else:
+        fid = open(color_file, 'rb')
+        colors = pickle.load(fid)
+        fid.close()
+
+    n_bins = 15; 
+    x = x[:n_bins]
+    y = y[:n_bins]/(sum(y)*0.01)
+    design_indices = [i + 1 for i in indices[:n_bins]]
+    design_colors = [colors[i] for i in indices[:n_bins]]
+
+    # design_indices = list(range(1,21)
+
+    
     mpl.rc('text', usetex = True)
     rcParams['font.family'] = 'serif'
     my_dpi = 100
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
     
-    plt.bar(x, y, width=0.8, bottom=None, align='center', data=None )
+    plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
     plt.xlabel('Design index', fontsize=14)
-    plt.ylabel('Count', fontsize=14) 
-    plt.xticks(list(range(20)), list(map(str,list(range(1,21)))))
+    plt.ylabel('$\%$ of requirement profiles satisfied', fontsize=14) 
+    plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
+    fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
+    
     #==========================================================================
     # Tradespace plot
     my_dpi = 100
@@ -378,8 +406,8 @@ if __name__ == "__main__":
     ax = plt.gca() 
     ax.tick_params(axis='both', which='major', labelsize=14) 
     
-    ax.legend((feasible, pareto, SBD_design), ('Design space', 'Pareto optimal designs', 'Set-based designs'))
-    # fig.savefig(os.path.join(os.getcwd(),'DOE_results','tradespace_pareto.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
+    ax.legend((feasible, pareto, SBD_design), ('Feasible designs $\in \Omega$', 'Pareto optimal designs', 'Set-based designs'))
+    fig.savefig(os.path.join(os.getcwd(),'DOE_results','tradespace_pareto.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
     
     #==========================================================================
     # Pie chart plot   

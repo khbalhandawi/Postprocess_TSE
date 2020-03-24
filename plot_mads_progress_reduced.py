@@ -58,8 +58,8 @@ class PlotOptimizationProgress():
         b = random.random()
         rgb = [r,g,b]
                 
-        x_data = [0.0]; y_data = [2.378925]; # initial point
-        
+        # x_data = [0.0]; y_data = [2.378925]; # initial point
+        x_data = [0.0]; y_data = [0.0]; # initial point
         for it in range(len(self.state)):
             ind = self.P_analysis_strip.index(self.state[0:it+2])
             x_data += [dictionary['weight'][ind]]
@@ -71,8 +71,8 @@ class PlotOptimizationProgress():
         
         self.line = ax.plot(x_data, y_data, 's-', color = 'm', linewidth = 3.0, markersize = 7.5 );
         current_path = os.getcwd()
-        fig.savefig(os.path.join(current_path,'progress','tradespace_%i.png' %(self.n_fcalls)), 
-                    format='png', dpi=100)
+        fig.savefig(os.path.join(current_path,'progress','tradespace_%i.svg' %(self.n_fcalls)), 
+                    format='svg', dpi=100)
         
         plt.pause(0.0005)
         plt.show()
@@ -87,9 +87,9 @@ from plot_reduced_TS import plot_tradespace_reduced
 P_analysis = loadmat('DOE_permutations.mat')['P_analysis']
 #P_analysis = P_analysis[0:44]
 
-attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-#attribute = ['resiliance_th','Requirement satisfaction ratio ($V_{{C}\cap{R}}/V_{R}$)']
-
+# attribute = ['n_f_th','Safety factor ($n_{safety}$)']
+attribute = ['resiliance_th','Probability of satisfying requirement ${P}(\mathbf{T} \in C)$']
+    
 [fig, ax, dictionary, P_analysis_strip] = plot_tradespace_reduced(attribute)
 
 # %% Begin combinatorial optimization

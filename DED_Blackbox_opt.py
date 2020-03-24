@@ -1164,7 +1164,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
             resiliance_th = process_requirements(index,['DOE_th_inputs','thermal_out_nominal'],
                                                  current_path,bounds_th,
                                                  mu,Sigma,req_type,variable_lbls,threshold,
-                                                 resolution,True,new_LHS_MCI,LHS_MCI_file,
+                                                 resolution,False,new_LHS_MCI,LHS_MCI_file,
                                                  req_index,server,DOE_inputs,outputs,plt)
         else:
             resiliance_th = 0.0
@@ -1407,7 +1407,7 @@ def main():
     T_ref = float(paramText[18])
     b_thick = float(paramText[19])
     
-    run_base = 1; run_nominal = 1; new_LHS = False; process_DOE_requirements = False
+    run_base = 1; run_nominal = 1; new_LHS = False; process_DOE_requirements = True
   
     # %% Sampling
     #========================== REQUIREMENTS SPACE LHS ============================#
