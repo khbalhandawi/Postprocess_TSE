@@ -38,7 +38,7 @@ class PlotOptimizationProgress():
 
     def move(self):
         """Get the branch components"""
-        self.state = self.opt_bb_calls[self.n_fcalls];
+        self.state = self.opt_bb_calls[self.n_fcalls]
         self.energy()
         
     def energy(self):
@@ -47,19 +47,14 @@ class PlotOptimizationProgress():
         x_data = self.dictionary['weight'][ind]
         y_data = self.dictionary['n_f_th'][ind]
         
-        e = -y_data;
-        self.n_fcalls += 1;
+        e = -y_data
+        self.n_fcalls += 1
         #print('Number of function calls: %i' %(self.n_fcalls))
         #=====================================================================#
         # Plot progress
-        # generate random color for branch
-        r = random.random()
-        g = random.random()
-        b = random.random()
-        rgb = [r,g,b]
-                
+        
         # x_data = [0.0]; y_data = [2.378925]; # initial point
-        x_data = [0.0]; y_data = [0.0]; # initial point
+        x_data = [0.0]; y_data = [0.0] # initial point
         for it in range(len(self.state)):
             ind = self.P_analysis_strip.index(self.state[0:it+2])
             x_data += [dictionary['weight'][ind]]
@@ -69,7 +64,7 @@ class PlotOptimizationProgress():
         if len(self.line) > 0:
             self.line[0].remove()
         
-        self.line = ax.plot(x_data, y_data, 's-', color = 'm', linewidth = 3.0, markersize = 7.5 );
+        self.line = ax.plot(x_data, y_data, 's-', color = 'm', linewidth = 3.0, markersize = 7.5 )
         current_path = os.getcwd()
         fig.savefig(os.path.join(current_path,'progress','tradespace_%i.svg' %(self.n_fcalls)), 
                     format='svg', dpi=100)
@@ -88,23 +83,23 @@ P_analysis = loadmat('DOE_permutations.mat')['P_analysis']
 #P_analysis = P_analysis[0:44]
 
 # attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-attribute = ['resiliance_th','Probability of satisfying requirement ${P}(\mathbf{T} \in C)$']
+attribute = ['resiliance_th','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$']
     
 [fig, ax, dictionary, P_analysis_strip] = plot_tradespace_reduced(attribute)
 
 # %% Begin combinatorial optimization
 
 # read MADS log file
-bb_evals = [];
+bb_evals = []
 with open('mads_bb_calls.log') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     line_count = 0
     for row in csv_reader:
         
-        row_strip = [];
+        row_strip = []
         for item in row:
             if int(item) != -1:
-                row_strip += [int(item)];
+                row_strip += [int(item)]
                 
         bb_evals += [row_strip]
         line_count += 1
@@ -112,7 +107,7 @@ with open('mads_bb_calls.log') as csv_file:
 
 # iterate through MADS bb evals
 current_path = os.getcwd()
-optproblem = PlotOptimizationProgress(bb_evals[0],P_analysis_strip, dictionary, bb_evals, attribute, fig);
+optproblem = PlotOptimizationProgress(bb_evals[0],P_analysis_strip, dictionary, bb_evals, attribute, fig)
 
 for bb_call in bb_evals:
     optproblem.move()

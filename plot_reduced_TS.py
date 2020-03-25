@@ -39,7 +39,7 @@ def plot_tradespace_reduced(attribute):
     dictionary = new_dict
     
     # Get unsorted design points
-    P_analysis_strip = [];
+    P_analysis_strip = []
     for c,i1,i2,i3,i4 in zip(dictionary['concept'],dictionary['i1'],dictionary['i2'],dictionary['i3'],dictionary['i4']):
         # Get permutation index
         permutation_index = []
@@ -60,7 +60,7 @@ def plot_tradespace_reduced(attribute):
     i3 = dictionary['i3'][i]
     i4 = dictionary['i4'][i]
     
-    sorted_designs = [];
+    sorted_designs = []
     for n in range(len(n_f_th)):
         
         # Get permutation index
@@ -73,10 +73,12 @@ def plot_tradespace_reduced(attribute):
     
     # This is not necessary if `text.usetex : True` is already set in `matplotlibrc`.    
     mpl.rc('text', usetex = True)
+    mpl.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}',
+                                           r'\usepackage{amssymb}']
     rcParams['font.family'] = 'serif'
     my_dpi = 100
     magnify = 1.75
-    fig = plt.figure(figsize=(magnify * 700/my_dpi, magnify * 500/my_dpi), dpi=my_dpi);
+    fig = plt.figure(figsize=(magnify * 700/my_dpi, magnify * 500/my_dpi), dpi=my_dpi)
     
     #reduced_designs = [sorted_designs[n] for n in [60, 58,-1, 3]]
     #pt_labels = ['d', 'o', '+', 's']
@@ -104,9 +106,9 @@ def plot_tradespace_reduced(attribute):
         b = random.random()
         rgb = [r,g,b]
         
-        plt.plot(x_data, y_data, '-', color = [0,0,0], linewidth = 1.5 );
-        plt.plot(x_data, y_data, 'o', color = [1,0,0], markersize=6 );
-        design_lg, = plt.plot( x_data[-1], y_data[-1], pt_label, markersize = e_size, markeredgewidth = e_width, color = rgb );
+        plt.plot(x_data, y_data, '-', color = [0,0,0], linewidth = 1.5 )
+        plt.plot(x_data, y_data, 'o', color = [1,0,0], markersize=6 )
+        design_lg, = plt.plot( x_data[-1], y_data[-1], pt_label, markersize = e_size, markeredgewidth = e_width, color = rgb )
         
         
         legend_handles += [design_lg]
@@ -117,7 +119,7 @@ def plot_tradespace_reduced(attribute):
     # ax.set_xlim([-4.9,32])
     # ax.set_ylim([1.25,5.0])
     
-    plt.title("Tradespace", fontsize=20 * magnify);
+    plt.title("Tradespace", fontsize=20 * magnify)
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14 * magnify)
     plt.ylabel(attribute_label, fontsize=14 * magnify)
     
@@ -140,7 +142,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     # attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-    attribute = ['resiliance_th','Probability of satisfying requirement $P(\mathbf{T} \in C)$']
+    attribute = ['resiliance_th','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$']
     
     [fig, ax, dictionary, P_analysis_strip] = plot_tradespace_reduced(attribute)
     fig.savefig(os.path.join(os.getcwd(),'tradespace_pareto_reduced.svg'), format='svg')

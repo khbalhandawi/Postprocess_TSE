@@ -36,12 +36,12 @@ for item in P_analysis:
     P_analysis_strip += [permutation_index]
 
 #attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-attribute = ['resiliance_th','Requirement satisfaction ratio ($V_{{C}\cap{R}}/V_{R}$)']
+attribute = ['resiliance_th','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$']
 
-[fig, ax, dictionary, start, wave, cross] = plot_tradespace(attribute);
+[fig, ax, dictionary, start, wave, cross] = plot_tradespace(attribute)
 
 # %% read MADS log file
-opt_points = [];
+opt_points = []
 with open('mads_x_opt_pareto.log') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=' ')
     line_count = 0
@@ -56,14 +56,14 @@ with open('mads_x_opt_pareto.log') as csv_file:
 current_path = os.getcwd()
 print('\nNumber of pareto points: %i' %(line_count))
 
-x_data = []; y_data = [];
+x_data = []; y_data = []
 for point in opt_points:
     ind = P_analysis_strip.index(point)
     x_data += [dictionary['weight'][ind]]
     y_data += [dictionary[attribute[0]][ind]]
     
 
-pareto, = plt.plot(x_data, y_data, 'd', color = 'm', linewidth = 4.0, markersize = 10.0 );
+pareto, = plt.plot(x_data, y_data, 'd', color = 'm', linewidth = 4.0, markersize = 10.0 )
    
 ax.legend((start, cross, wave, pareto), ('initial design', 'cross concepts', 'wave concepts', 'Pareto point'))
 fig.savefig(os.path.join(current_path,'tradespace_pareto.pdf'), format='pdf', dpi=1000,bbox_inches='tight')

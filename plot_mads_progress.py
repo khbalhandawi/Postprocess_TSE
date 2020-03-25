@@ -38,7 +38,7 @@ class PlotOptimizationProgress():
 
     def move(self):
         """Get the branch components"""
-        self.state = self.opt_bb_calls[self.n_fcalls];
+        self.state = self.opt_bb_calls[self.n_fcalls]
         self.energy()
         
     def energy(self):
@@ -47,16 +47,12 @@ class PlotOptimizationProgress():
         x_data = self.dictionary['weight'][ind]
         y_data = self.dictionary['n_f_th'][ind]
         
-        e = -y_data;
-        self.n_fcalls += 1;
+        e = -y_data
+        self.n_fcalls += 1
         #print('Number of function calls: %i' %(self.n_fcalls))
         #=====================================================================#
         # Plot progress
         # generate random color for branch
-        r = random.random()
-        g = random.random()
-        b = random.random()
-        rgb = [r,g,b]
                 
         x_data = []
         y_data = []
@@ -70,7 +66,7 @@ class PlotOptimizationProgress():
         if len(self.line) > 0:
             self.line[0].remove()
         
-        self.line = ax.plot(x_data, y_data, 's-', color = 'm', linewidth = 3.0, markersize = 7.5 );
+        self.line = ax.plot(x_data, y_data, 's-', color = 'm', linewidth = 3.0, markersize = 7.5 )
         current_path = os.getcwd()
         fig.savefig(os.path.join(current_path,'progress','tradespace_%i.png' %(self.n_fcalls)), 
                     format='png', dpi=100,bbox_inches='tight')
@@ -89,7 +85,7 @@ P_analysis = loadmat('DOE_permutations.mat')['P_analysis']
 #P_analysis = P_analysis[0:44]
 
 attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-#attribute = ['resiliance_th','Requirement satisfaction ratio ($V_{{C}\cap{R}}/V_{R}$)']
+#attribute = ['resiliance_th','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$]
 
 P_analysis_strip = []
 for item in P_analysis:
@@ -100,21 +96,21 @@ for item in P_analysis:
             permutation_index += [int(arg)] # populate permutation index
     P_analysis_strip += [permutation_index]
 
-[fig, ax, dictionary, start, wave, cross] = plot_tradespace(attribute);
+[fig, ax, dictionary, start, wave, cross] = plot_tradespace(attribute)
 
 # %% Begin combinatorial optimization
 
 # read MADS log file
-bb_evals = [];
+bb_evals = []
 with open('mads_bb_calls.log') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     line_count = 0
     for row in csv_reader:
         
-        row_strip = [];
+        row_strip = []
         for item in row:
             if int(item) != -1:
-                row_strip += [int(item)];
+                row_strip += [int(item)]
                 
         bb_evals += [row_strip]
         line_count += 1
@@ -122,7 +118,7 @@ with open('mads_bb_calls.log') as csv_file:
 
 # iterate through MADS bb evals
 current_path = os.getcwd()
-optproblem = PlotOptimizationProgress(bb_evals[0],P_analysis_strip, dictionary, bb_evals, attribute, fig);
+optproblem = PlotOptimizationProgress(bb_evals[0],P_analysis_strip, dictionary, bb_evals, attribute, fig)
 
 for bb_call in bb_evals:
     optproblem.move()
@@ -130,7 +126,7 @@ for bb_call in bb_evals:
 print('\nNumber of function calls: %i' %(optproblem.n_fcalls))
 
 # read MADS log file
-opt_points = [];
+opt_points = []
 with open('mads_x_opt.log') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=' ')
     line_count = 0
@@ -141,12 +137,12 @@ with open('mads_x_opt.log') as csv_file:
         opt_points += [row_strip]
         line_count += 1
 
-x_data = []; y_data = [];
+x_data = []; y_data = []
 for it in range(len(opt_points[0][1::])):
     ind = P_analysis_strip.index(opt_points[0][0:it+2])
     x_data += [dictionary['weight'][ind]]
     y_data += [dictionary[attribute[0]][ind]]
 
 optproblem.line[0].remove()
-ax.plot(x_data, y_data, '-', color = 'r', linewidth = 4.0 );
+ax.plot(x_data, y_data, '-', color = 'r', linewidth = 4.0 )
 fig.savefig(os.path.join(current_path,'progress','tradespace_%i.png' %(optproblem.n_fcalls)), format='png', dpi=100,bbox_inches='tight')

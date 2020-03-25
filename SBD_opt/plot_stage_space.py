@@ -31,6 +31,8 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id):
     
     # This is not necessary if `text.usetex : True` is already set in `matplotlibrc`.    
     mpl.rc('text', usetex = True)
+    mpl.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}',
+                                           r'\usepackage{amssymb}']
     rcParams['font.family'] = 'serif'
     my_dpi = 100
     fig1 = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
@@ -94,7 +96,7 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id):
     ax2.set_ylim((0,21))
     ax2.legend(legend_h_f2, legend_labels, loc='lower right', fontsize = 10)
 
-    fig_file_name = '%i_stagespace_weight.pdf' %(plot_id)
+    fig_file_name = '%i_stagespace_weight.svg' %(plot_id)
     save_folder = 'DOE_results'
     save_directory = os.path.join(current_path,save_folder,fig_file_name)
     fig2.savefig(save_directory, bbox_inches='tight')
@@ -113,7 +115,7 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id):
     ax1.set_ylim((0.0,1.15))
     ax1.legend(legend_h_f1, legend_labels, loc='lower right', fontsize = 10)
 
-    fig_file_name = '%i_stagespace_res.pdf' %(plot_id)
+    fig_file_name = '%i_stagespace_res.svg' %(plot_id)
     save_folder = 'DOE_results'
     save_directory = os.path.join(current_path,save_folder,fig_file_name)
     fig1.savefig(save_directory, bbox_inches='tight')
@@ -132,7 +134,7 @@ if __name__ == "__main__":
     MADS_output_folder = 'MADS_output'
     MADS_output_dir = os.path.join(current_path,MADS_output_folder)
 
-    attribute = ['$P(\mathbf{T} \in C)$']
+    attribute = ['$\mathbb{P}(\mathbf{T} \in C)$']
 
     # plot 1
     plot_id = 1

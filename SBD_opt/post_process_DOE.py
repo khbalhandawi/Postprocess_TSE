@@ -369,7 +369,7 @@ if __name__ == "__main__":
         colors = pickle.load(fid)
         fid.close()
 
-    n_bins = 15; 
+    n_bins = 15
     x = x[:n_bins]
     y = y[:n_bins]/(sum(y)*0.01)
     design_indices = [i + 1 for i in indices[:n_bins]]

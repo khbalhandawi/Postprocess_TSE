@@ -74,8 +74,8 @@ class PlotOptimizationProgress():
         
         self.line_R = ax.plot(x_data, R_data, 's-', color = 'm', linewidth = 3.0, markersize = 7.5 )
         current_path = os.getcwd()
-        self.fig_R.savefig(os.path.join(current_path,'DOE_results','stagespace_res_%i.pdf' %(self.n_fcalls)), 
-                    format='pdf', dpi=100)
+        self.fig_R.savefig(os.path.join(current_path,'DOE_results','stagespace_res_%i.svg' %(self.n_fcalls)), 
+                    format='svg', dpi=100)
         
         ax = self.fig_W.gca()
         if len(self.line_W) > 0:
@@ -83,8 +83,8 @@ class PlotOptimizationProgress():
         
         self.line_W = ax.plot(x_data, w_data, 's-', color = 'm', linewidth = 3.0, markersize = 7.5 )
         current_path = os.getcwd()
-        self.fig_W.savefig(os.path.join(current_path,'DOE_results','stagespace_weight_%i.pdf' %(self.n_fcalls)), 
-                    format='pdf', dpi=100)
+        self.fig_W.savefig(os.path.join(current_path,'DOE_results','stagespace_weight_%i.svg' %(self.n_fcalls)), 
+                    format='svg', dpi=100)
         
 
         plt.pause(0.0005)
@@ -100,7 +100,7 @@ def main():
     from scipy.io import loadmat
     from plot_stage_space import plot_stagespace
 
-    attribute = ['$P(n_{safety}(\mathbf{T}) \ge n_{th})$']
+    attribute = ['$\mathbb{P}(\mathbf{T} \in C)$']
 
     current_path = os.getcwd()
     MADS_output_folder = 'MADS_output'
