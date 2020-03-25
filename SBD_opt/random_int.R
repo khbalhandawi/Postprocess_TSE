@@ -5,9 +5,9 @@ args = commandArgs(trailingOnly=TRUE)
 
 integerLHS <- function(n, intGroups, lb, ub) 
 { 
-	stopifnot(all(lapply(intGroups, function(X) length(X) %% n) == 0)) 
-	stopifnot(require(lhs)) 
-	stopifnot(is.list(intGroups)) 
+	# stopifnot(all(lapply(intGroups, function(X) length(X) %% n) == 0)) 
+	# stopifnot(require(lhs)) 
+	# stopifnot(is.list(intGroups)) 
 	ranges <- lapply(intGroups, function(X) max(X) - min(X)) 
 	A <- matrix(nrow = n, ncol = length(intGroups)) 
 	for (j in 1:length(ranges)) 
@@ -20,11 +20,11 @@ integerLHS <- function(n, intGroups, lb, ub)
 		
 		for (k in 1:n) 
 		{ 
-			i <- sequ[k] 
-			a <- min(intGroups[[j]]) + (i - 1)*(ranges[[j]] + spacing)/n 
-			b <- min(intGroups[[j]]) + i*(ranges[[j]] + spacing)/n - 1 
-			# a <- lb # random sampling of entire range
-			# b <- ub # random sampling of entire range
+			# i <- sequ[k] 
+			# a <- min(intGroups[[j]]) + (i - 1)*(ranges[[j]] + spacing)/n 
+			# b <- min(intGroups[[j]]) + i*(ranges[[j]] + spacing)/n - 1 
+			a <- lb # random sampling of entire range
+			b <- ub # random sampling of entire range
 			if (a < b) 
 			{ 
 				A[k,j] <- sample(seq(a,b,spacing), 1) 
@@ -34,7 +34,7 @@ integerLHS <- function(n, intGroups, lb, ub)
 			} else 
 			{
 				A[k,j] <- sample(seq(a,b,spacing), 1) 
-				stop("error") 
+				# stop("error") 
 			}
 		} 
 	} 

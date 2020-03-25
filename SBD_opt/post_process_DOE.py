@@ -101,6 +101,8 @@ def plot_tradespace(attribute,plot_true):
     if plot_true:
         # This is not necessary if `text.usetex : True` is already set in `matplotlibrc`.    
         mpl.rc('text', usetex = True)
+        rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}',
+                                           r'\usepackage{amssymb}']
         rcParams['font.family'] = 'serif'
         my_dpi = 100
         fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
@@ -142,13 +144,13 @@ def plot_tradespace(attribute,plot_true):
             designs_padded += [design_index_padded]
             designs += [design_index]
             
-            # generate random color for branch
-            r = random.random()
-            g = random.random()
-            b = random.random()
-            rgb = [r,g,b]
-            
             if plot_true:
+                # generate random color for branch
+                r = random.random()
+                g = random.random()
+                b = random.random()
+                rgb = [r,g,b]
+
                 plt.plot(x_data, y_data, ':', color = rgb, linewidth = 2.5 )
                 # plt.plot(x_data, y_data, 'o', markersize=10, markevery=len(x_data), color = [0,0,0])
                 plot_h, = plt.plot(x_data, y_data, 'o', color = [0,0,1], markersize=6 )
@@ -166,7 +168,7 @@ def plot_tradespace(attribute,plot_true):
         plt.xlabel('Design stage number', fontsize=14)
         plt.ylabel(attribute_label, fontsize=14)
     
-        return fig, ax, dictionary, plot_h, designs
+        return dictionary,dictionary_res,dictionary_weight,designs,designs_padded,fig,ax,plot_h
     else:
         return dictionary,dictionary_res,dictionary_weight,designs,designs_padded
 
@@ -247,32 +249,25 @@ def rank_designs(designs):
     index = 0; P_analysis_strip = []
     histogram = np.zeros(len(P_analysis), dtype = int) 
     
+    P_analysis_strip = []
     for P_i in P_analysis:
-        
-        P_analysis_strip = []
-        for item in P_analysis:
-            # Get permutation index
-            permutation_index = []
-            for arg in item:
-                if not int(arg) == -1:
-                    permutation_index += [int(arg)] # populate permutation index
-            P_analysis_strip += [permutation_index]
+
+        # Get permutation index
+        permutation_index = []
+        for arg in P_i:
+            if not int(arg) == -1:
+                permutation_index += [int(arg)] # populate permutation index
+        P_analysis_strip += [permutation_index]
         
         # loop over data points
         for design in designs:
-                       
-            # Get permutation index
-            permutation_index = [P_i[0]]
-            for arg in P_i[1::]:
-                if not int(arg) == -1:
-                    permutation_index += [int(arg)] # populate permutation index
 
             # check if permutation index contained within branch
             if design == permutation_index:
                 histogram[index] += 1
         
         index += 1 
-            
+
     return histogram,P_analysis_strip
 
 #==============================================================================
@@ -312,7 +307,7 @@ if __name__ == "__main__":
     plt.close('all')
     
     #attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-    attribute = ['Requirement satisfaction ratio ($V_{{C}\cap{R}}/V_{R}$)']
+    attribute = ['$\mathbb{P}(\mathbf{T} \in C)$']
     
     # [fig, ax, dictionary, plot_h, designs] = plot_tradespace(attribute,True)
     [dictionary, dictionary_res, dictionary_weight, designs, designs_padded] = plot_tradespace(attribute,False)
@@ -326,9 +321,9 @@ if __name__ == "__main__":
     
     
     x = range(0,len(histogram))
-    y = sorted(histogram, reverse = True)
-    indices = [x for _,x in sorted(zip(y,x),reverse = False)]
-    sorted_designs = [x for _,x in sorted(zip(y,design_list),reverse = False)]
+    y = sorted(histogram,reverse = True)
+    indices = [x for _,x in sorted(zip(histogram,x),reverse = True)]
+    sorted_designs = [x for _,x in sorted(zip(histogram,design_list),reverse = True)]
     
     print(sorted_designs[:5])
 
@@ -350,7 +345,7 @@ if __name__ == "__main__":
     #==========================================================================
     # Histogram plot
     # data for plotting histogram SBD
-    new_colors = False
+    new_colors = True
     color_file = 'colors_histogram.pkl'
     
     if new_colors:
@@ -369,15 +364,15 @@ if __name__ == "__main__":
         colors = pickle.load(fid)
         fid.close()
 
-    n_bins = 15
+    n_bins = 20
     x = x[:n_bins]
     y = y[:n_bins]/(sum(y)*0.01)
+
     design_indices = [i + 1 for i in indices[:n_bins]]
     design_colors = [colors[i] for i in indices[:n_bins]]
 
     # design_indices = list(range(1,21)
 
-    
     mpl.rc('text', usetex = True)
     rcParams['font.family'] = 'serif'
     my_dpi = 100

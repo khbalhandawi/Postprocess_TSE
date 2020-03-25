@@ -143,8 +143,8 @@ def main():
     import os
     
     index = 1
-    n_points = 100000
-    lb = 1; ub = 50
+    n_points = 1600
+    lb = 1; ub = 1600
     n_var = 6
     
     current_path = os.getcwd()
@@ -175,14 +175,14 @@ def main():
     filename = "req_opt_log.log"
     full_filename = os.path.join(DOE_out_dir,filename)
     
-    index = 82949
-    points = points[82949::]
+    index = 0
+    points = points[index::]
     
     for point in points:
         
         index += 1
         
-        req_thresh = [ 0.01, 0.1, 0.3, 0.3, 0.3, 0.8 ]
+        req_thresh = [ 0.01, 0.1, 0.3, 0.3, 0.3, 0.9 ]
         eval_point = []
         call_type = 0
         req_vec = point
