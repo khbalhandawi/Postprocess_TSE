@@ -412,18 +412,20 @@ int main ( int argc , char ** argv ) {
 	int r_n, eval_point_n;
 	double r_thresh_n;
 
-	int call_type;
+	int call_type, check_feasibility;
 	vector<int> r_vec, eval_point;
 	vector<double> r_thresh;
 	
 	call_type = stoi(argv[1]);
+	check_feasibility = stoi(argv[2]);
+	int n_sargs = 3; // number of static arguments
 
-	for (int r_i = 2; r_i < (n_stages + 2); r_i++) {
+	for (int r_i = n_sargs; r_i < (n_stages + n_sargs); r_i++) {
 		r_n = stoi(argv[r_i]);
 		r_vec.push_back(r_n);
 	}
 
-	for (int r_i = (n_stages + 2); r_i < (2 * n_stages + 2); r_i++) {
+	for (int r_i = (n_stages + n_sargs); r_i < (2 * n_stages + n_sargs); r_i++) {
 		r_thresh_n = atof(argv[r_i]);
 		r_thresh.push_back(r_thresh_n);
 	}
@@ -439,8 +441,8 @@ int main ( int argc , char ** argv ) {
 	NOMAD::begin (argc, argv);
 	
 	// display:
-	NOMAD::Display out ( cout );
-	out.precision (NOMAD::DISPLAY_PRECISION_STD );
+	NOMAD::Display out(cout);
+	out.precision(NOMAD::DISPLAY_PRECISION_STD);
 
 	// check the number of processess:
 	#ifdef USE_MPI
@@ -458,7 +460,7 @@ int main ( int argc , char ** argv ) {
 		
 		// parameters creation:
 		NOMAD::Parameters p ( out );
-		
+		if (check_feasibility == 1) { p.set_DISPLAY_DEGREE(0); } // turn off display
 		vector<NOMAD::bb_output_type> bbot(7);
 		bbot[0] = NOMAD::OBJ; // objective
 		bbot[1] = NOMAD::PB;  // resiliance constraint
@@ -572,10 +574,10 @@ int main ( int argc , char ** argv ) {
 		}
 		else if (call_type == 1) { // evaluation call
 
-			int n_deposits = stoi(argv[2 * n_stages + 2]);
+			int n_deposits = stoi(argv[2 * n_stages + n_sargs]);
 			vector<int> eval_point;
 
-			for (int r_i = (2 * n_stages + 2); r_i < (2 * n_stages + 2 + n_deposits + 2); r_i++) {
+			for (int r_i = (2 * n_stages + n_sargs); r_i < (2 * n_stages + n_sargs + n_deposits + 2); r_i++) {
 				eval_point_n = stoi(argv[r_i]);
 				eval_point.push_back(eval_point_n);
 			}
@@ -593,8 +595,53 @@ int main ( int argc , char ** argv ) {
 			// Test blackbox
 			ev.eval_x(xt, hmax, count);
 			ep.construct_extended_points(xt); // debug extended poll
-			xt.display_eval(cout); // Debug evaluator
+			//xt.display_eval(cout); // Debug evaluator
 
+			// Check design feasibility by looping over requirement profile
+			bool feasible = false; // global feasiblity check
+			if (check_feasibility == 1) {
+				vector<NOMAD::Point> extended;
+				ep.shuffle_padding(xt, &extended);
+
+				// loop over constraints to check if they are all satisfied
+				for (size_t k = 2; k < extended.size(); k++) {
+					NOMAD::Eval_Point x_ex(extended[k].size(), 7);
+					// map nomad point to eval point
+					for (size_t j = 0; j < extended[k].size(); ++j) {
+						x_ex[j] = extended[k][j];
+					}
+					ev.eval_x(x_ex, hmax, count);
+					//x_ex.display_eval(cout); // Debug evaluator
+
+					// local feasibility check
+					bool x_feasible = true;
+					for (size_t i = 1; i < x_ex.get_bb_outputs().size(); ++i) {
+						NOMAD::Double g_i = x_ex.get_bb_outputs()[i];
+						if (g_i > 0.0) {
+							x_feasible = false;
+							break;
+						}
+					}
+
+					// stop iterating and set global feasibility to true
+					if (x_feasible) {
+						feasible = true;
+						break; 
+					}
+
+				}
+			}
+
+			vector<double> feas_out;
+			if (feasible) { feas_out.push_back(1.0); } else { feas_out.push_back(0.0); }
+
+			// Output feasibility check to file
+			ofstream feas_file("./MADS_output/feasiblity.log", ofstream::out);
+			feas_file.precision(1);
+			writeTofile_vector(feas_out, &feas_file);
+			feas_file.close();
+
+			// Output evaluation to file
 			ofstream output_file("./MADS_output/eval_point_out.log", ofstream::out);
 			output_file.precision(11);
 			NOMAD::Point outs;
