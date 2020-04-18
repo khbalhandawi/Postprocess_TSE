@@ -346,6 +346,7 @@ vector<double> lookup_function(const vector<int> & input_deposits,
 	return { W, R, count_eval };
 
 }
+//****************End of lookup_function funtion****************
 
 #define USE_SURROGATE false
 
@@ -402,6 +403,97 @@ class My_Extended_Poll : public NOMAD::Extended_Poll {
 
 };
 
+
+// Function to display check feasiblity of each design
+vector<double> feasiblity_loop(const vector<vector<double>> & design_data,
+	My_Evaluator *ev,
+	My_Extended_Poll *ep) {
+
+	vector<double> concept, i1, i2, i3, i4, n_f_th, weight;
+
+	concept = design_data[1];
+	i1 = design_data[2];
+	i2 = design_data[3];
+	i3 = design_data[4];
+	i4 = design_data[5];
+	n_f_th = design_data[32];
+	weight = design_data[34];
+
+	// number of branches
+	size_t k = n_f_th.size();
+
+	// Look up safety factor value
+	vector<int> lookup;
+	vector<double> feasiblity_vec;
+
+	// loop over designs to check their feasiblity
+	for (int i = 0; i < k; ++i) {
+
+		lookup = { static_cast<int> (concept[i]), static_cast<int> (i1[i]),
+			static_cast<int> (i2[i]), static_cast<int> (i3[i]),
+			static_cast<int> (i4[i]) };
+
+		NOMAD::Point xt(8);
+		xt[0] = 6;
+		for (size_t k = 0; k < 7; k++) {
+			if (k < lookup.size()) {
+				xt[k + 1] = lookup[k];
+			}
+			else {
+				xt[k + 1] = -1;
+			}
+		}
+		//cout << xt << endl;
+		vector<NOMAD::Point> extended;
+		ep->shuffle_padding(xt, &extended);
+
+		bool feasible = false; // global feasiblity check
+		// loop over variants until one of them satisfies requirement
+		for (size_t k = 2; k < extended.size(); k++) {
+			NOMAD::Eval_Point x_ex(extended[k].size(), 7);
+
+			// map nomad point to eval point
+			for (size_t j = 0; j < extended[k].size(); ++j) {
+				x_ex[j] = extended[k][j];
+			}
+			NOMAD::Double hmax = 20.0;
+			bool count = false;
+
+			ev->eval_x(x_ex, hmax, count);
+			//x_ex.display_eval(cout); // Debug evaluator
+
+			// local feasibility check
+			bool x_feasible = true;
+			for (size_t i = 1; i < x_ex.get_bb_outputs().size(); ++i) {
+				NOMAD::Double g_i = x_ex.get_bb_outputs()[i];
+				if (g_i > 0.0) {
+					x_feasible = false;
+					break;
+				}
+			}
+
+			// stop iterating and set global feasibility to true
+			if (x_feasible) {
+				feasible = true;
+				break;
+			}
+
+		}
+
+		// Output vector
+		if (feasible) {
+			feasiblity_vec.push_back(1.0);
+		}
+		else {
+			feasiblity_vec.push_back(0.0);
+		}
+	}
+
+	return feasiblity_vec;
+
+}
+//****************End of feasiblity_loop funtion****************
+
 /*------------------------------------------*/
 /*            NOMAD main function           */
 /*------------------------------------------*/
@@ -412,13 +504,12 @@ int main ( int argc , char ** argv ) {
 	int r_n, eval_point_n;
 	double r_thresh_n;
 
-	int call_type, check_feasibility;
+	int call_type;
 	vector<int> r_vec, eval_point;
 	vector<double> r_thresh;
 	
 	call_type = stoi(argv[1]);
-	check_feasibility = stoi(argv[2]);
-	int n_sargs = 3; // number of static arguments
+	int n_sargs = 2; // number of static arguments
 
 	for (int r_i = n_sargs; r_i < (n_stages + n_sargs); r_i++) {
 		r_n = stoi(argv[r_i]);
@@ -460,7 +551,7 @@ int main ( int argc , char ** argv ) {
 		
 		// parameters creation:
 		NOMAD::Parameters p ( out );
-		if (check_feasibility == 1) { p.set_DISPLAY_DEGREE(0); } // turn off display
+		//if (call_type == 2) { p.set_DISPLAY_DEGREE(0); } // turn off display
 		vector<NOMAD::bb_output_type> bbot(7);
 		bbot[0] = NOMAD::OBJ; // objective
 		bbot[1] = NOMAD::PB;  // resiliance constraint
@@ -561,7 +652,6 @@ int main ( int argc , char ** argv ) {
 					coor_i = int(coor.value());
 					x_opt_vec.push_back(coor_i);
 				}
-				//x_opt->display(output_file);
 			}
 			else {
 				cout << "no solution found" << endl;
@@ -588,58 +678,13 @@ int main ( int argc , char ** argv ) {
 				xt[k] = eval_point[k];
 			}
 
-
 			NOMAD::Double hmax = 20.0;
 			bool count = false;
 
 			// Test blackbox
 			ev.eval_x(xt, hmax, count);
 			ep.construct_extended_points(xt); // debug extended poll
-			//xt.display_eval(cout); // Debug evaluator
-
-			// Check design feasibility by looping over requirement profile
-			bool feasible = false; // global feasiblity check
-			if (check_feasibility == 1) {
-				vector<NOMAD::Point> extended;
-				ep.shuffle_padding(xt, &extended);
-
-				// loop over constraints to check if they are all satisfied
-				for (size_t k = 2; k < extended.size(); k++) {
-					NOMAD::Eval_Point x_ex(extended[k].size(), 7);
-					// map nomad point to eval point
-					for (size_t j = 0; j < extended[k].size(); ++j) {
-						x_ex[j] = extended[k][j];
-					}
-					ev.eval_x(x_ex, hmax, count);
-					//x_ex.display_eval(cout); // Debug evaluator
-
-					// local feasibility check
-					bool x_feasible = true;
-					for (size_t i = 1; i < x_ex.get_bb_outputs().size(); ++i) {
-						NOMAD::Double g_i = x_ex.get_bb_outputs()[i];
-						if (g_i > 0.0) {
-							x_feasible = false;
-							break;
-						}
-					}
-
-					// stop iterating and set global feasibility to true
-					if (x_feasible) {
-						feasible = true;
-						break; 
-					}
-
-				}
-			}
-
-			vector<double> feas_out;
-			if (feasible) { feas_out.push_back(1.0); } else { feas_out.push_back(0.0); }
-
-			// Output feasibility check to file
-			ofstream feas_file("./MADS_output/feasiblity.log", ofstream::out);
-			feas_file.precision(1);
-			writeTofile_vector(feas_out, &feas_file);
-			feas_file.close();
+			xt.display_eval(cout); // Debug evaluator
 
 			// Output evaluation to file
 			ofstream output_file("./MADS_output/eval_point_out.log", ofstream::out);
@@ -649,6 +694,15 @@ int main ( int argc , char ** argv ) {
 			writeTofile_output(outs, &output_file);
 			output_file.close();
 
+		}
+		else if (call_type == 2) { // feasiblity call
+
+			vector<double> feas_out = feasiblity_loop(input_data, &ev, &ep);
+			// Output feasibility check to file
+			ofstream feas_file("./MADS_output/feasiblity.log", ofstream::out);
+			feas_file.precision(1);
+			writeTofile_vector(feas_out, &feas_file);
+			feas_file.close();
 		}
 
 	} catch ( exception & e ) {
@@ -1204,7 +1258,6 @@ void My_Extended_Poll::shuffle_padding(const NOMAD::Point & x, vector<NOMAD::Poi
 	vector<int> in_list;
 	int max_stages = int(x[0].value());
 	vector< vector<int> > outputs{};
-
 	NOMAD::Signature *point_sig;
 
 	if (max_stages == 1) {
@@ -1252,6 +1305,7 @@ void My_Extended_Poll::shuffle_padding(const NOMAD::Point & x, vector<NOMAD::Poi
 		add_extended_poll_point(y, *point_sig);
 		extended->push_back(y);
 	}
+
 }
 
 void My_Extended_Poll::shuffle_padding(const NOMAD::Eval_Point & x, vector<NOMAD::Point> *extended) {
