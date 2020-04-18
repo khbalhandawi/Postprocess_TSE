@@ -13,7 +13,6 @@ def insert_i(in_list, n_insert, n_deposit, outputs = [], depth = 0, shift = 0):
     for k in range(1 + shift, n_insert + n_deposit):
         
         print(in_list) 
-        print(k)       
         temp = in_list.copy()
         temp.insert(k, i)
         out = temp.copy()

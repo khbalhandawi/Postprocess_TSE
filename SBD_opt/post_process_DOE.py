@@ -5,6 +5,17 @@ Created on Tue Mar 10 18:06:53 2020
 @author: Khalil
 """
 
+def rgb2hex(color):
+    """Converts a list or tuple of color to an RGB string
+
+    Args:
+        color (list|tuple): the list or tuple of integers (e.g. (127, 127, 127))
+
+    Returns:
+        str:  the rgb string
+    """
+    return f"#{''.join(f'{hex(c)[2:].upper():0>2}' for c in color)}"
+
 #==============================================================================
 # Acquire requirements DOE design results and 
 # get dictionary data from design log and resiliance log
@@ -20,7 +31,7 @@ def plot_tradespace(attribute,plot_true):
         from matplotlib import rcParams
         plt.close('all')
     
-    filename = 'req_opt_log_2.log'
+    filename = 'req_opt_log_R50.log'
     current_path = os.getcwd()
     filepath = os.path.join(current_path,'DOE_results',filename)
     
@@ -157,7 +168,7 @@ def plot_tradespace(attribute,plot_true):
             
             branch_id += 1
             
-            if branch_id == 100000 + 1:
+            if branch_id == 1000000 + 1:
                 break
       
     if plot_true:
@@ -176,10 +187,9 @@ def plot_tradespace(attribute,plot_true):
 # Call MADS and get Pareto optimal solutions from MADS
 def NOMAD_call_BIOBJ(req_index,P_analysis_strip,attribute,cost,evaluate):
     
-    from sample_requirements import system_command
-    import os
-    
     if evaluate: # run bi-objective optimization
+        from sample_requirements import system_command
+
         command = "categorical_biobj %i" %(req_index)
         print(command)
         system_command(command)
@@ -213,7 +223,8 @@ def get_pareto(P_analysis_strip,attribute,cost):
     # iterate through MADS bb evals
     current_path = os.getcwd()
     print('\nNumber of pareto points: %i' %(line_count))
-    print(opt_points)
+    for point in opt_points:
+        print(point)
     
     x_data = []; y_data = []
     for point in opt_points:
@@ -325,14 +336,14 @@ if __name__ == "__main__":
     indices = [x for _,x in sorted(zip(histogram,x),reverse = True)]
     sorted_designs = [x for _,x in sorted(zip(histogram,design_list),reverse = True)]
     
-    print(sorted_designs[:5])
-
+    print('Top 5 designs:')
+    for design in sorted_designs[:5]:
+        print(design)
     # data for constructing tradespace of feasible designs
     # req_index = 50
     # attribute = dictionary_res['req_index_%i' %(req_index)]
     req_index = 0
     attribute = dictionary_weight['n_f_th']
-
     cost = dictionary_weight['weight']
 
     # Data for plotting SBD designs
@@ -345,18 +356,25 @@ if __name__ == "__main__":
     #==========================================================================
     # Histogram plot
     # data for plotting histogram SBD
-    new_colors = True
+    new_colors = False
     color_file = 'colors_histogram.pkl'
-    
+    # ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', ...]
+    colors_default = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+    top_10 = indices[:10]
     if new_colors:
         colors = []
         for i in range(0,len(histogram)):
             r = random.random()
             g = random.random()
             b = random.random()
-            rgb = [r,g,b]
-            colors += [rgb]
+            rgb = [int(r*256),int(g*256),int(b*256)]
+            colors += [rgb2hex(rgb).lower()]
         
+        # color top 10 designs using default color palette
+        for i,color in zip(top_10,colors_default):
+            colors[i] = color
+
         with open(color_file, 'wb') as pickle_file:
             pickle.dump(colors,pickle_file)
     else:
@@ -367,7 +385,6 @@ if __name__ == "__main__":
     n_bins = 20
     x = x[:n_bins]
     y = y[:n_bins]/(sum(y)*0.01)
-
     design_indices = [i + 1 for i in indices[:n_bins]]
     design_colors = [colors[i] for i in indices[:n_bins]]
 
@@ -378,9 +395,13 @@ if __name__ == "__main__":
     my_dpi = 100
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
     
-    plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
+    barlist = plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
+    for bar in barlist[:5]: # set color of first five bars
+        bar.set_edgecolor('r')
+        bar.set_linewidth(2.3)
+
     plt.xlabel('Design index', fontsize=14)
-    plt.ylabel('$\%$ of requirement profiles satisfied', fontsize=14) 
+    plt.ylabel('$\%$ of multi-stage problems solved', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
     
@@ -404,6 +425,8 @@ if __name__ == "__main__":
     ax.legend((feasible, pareto, SBD_design), ('Feasible designs $\in \Omega$', 'Pareto optimal designs', 'Set-based designs'))
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','tradespace_pareto.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
     
+    # print(ax.get_xlim())
+    # print(ax.get_ylim())
     #==========================================================================
     # Pie chart plot   
     import matplotlib.gridspec as gridspec
@@ -424,13 +447,14 @@ if __name__ == "__main__":
     my_dpi = 100
     fig = plt.figure(figsize=(1400/my_dpi, 1000/my_dpi), dpi=my_dpi)
     
+    # Plot all stages
     iteraton = -1
     for item in [i1,i2,i3,i4]:
         
         iteraton += 1
         
         # Pie chart, where the slices will be ordered and plotted counter-clockwise:
-        labels = 'deposit 1', 'deposit 2', 'deposit 3', 'deposit 4'
+        labels = 'deposit 0', 'deposit 1', 'deposit 2', 'deposit 3'
         sizes = item
         explode = (0, 0, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
         
@@ -439,7 +463,32 @@ if __name__ == "__main__":
                 shadow=True, startangle=90)
         ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         
+    # Plot 1st stage only
+    my_dpi = 100
+    fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
+        
+    # Pie chart, where the slices will be ordered and plotted counter-clockwise:
+    labels = 'deposit 0', 'deposit 1', 'deposit 2', 'deposit 3'
+    sizes = i1
+    explode = (0, 0, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
     
+    ax = plt.gca()
+    patches, texts, autotexts = ax.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
+                                shadow=False, startangle=90)
+    
+    for i in range(len(labels)):
+        texts[i].set_fontsize(18)
+        autotexts[i].set_fontsize(18)
+    
+    # Color a section of the pie
+    # patches[1].set_edgecolor('b')
+    # patches[1].set_linewidth(3)
+    # patches[1].set_hatch('\\')
+        
+    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    fig.savefig(os.path.join(os.getcwd(),'DOE_results','1st_stage_pie.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
+    
+    # Plot concept only
     my_dpi = 100
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
         

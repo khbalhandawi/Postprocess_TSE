@@ -5,6 +5,8 @@ Created on Wed Mar  4 01:12:10 2020
 @author: Khalil
 """
 import csv
+import os
+import numpy as np
 
 #==============================================================================#
 # %% Execute system commands and return output to console
@@ -21,15 +23,14 @@ def system_command(command):
         print(line.rstrip()) # print line by line
         # rstrip() to reomove \n separator
 
-def NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir):
-    
-    import os
+def NOMAD_call(call_type,feas_check,req_vec,req_thresh,eval_point,MADS_output_dir):
+
     
     req_vec_str = ' '.join(map(str,req_vec)) # print variables as space demilited string
     req_thresh_str = ' '.join(map(str,req_thresh)) # print parameters as space demilited string
     eval_point_str = ' '.join(map(str,eval_point)) # print parameters as space demilited string
     
-    command = "categorical_MSSP %i %s %s %s" %(call_type,req_vec_str,req_thresh_str,eval_point_str)
+    command = "categorical_MSSP %i %i %s %s %s" %(call_type,feas_check,req_vec_str,req_thresh_str,eval_point_str)
     print(command)
     system_command(command)
     
@@ -68,15 +69,24 @@ def NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir):
                 row = [float(item) for item in row]
             
             weights = row
+    
+        if feas_check == 1: # read feasibility check out file
+            # read feasibility log file
+            feas_file = os.path.join(MADS_output_dir,'feasiblity.log')
+            with open(feas_file,'r') as fileID:
+                InputText = np.loadtxt(fileID, delimiter = '\n', dtype=np.str) # \n is the delimiter
+                feasibility = float(InputText)
                 
-        return outs,weights
+            return outs,weights,feasibility
+        else:
+            return outs,weights
     
 def lhs_function(n_points,n_var,lb,ub,DOE_dir):
     from scipy import io
-    import os
     # Outputs a latin hypercube that is augmentables via R lhs package
     
-    command = 'RScript --vanilla lhs_int.R %i %i %i %i' %(n_points, n_var, lb, ub)
+    # command = 'RScript --vanilla lhs_int.R %i %i %i %i' %(n_points, n_var, lb, ub) # integer LHS
+    command = 'RScript --vanilla random_int.R %i %i %i %i' %(n_points, n_var, lb, ub) # random integer LHS
     print(command)
     system_command(command)
     
@@ -92,9 +102,6 @@ def lhs_function(n_points,n_var,lb,ub,DOE_dir):
 #==============================================================================#
 # %% DOE FOR LOADCASE LOADS
 def DOE_generator(index,n_points,n_var,lb,ub,DOE_dir,DOE_filename,regenerate):
-    import os
-    import numpy as np
-    
         
     DOE_full_name = DOE_filename+'.npy'
     DOE_filepath = os.path.join(DOE_dir,DOE_full_name)
@@ -135,13 +142,36 @@ def scaling(x,l,u,operation):
     
     return x_out
 
+#==============================================================================
+# Check feasiblity of each design against requirement
+def feas_designs(P_analysis,req_vec,req_thresh,MADS_output_dir):
+
+    P_analysis_strip = []; feasbibility_vector = []
+
+    for P_i in P_analysis:
+
+        # Get permutation index
+        eval_point = [6,P_i[0]]; i = 0
+        for i in range(6):
+            if i < len(P_i) - 1:
+                eval_point += [P_i[i + 1]] # populate permutation index (skip concept)
+            else:
+                eval_point += [-1]
+        
+        call_type = 1
+        feas_check = 1
+        [_,_,feasible] = NOMAD_call(call_type,feas_check,req_vec,req_thresh,eval_point,MADS_output_dir)
+        
+        P_analysis_strip += [eval_point]
+        feasbibility_vector += [feasible]
+
+    return feasbibility_vector,P_analysis_strip
 #==============================================================================#
 # %% MAIN DOE LOOP
 def main():
-    
-    import numpy as np
-    import os
-    
+        
+    from scipy.io import loadmat
+
     index = 1
     n_points = 1600
     lb = 1; ub = 1600
@@ -152,11 +182,17 @@ def main():
     MADS_output_folder = 'MADS_output'
     DOE_folder = 'LHS_DOE'
     DOE_out_folder = 'DOE_results'
-    
+    # one-liner to read a single variable
+    input_filename = 'DOE_permutations.mat'
+    input_folder = 'Input_files'
+
     MADS_output_dir = os.path.join(current_path,MADS_output_folder)
     DOE_dir = os.path.join(current_path,DOE_folder)
     DOE_out_dir = os.path.join(current_path,DOE_out_folder)
+    Input_file_dir = os.path.join(current_path,input_folder,input_filename)
     
+    P_analysis = loadmat(Input_file_dir)['P_analysis']
+
     points = DOE_generator(index,n_points,n_var,lb,ub,DOE_dir,DOE_filename,False)
     print(points)
     
@@ -174,46 +210,63 @@ def main():
     #========================== OUTPUT VARIABLES LOG ==============================#
     filename = "req_opt_log.log"
     full_filename = os.path.join(DOE_out_dir,filename)
-    
+    filename = "feasiblity_log.log"
+    feasiblity_filename = os.path.join(DOE_out_dir,filename)
+    design_titles = []
+    for d_i in range(len(P_analysis)):
+        design_titles += ['D_index_%i' %(d_i+1)]
+
     index = 0
     points = points[index::]
     
     for point in points:
         
         index += 1
-        
-        req_thresh = [ 0.01, 0.1, 0.3, 0.3, 0.3, 0.9 ]
+        print("\n+============================================================+")
+        print("|                         LOOP %04d                          |" %(index))
+        print("+============================================================+\n")
+
+        req_thresh = [ 0.01, 0.1, 0.3, 0.3, 0.3, 0.99 ]
         eval_point = []
         call_type = 0
+        feas_check = 0
         req_vec = point
-        [opt] = NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir)
+        [opt] = NOMAD_call(call_type,feas_check,req_vec,req_thresh,eval_point,MADS_output_dir)
         print(opt)
         
         eval_point = [ 6 , 1 , 3 , -1 , -1 , -1 , -1 , 2]
         eval_point = opt
         call_type = 1
-        [outs,weights] = NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir)
+        feas_check = 0
+        [outs,weights] = NOMAD_call(call_type,feas_check,req_vec,req_thresh,eval_point,MADS_output_dir)
         
-        resiliance = [thresh - item  for thresh,item in zip(req_thresh,outs[1::])]
-        
-        f = outs[0]
-        
+        resiliance = [thresh - item  for thresh,item in zip(req_thresh,outs[1::])] # resiliance values (P_th - P)
+        f = outs[0] # objective function
+        [feasibility_vector,_] = feas_designs(P_analysis,req_vec,req_thresh,MADS_output_dir) # feasibility vector
+
         if index == 1: # initialize log file for writing
             resultsfile=open(full_filename,'w')
             resultsfile.write('index'+','+'n_stages'+','+'concept'+','+'s1'+','+'s2'+','+'s3'+','+'s4'+','+'s5'+','+'s6'+','
                               +'w1'+','+'w2'+','+'w3'+','+'w4'+','+'w5'+','+'w6'+','
                               +'R1'+','+'R2'+','+'R3'+','+'R4'+','+'R5'+','+'R6'+','
                               +'Total_weight'+'\n')
+            
+            feasiblityfile=open(feasiblity_filename,'w')
+            feasiblityfile.write('index'+','+','.join(design_titles)+'\n')
         
         resultsfile=open(full_filename,'a+')
         resultsfile.write(str(index)+','+','.join(map(str,opt))+','
                           +','.join(map(str,weights))+','
                           +','.join(map(str,resiliance))+','+str(f)+'\n')
         resultsfile.close()
-        
-        
+
+        feasiblityfile=open(feasiblity_filename,'a+')
+        feasiblityfile.write(str(index)+','+','.join(map(str,feasibility_vector))+'\n')
+        feasiblityfile.close()
+
         print(resiliance)
         print(weights)
+        
     
 if __name__ == "__main__":
     main()
