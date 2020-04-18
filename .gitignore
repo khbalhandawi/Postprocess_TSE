@@ -32,7 +32,6 @@ SGTE_matlab_server/.project
 flag_pong
 flag_predict_finished
 *.vsdx
-*.dll
 Job_results/
 MADS_output/
 SBD_opt/MADS_output/
