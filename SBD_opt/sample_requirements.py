@@ -23,14 +23,14 @@ def system_command(command):
         print(line.rstrip()) # print line by line
         # rstrip() to reomove \n separator
 
-def NOMAD_call(call_type,feas_check,req_vec,req_thresh,eval_point,MADS_output_dir):
+def NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir):
 
     
     req_vec_str = ' '.join(map(str,req_vec)) # print variables as space demilited string
     req_thresh_str = ' '.join(map(str,req_thresh)) # print parameters as space demilited string
     eval_point_str = ' '.join(map(str,eval_point)) # print parameters as space demilited string
     
-    command = "categorical_MSSP %i %i %s %s %s" %(call_type,feas_check,req_vec_str,req_thresh_str,eval_point_str)
+    command = "categorical_MSSP %i %s %s %s" %(call_type,req_vec_str,req_thresh_str,eval_point_str)
     print(command)
     system_command(command)
     
@@ -69,17 +69,22 @@ def NOMAD_call(call_type,feas_check,req_vec,req_thresh,eval_point,MADS_output_di
                 row = [float(item) for item in row]
             
             weights = row
-    
-        if feas_check == 1: # read feasibility check out file
-            # read feasibility log file
-            feas_file = os.path.join(MADS_output_dir,'feasiblity.log')
-            with open(feas_file,'r') as fileID:
-                InputText = np.loadtxt(fileID, delimiter = '\n', dtype=np.str) # \n is the delimiter
-                feasibility = float(InputText)
-                
-            return outs,weights,feasibility
-        else:
-            return outs,weights
+            
+        return outs,weights
+
+    elif call_type == 2: # read feasibility check out file
+
+        # read feasibility log file
+        feas_file = os.path.join(MADS_output_dir,'feasiblity.log')
+
+        with open(feas_file) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            for row in csv_reader:
+                row = [float(item) for item in row]
+            
+            feasibility = row
+            
+        return feasibility
     
 def lhs_function(n_points,n_var,lb,ub,DOE_dir):
     from scipy import io
@@ -142,30 +147,6 @@ def scaling(x,l,u,operation):
     
     return x_out
 
-#==============================================================================
-# Check feasiblity of each design against requirement
-def feas_designs(P_analysis,req_vec,req_thresh,MADS_output_dir):
-
-    P_analysis_strip = []; feasbibility_vector = []
-
-    for P_i in P_analysis:
-
-        # Get permutation index
-        eval_point = [6,P_i[0]]; i = 0
-        for i in range(6):
-            if i < len(P_i) - 1:
-                eval_point += [P_i[i + 1]] # populate permutation index (skip concept)
-            else:
-                eval_point += [-1]
-        
-        call_type = 1
-        feas_check = 1
-        [_,_,feasible] = NOMAD_call(call_type,feas_check,req_vec,req_thresh,eval_point,MADS_output_dir)
-        
-        P_analysis_strip += [eval_point]
-        feasbibility_vector += [feasible]
-
-    return feasbibility_vector,P_analysis_strip
 #==============================================================================#
 # %% MAIN DOE LOOP
 def main():
@@ -229,20 +210,20 @@ def main():
         req_thresh = [ 0.01, 0.1, 0.3, 0.3, 0.3, 0.99 ]
         eval_point = []
         call_type = 0
-        feas_check = 0
         req_vec = point
-        [opt] = NOMAD_call(call_type,feas_check,req_vec,req_thresh,eval_point,MADS_output_dir)
+        [opt] = NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir)
         print(opt)
         
-        eval_point = [ 6 , 1 , 3 , -1 , -1 , -1 , -1 , 2]
         eval_point = opt
         call_type = 1
-        feas_check = 0
-        [outs,weights] = NOMAD_call(call_type,feas_check,req_vec,req_thresh,eval_point,MADS_output_dir)
+        [outs,weights] = NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir)
         
         resiliance = [thresh - item  for thresh,item in zip(req_thresh,outs[1::])] # resiliance values (P_th - P)
         f = outs[0] # objective function
-        [feasibility_vector,_] = feas_designs(P_analysis,req_vec,req_thresh,MADS_output_dir) # feasibility vector
+
+        eval_point = []
+        call_type = 2
+        feasibility_vector = NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir)
 
         if index == 1: # initialize log file for writing
             resultsfile=open(full_filename,'w')
