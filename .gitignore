@@ -13,7 +13,6 @@ animations/presentation_1.toc
 animations/presentationbib.tex
 *.png
 *.pkl
-*.npy
 *.html
 *.csv
 *.xlsx
