@@ -31,7 +31,7 @@ def plot_tradespace(attribute,plot_true):
         from matplotlib import rcParams
         plt.close('all')
     
-    filename = 'req_opt_log_R50.log'
+    filename = 'req_opt_log.log'
     current_path = os.getcwd()
     filepath = os.path.join(current_path,'DOE_results',filename)
     
@@ -184,6 +184,31 @@ def plot_tradespace(attribute,plot_true):
         return dictionary,dictionary_res,dictionary_weight,designs,designs_padded
 
 #==============================================================================
+# Import feasibility data
+def import_feasibility():
+    
+    import numpy as np
+    
+    filename = 'feasiblity_log.log'
+    current_path = os.getcwd()
+    filepath = os.path.join(current_path,'DOE_results',filename)
+    
+    data = np.loadtxt(filepath, skiprows = 1, delimiter=",")
+    
+    # Read raw data
+    with open(filepath) as f:
+        line = f.readline()
+        list_names = line.split(',')
+        list_names[-1] = list_names[-1].split('\n')[0]
+        
+    # assign data to dictionary
+    data = data.transpose()
+    dictionary = dict(zip(list_names, data))
+    feasiblity = (np.sum(data[1:], axis = 1) * 100) / len(data[0])
+
+    return data, feasiblity
+    
+#==============================================================================
 # Call MADS and get Pareto optimal solutions from MADS
 def NOMAD_call_BIOBJ(req_index,P_analysis_strip,attribute,cost,evaluate):
     
@@ -316,7 +341,7 @@ if __name__ == "__main__":
     mpl.rcParams['font.size'] = 14.0
     
     plt.close('all')
-    
+
     #attribute = ['n_f_th','Safety factor ($n_{safety}$)']
     attribute = ['$\mathbb{P}(\mathbf{T} \in C)$']
     
@@ -330,7 +355,9 @@ if __name__ == "__main__":
                     dictionary_weight['i3'],dictionary_weight['i4']):
         design_list += [[int(x) for x in data]]
     
-    
+    #==============================================================================
+    # Set based sorting
+
     x = range(0,len(histogram))
     y = sorted(histogram,reverse = True)
     indices = [x for _,x in sorted(zip(histogram,x),reverse = True)]
@@ -350,8 +377,25 @@ if __name__ == "__main__":
     attribute_SBD = attribute[indices]
     cost_SBD = cost[indices]
     
-    # data for plotting Pareto front
-    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,P_analysis_strip,attribute,cost,False) # get Pareto optimal points
+    #==============================================================================
+    # Feasiblity sorting
+    [data,robustness] = import_feasibility()
+
+    xR = range(0,len(robustness))
+    yR = sorted(robustness,reverse = True)
+    indices_robust = [x for _,x in sorted(zip(robustness,xR),reverse = True)]
+    sorted_designs_robust = [x for _,x in sorted(zip(robustness,design_list),reverse = True)]
+    
+    print('Top 5 robust designs:')
+    for design in sorted_designs_robust[:5]:
+        print(design)
+    # data for constructing tradespace of feasible designs
+    # req_index = 50
+    # attribute = dictionary_res['req_index_%i' %(req_index)]
+
+    # Data for plotting SBD designs
+    attribute_robust = attribute[indices]
+    cost_robust = cost[indices]
 
     #==========================================================================
     # Histogram plot
@@ -406,13 +450,44 @@ if __name__ == "__main__":
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
     
     #==========================================================================
+    # Histogram plot for feasible designs
+    # data for plotting histogram feasibility
+
+    n_bins = 20
+    x = xR[:n_bins]
+    y = yR[:n_bins]/(sum(y)*0.01)
+    design_indices = [i + 1 for i in indices_robust[:n_bins]]
+    design_colors = [colors[i] for i in indices_robust[:n_bins]]
+
+    # design_indices = list(range(1,21)
+
+    mpl.rc('text', usetex = True)
+    rcParams['font.family'] = 'serif'
+    my_dpi = 100
+    fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
+    
+    barlist = plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
+    for bar in barlist[:5]: # set color of first five bars
+        bar.set_edgecolor('r')
+        bar.set_linewidth(2.3)
+
+    plt.xlabel('Design index', fontsize=14)
+    plt.ylabel('$\%$ of multi-stage problems satisfied', fontsize=14) 
+    plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
+    fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE_R.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
+
+    #==========================================================================
     # Tradespace plot
+    # data for plotting Pareto front
+    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,P_analysis_strip,attribute,cost,False) # get Pareto optimal points
+
     my_dpi = 100
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
 
     pareto, = plt.plot(x_data, y_data, '-d', color = 'm', linewidth = 4.0, markersize = 10.0 )
     markersizes = [ (1/20)*(n**4) for n in reversed(range(3,len(cost_SBD[:10])+3)) ]
     SBD_design = plt.scatter( cost_SBD[:10], attribute_SBD[:10], s = markersizes, color = [1,0,0], marker = '.' )
+    Robust_design = plt.scatter( cost_robust[:10], attribute_robust[:10], s = markersizes, color = [0,0,1], marker = '.' )
     feasible, = plt.plot(cost, attribute, 'x', color = [0,0,0], linewidth = 1, markersize = 6 )
     
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14)
@@ -422,7 +497,7 @@ if __name__ == "__main__":
     ax = plt.gca() 
     ax.tick_params(axis='both', which='major', labelsize=14) 
     
-    ax.legend((feasible, pareto, SBD_design), ('Feasible designs $\in \Omega$', 'Pareto optimal designs', 'Set-based designs'))
+    ax.legend((feasible, pareto, SBD_design, Robust_design), ('Feasible designs $\in \Omega$', 'Pareto optimal designs', 'Set-based designs', 'Robust designs'))
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','tradespace_pareto.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
     
     # print(ax.get_xlim())

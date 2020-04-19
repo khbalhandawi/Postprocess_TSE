@@ -207,7 +207,7 @@ def main():
         print("|                         LOOP %04d                          |" %(index))
         print("+============================================================+\n")
 
-        req_thresh = [ 0.01, 0.1, 0.3, 0.3, 0.3, 0.99 ]
+        req_thresh = [ 0.01, 0.1, 0.3, 0.3, 0.3, 0.8 ]
         eval_point = []
         call_type = 0
         req_vec = point
