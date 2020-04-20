@@ -551,7 +551,9 @@ int main ( int argc , char ** argv ) {
 		
 		// parameters creation:
 		NOMAD::Parameters p ( out );
-		//if (call_type == 2) { p.set_DISPLAY_DEGREE(0); } // turn off display
+		if (call_type == 0) { p.set_DISPLAY_DEGREE(0); } // turn off display
+		if (call_type == 1) { p.set_DISPLAY_DEGREE(0); } // turn off display
+		if (call_type == 2) { p.set_DISPLAY_DEGREE(0); } // turn off display
 		vector<NOMAD::bb_output_type> bbot(7);
 		bbot[0] = NOMAD::OBJ; // objective
 		bbot[1] = NOMAD::PB;  // resiliance constraint
