@@ -916,7 +916,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                             ax_pos, st_thick, st_width, laser_power, scanning_speed,
                             power_density, layer_length, layer_width, layer_thick,
                             n_layers, n_deposit, mesh_size, mesh_AM_size,
-                            melting_T, b_thick, process_DOE_requirements,index):
+                            melting_T, b_thick, process_DOE_requirements, sampling, index):
 
     import os, time
     import numpy as np
@@ -1056,27 +1056,67 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
         print('Nominal resiliance against pressure loads: %f' %(resiliance_ip))
     
     plt.show()
-
+    
     #===========================================================================
     # IP loadcase guassian parameters (DOE values)
-    req_type_1 = "uniform"
-    req_type_2 = "guassian"
-    
-    DOE_full_name = 'req_distribution_IP_LHS'+'.npy'
+    DOE_full_name = 'req_distribution_IP_LHS_data'+'.pkl'
     DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
-    points_us = np.load(DOE_filepath) # load DOE array
     
-    req_combinations = []
-    for point in points_us:
+    resultsfile=open(DOE_filepath,'rb')
+    
+    lob_req = pickle.load(resultsfile)
+    upb_req = pickle.load(resultsfile)
+    points = pickle.load(resultsfile)
+    points_us = pickle.load(resultsfile)
+
+    resultsfile.close()
+
+    req_type_1 = 'uniform'
+    req_type_2 = 'guassian'
+    
+    #===========================================================================
+    # IP loadcase guassian parameters full factorial
+    if sampling == 'fullfact':
+    
+        mu_1 = lob_req[:1]
+        mu_2 = upb_req[:1]
         
-        for req_type in [req_type_1,req_type_2]:
+        Sigma_1 = lob_req[1::] # Sigma^2
+        Sigma_2 = upb_req[1::] # Sigma^2
+    
+        # linearly interpolate between two vectors
+        from scipy.interpolate import interp1d
+    
+        linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
+        mus = list(linfit([1,2,3,4,5]))
+        linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
+        Sigmas = list(linfit([1,2,3,4,5]))
+    
+        Sigma_2s = []
+        for Sigma in Sigmas:
+            Sigma_2 = (Sigma/3)**2
+            Sigma_2s += [Sigma_2]
+    
+        req_list = [[req_type_1, req_type_2], mus, Sigma_2s ]
+        req_combinations = list(itertools.product(*req_list)) 
+    
+    #===========================================================================
+    # IP loadcase guassian parameters LHS sampling
+    elif sampling == 'LHS':
+    
+        req_combinations = []
+        for point in points_us:
             
-            mu_lhs = point[0:1]
-            Sigma_lhs = point[1::]
-            Sigma_lhs_2 = (Sigma_lhs/3)**2
-            
-            line = [req_type,mu_lhs,Sigma_lhs_2]
-            req_combinations += [line]
+            for req_type in [req_type_1,req_type_2]:
+                
+                mu_lhs = point[0:1]
+                Sigma_lhs = point[1::]
+                Sigma_lhs_2 = (Sigma_lhs/3)**2
+                
+                line = [req_type,mu_lhs,Sigma_lhs_2]
+                req_combinations += [line]
+    #===========================================================================
+
     
     if process_DOE_requirements:
 
@@ -1126,7 +1166,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     resolution = 50 # sampling resolution for capability calculation (must be a square number)!
     # threshold = 100000 # cutoff threshold for capability calculation
     # threshold = 4.2 # cutoff threshold for capability calculation
-    threshold = 2.8 # cutoff threshold for capability calculation
+    threshold = 4.5 # cutoff threshold for capability calculation
     
     DOE_folder = 'Thermal_DOE_results'; base_name = ['DOE_th_inputs','thermal_out']
     variable_lbls_pc = ['T1','T2','T3','T4']
@@ -1192,43 +1232,45 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
 
     #===========================================================================
     # Thermal loadcase guassian parameters full factorial
-    mu_1 = lob_req[:4]
-    mu_2 = upb_req[:4]
+    if sampling == 'fullfact':
     
-    Sigma_1 = lob_req[4::] # Sigma^2
-    Sigma_2 = upb_req[4::] # Sigma^2
-
-    # linearly interpolate between two vectors
-    from scipy.interpolate import interp1d
-
-    linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
-    mus = list(linfit([1,2,3,4,5]))
-    linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
-    Sigmas = list(linfit([1,2,3,4,5]))
-
-    Sigma_2s = []
-    for Sigma in Sigmas:
-        Sigma_2 = (Sigma/3)**2
-        Sigma_2s += [Sigma_2]
-
-    req_list = [[req_type_1, req_type_2], mus, Sigma_2s ]
-    req_combinations = list(itertools.product(*req_list)) 
-    #===========================================================================
-
+        mu_1 = lob_req[:4]
+        mu_2 = upb_req[:4]
+        
+        Sigma_1 = lob_req[4::] # Sigma^2
+        Sigma_2 = upb_req[4::] # Sigma^2
+    
+        # linearly interpolate between two vectors
+        from scipy.interpolate import interp1d
+    
+        linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
+        mus = list(linfit([1,2,3,4,5]))
+        linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
+        Sigmas = list(linfit([1,2,3,4,5]))
+    
+        Sigma_2s = []
+        for Sigma in Sigmas:
+            Sigma_2 = (Sigma/3)**2
+            Sigma_2s += [Sigma_2]
+    
+        req_list = [[req_type_1, req_type_2], mus, Sigma_2s ]
+        req_combinations = list(itertools.product(*req_list)) 
     #===========================================================================
     # Thermal loadcase guassian parameters LHS sampling
-    # req_combinations = []
-    # for point in points_us:
-        
-    #     for req_type in [req_type_1,req_type_2]:
+    elif sampling == 'LHS':
+    
+        req_combinations = []
+        for point in points_us:
             
-    #         mu_lhs = point[0:4]
-    #         Sigma_lhs = point[4::]
-    #         Sigma_lhs_2 = (Sigma_lhs/3)**2
-            
-    #         line = [req_type,mu_lhs,Sigma_lhs_2]
-    #         req_combinations += [line]
-    #=========================================================================== 
+            for req_type in [req_type_1,req_type_2]:
+                
+                mu_lhs = point[0:4]
+                Sigma_lhs = point[4::]
+                Sigma_lhs_2 = (Sigma_lhs/3)**2
+                
+                line = [req_type,mu_lhs,Sigma_lhs_2]
+                req_combinations += [line]
+    
 
     if process_DOE_requirements:
         req_index = 0; resiliance_th_vec = []
@@ -1240,7 +1282,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
             if process_TH:
                 resiliance_th = process_requirements(index,base_name,current_path,bounds_th,
                                                 mu,Sigma,req_type,variable_lbls,threshold,
-                                                resolution,True,new_LHS_MCI,LHS_MCI_file,
+                                                resolution,False,new_LHS_MCI,LHS_MCI_file,
                                                 req_index,server,DOE_inputs,outputs,plt)
             else:
                 resiliance_th = 0.0
@@ -1372,42 +1414,68 @@ def main():
     
     current_path = os.getcwd() # Working directory of file
     
-    #=============================== VARIABLES ====================================#
+    #============================ PERMUTATIONS ================================#
     
     # one-liner to read a single variable
     P_analysis = loadmat('DOE_permutations.mat')['P_analysis']
     
-    #=============================== PARAMETERS ===================================#
+    #============================= VARIABLES ==================================#
+    input_file_name = 'DED_vars_inputs.log'
+    
+    Inomad_full_name = os.path.join(current_path,'Optimization_studies',input_file_name)
+    inputfile=open(Inomad_full_name,'r')
+    
+    InputText = np.loadtxt(inputfile,
+       delimiter = ' ',
+       dtype=np.str) # \n is the delimiter
+    
+    ax_pos =       float(InputText[0])
+    st_height =    float(InputText[1])
+    st_width =     float(InputText[2])
+    laser_power =  float(InputText[3])
+    b_thick =      float(InputText[4])
+    shroud_width = float(InputText[5])
+    
+    #============================= PARAMETERS =================================#
     para_file_name = 'DED_parameters.log'
     
     Ipara_full_name = os.path.join(current_path,'Optimization_studies',para_file_name)
     paramfile=open(Ipara_full_name,'r')
     
     paramText = np.loadtxt(paramfile,
-        delimiter = ' ',
-        dtype=np.str) # \n is the delimiter
+       delimiter = ' ',
+       dtype=np.str) # \n is the delimiter
     
-    ax_pos = float(paramText[1])
-    st_height = float(paramText[2])
-    st_width = float(paramText[3])
-    st_thick = float(paramText[4])
-    laser_power = float(paramText[5])
-    scanning_speed = float(paramText[6])
-    power_density = float(paramText[7])
-    layer_length = float(paramText[8])
-    layer_width = float(paramText[9])
-    layer_thick = float(paramText[10])
-    max_T_pool = float(paramText[11])
-    n_layers = int(float(paramText[12]))
-    n_deposit = int(float(paramText[13]))
-    mesh_size = float(paramText[14])
-    mesh_AM_size = float(paramText[15])
-    melting_T = float(paramText[16])
-    H_subs = float(paramText[17])
-    T_ref = float(paramText[18])
-    b_thick = float(paramText[19])
+    index = int(float(paramText[0]))
     
-    run_base = 1; run_nominal = 1; new_LHS = False; process_DOE_requirements = True
+    concept = int(float(paramText[1]))
+    permutation_index = []
+    for entry in paramText[2:7]:
+        permutation_index += [int(float(entry))]
+    
+    print(paramText)
+    
+    IP_n =           float(paramText[7])
+    T1_n =           float(paramText[8])
+    T2_n =           float(paramText[9])
+    T3_n =           float(paramText[10])
+    T4_n =           float(paramText[11])
+    st_thick =       float(paramText[12])
+    scanning_speed = float(paramText[13])
+    power_density =  float(paramText[14])
+    layer_length =   float(paramText[15])
+    layer_width =    float(paramText[16])
+    layer_thick =    float(paramText[17])
+    max_T_pool =     float(paramText[18])
+    n_layers =       int(float(paramText[19]))
+    n_deposit =      int(float(paramText[20]))
+    mesh_size =      float(paramText[21])
+    mesh_AM_size =   float(paramText[22])
+    melting_T =      float(paramText[23])
+    H_subs =         float(paramText[24])
+    T_ref =          float(paramText[25])
+    
+    run_base = 1; run_nominal = 1; new_LHS = False; process_DOE_requirements = True; sampling = 'fullfact'
   
     # %% Sampling
     #========================== REQUIREMENTS SPACE LHS ============================#
@@ -1449,8 +1517,10 @@ def main():
         points_us = np.load(DOE_filepath) # load DOE array
     
     # Thermal loadcase guassian parameters
-    mu_lob = np.array([0.375, 0.80, 0.80, 0.625])
-    mu_upb = np.array([0.625, 0.20, 0.20, 0.375])
+    # mu_lob = np.array([0.375, 0.80, 0.80, 0.625])
+    # mu_upb = np.array([0.625, 0.20, 0.20, 0.375])
+    mu_lob = np.array([0.15, 0.80, 0.80, 0.85])
+    mu_upb = np.array([0.85, 0.20, 0.20, 0.15])
      
     Sigma_lob = np.array([0.1875, 0.125, 0.125, 0.1875]) # sigma^2
     Sigma_upb = np.array([0.375 , 0.250, 0.250, 0.375]) # sigma^2
@@ -1487,10 +1557,11 @@ def main():
     
     # %% Processing
     #============================= MAIN EXECUTION =================================#
-        
-    index = 63
-    P_analysis = [P_analysis[63]] # for testing
-    #index = 74
+    
+    index = 0
+    # index = 63
+    # P_analysis = [P_analysis[63]] # for testing
+    # index = 74
     # P_analysis = P_analysis[74::] # for testing
     for P_i in P_analysis:
         index += 1
@@ -1506,7 +1577,7 @@ def main():
                                               ax_pos, st_thick, st_width, laser_power, scanning_speed, 
                                               power_density, layer_length, layer_width, layer_thick, 
                                               n_layers, n_deposit, mesh_size, mesh_AM_size, 
-                                              melting_T, b_thick, process_DOE_requirements, index)
+                                              melting_T, b_thick, process_DOE_requirements, sampling, index)
         
         [resiliance_ip_vec,resiliance_th_vec,n_reqs] = resiliance_data
         

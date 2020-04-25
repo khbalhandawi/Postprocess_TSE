@@ -23,14 +23,15 @@ def system_command(command):
         print(line.rstrip()) # print line by line
         # rstrip() to reomove \n separator
 
-def NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir):
+def NOMAD_call(call_type,weight_file,res_ip_file,res_th_file,
+               req_vec,req_thresh,eval_point,MADS_output_dir):
 
-    
     req_vec_str = ' '.join(map(str,req_vec)) # print variables as space demilited string
     req_thresh_str = ' '.join(map(str,req_thresh)) # print parameters as space demilited string
     eval_point_str = ' '.join(map(str,eval_point)) # print parameters as space demilited string
     
-    command = "categorical_MSSP %i %s %s %s" %(call_type,req_vec_str,req_thresh_str,eval_point_str)
+    command = "categorical_MSSP %i %s %s %s %s %s %s" %(call_type,weight_file,res_ip_file,res_th_file,
+                                                        req_vec_str,req_thresh_str,eval_point_str)
     print(command)
     system_command(command)
     
@@ -166,6 +167,9 @@ def main():
     # one-liner to read a single variable
     input_filename = 'DOE_permutations.mat'
     input_folder = 'Input_files'
+    weight_file = 'varout_opt_log.log'
+    res_ip_file = 'resiliance_ip.log'
+    res_th_file = 'resiliance_th.log'
 
     MADS_output_dir = os.path.join(current_path,MADS_output_folder)
     DOE_dir = os.path.join(current_path,DOE_folder)
@@ -204,26 +208,29 @@ def main():
         
         index += 1
         print("\n+============================================================+")
-        print("|                         LOOP %04d                          |" %(index))
+        print("|                        LOOP %05d                          |" %(index))
         print("+============================================================+\n")
 
-        req_thresh = [ 0.01, 0.1, 0.3, 0.3, 0.3, 0.8 ]
+        req_thresh = [ 0.01, 0.1, 0.3, 0.3, 0.3, 0.9 ]
         eval_point = []
         call_type = 0
         req_vec = point
-        [opt] = NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir)
+        [opt] = NOMAD_call(call_type,weight_file,res_ip_file,res_th_file,
+                           req_vec,req_thresh,eval_point,MADS_output_dir)
         print(opt)
         
         eval_point = opt
         call_type = 1
-        [outs,weights] = NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir)
+        [outs,weights] = NOMAD_call(call_type,weight_file,res_ip_file,res_th_file,
+                                    req_vec,req_thresh,eval_point,MADS_output_dir)
         
         resiliance = [thresh - item  for thresh,item in zip(req_thresh,outs[1::])] # resiliance values (P_th - P)
         f = outs[0] # objective function
 
         eval_point = []
         call_type = 2
-        feasibility_vector = NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir)
+        feasibility_vector = NOMAD_call(call_type,weight_file,res_ip_file,res_th_file,
+                                        req_vec,req_thresh,eval_point,MADS_output_dir)
 
         if index == 1: # initialize log file for writing
             resultsfile=open(full_filename,'w')

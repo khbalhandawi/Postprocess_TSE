@@ -5,21 +5,10 @@ Created on Tue Mar 10 18:06:53 2020
 @author: Khalil
 """
 
-def rgb2hex(color):
-    """Converts a list or tuple of color to an RGB string
-
-    Args:
-        color (list|tuple): the list or tuple of integers (e.g. (127, 127, 127))
-
-    Returns:
-        str:  the rgb string
-    """
-    return f"#{''.join(f'{hex(c)[2:].upper():0>2}' for c in color)}"
-
 #==============================================================================
 # Acquire requirements DOE design results and 
 # get dictionary data from design log and resiliance log
-def plot_tradespace(attribute,plot_true):
+def plot_tradespace(attribute,filename_opt,filename_res,filename_weight,plot_true):
     
     import numpy as np
     import random
@@ -31,9 +20,8 @@ def plot_tradespace(attribute,plot_true):
         from matplotlib import rcParams
         plt.close('all')
     
-    filename = 'req_opt_log.log'
     current_path = os.getcwd()
-    filepath = os.path.join(current_path,'DOE_results',filename)
+    filepath = os.path.join(current_path,'DOE_results',filename_opt)
     
     data = []
     
@@ -52,9 +40,8 @@ def plot_tradespace(attribute,plot_true):
     dictionary = dict(zip(list_names, data))
     #==========================================================================
     # read resiliance data
-    filename = 'resiliance_th.log'
     current_path = os.getcwd()
-    filepath = os.path.join(current_path,'Input_files',filename)
+    filepath = os.path.join(current_path,'Input_files',filename_res)
     
     data = []
     
@@ -80,9 +67,8 @@ def plot_tradespace(attribute,plot_true):
     dictionary_res = dict(zip(list_names, data))
     #==========================================================================
     # read weight data
-    filename = 'varout_opt_log.log'
     current_path = os.getcwd()
-    filepath = os.path.join(current_path,'Input_files',filename)
+    filepath = os.path.join(current_path,'Input_files',filename_weight)
     
     data = []
     
@@ -185,13 +171,12 @@ def plot_tradespace(attribute,plot_true):
 
 #==============================================================================
 # Import feasibility data
-def import_feasibility():
+def import_feasibility(filename_feas):
     
     import numpy as np
     
-    filename = 'feasiblity_log.log'
     current_path = os.getcwd()
-    filepath = os.path.join(current_path,'DOE_results',filename)
+    filepath = os.path.join(current_path,'DOE_results',filename_feas)
     
     data = np.loadtxt(filepath, skiprows = 1, delimiter=",")
     
@@ -210,12 +195,13 @@ def import_feasibility():
     
 #==============================================================================
 # Call MADS and get Pareto optimal solutions from MADS
-def NOMAD_call_BIOBJ(req_index,P_analysis_strip,attribute,cost,evaluate):
+def NOMAD_call_BIOBJ(req_index,weight_file,res_ip_file,res_th_file,
+                     P_analysis_strip,attribute,cost,evaluate):
     
     if evaluate: # run bi-objective optimization
         from sample_requirements import system_command
 
-        command = "categorical_biobj %i" %(req_index)
+        command = "categorical_biobj %i %s %s %s" %(req_index,weight_file,res_ip_file,res_th_file)
         print(command)
         system_command(command)
     
@@ -262,11 +248,6 @@ def get_pareto(P_analysis_strip,attribute,cost):
         y_data += [attribute_Pareto]
         
     return x_data, y_data
-
-def is_a_in_x(A, X):
-  for i in range(len(X) - len(A) + 1):
-    if A == X[i:i+len(A)]: return True
-  return False
 
 #==============================================================================
 # rank designs and get histogram distribution
@@ -326,6 +307,19 @@ def get_dstribution(d_types,k,design_list):
     return dist
 
 #==============================================================================
+# Convert color floats to hex
+def rgb2hex(color):
+    """Converts a list or tuple of color to an RGB string
+
+    Args:
+        color (list|tuple): the list or tuple of integers (e.g. (127, 127, 127))
+
+    Returns:
+        str:  the rgb string
+    """
+    return f"#{''.join(f'{hex(c)[2:].upper():0>2}' for c in color)}"
+
+#==============================================================================
 # MAIN CALL
 if __name__ == "__main__":
     
@@ -342,11 +336,17 @@ if __name__ == "__main__":
     
     plt.close('all')
 
+    filename_opt = 'req_opt_log_th0.99.log'
+    filename_res = 'resiliance_th.log'
+    filename_res_ip = 'resiliance_ip.log'
+    filename_weight = 'varout_opt_log.log'
+    filename_feas = 'feasiblity_log_th0.99.log'
+
     #attribute = ['n_f_th','Safety factor ($n_{safety}$)']
     attribute = ['$\mathbb{P}(\mathbf{T} \in C)$']
     
     # [fig, ax, dictionary, plot_h, designs] = plot_tradespace(attribute,True)
-    [dictionary, dictionary_res, dictionary_weight, designs, designs_padded] = plot_tradespace(attribute,False)
+    [dictionary, dictionary_res, dictionary_weight, designs, designs_padded] = plot_tradespace(attribute,filename_opt,filename_res,filename_weight,False)
     [histogram,P_analysis_strip] = rank_designs(designs)
     
     design_list = []
@@ -379,7 +379,7 @@ if __name__ == "__main__":
     
     #==============================================================================
     # Feasiblity sorting
-    [data,robustness] = import_feasibility()
+    [data,robustness] = import_feasibility(filename_feas)
 
     xR = range(0,len(robustness))
     yR = sorted(robustness,reverse = True)
@@ -394,8 +394,8 @@ if __name__ == "__main__":
     # attribute = dictionary_res['req_index_%i' %(req_index)]
 
     # Data for plotting SBD designs
-    attribute_robust = attribute[indices]
-    cost_robust = cost[indices]
+    attribute_robust = attribute[indices_robust]
+    cost_robust = cost[indices_robust]
 
     #==========================================================================
     # Histogram plot
@@ -479,25 +479,30 @@ if __name__ == "__main__":
     #==========================================================================
     # Tradespace plot
     # data for plotting Pareto front
-    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,P_analysis_strip,attribute,cost,False) # get Pareto optimal points
+    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,filename_weight,filename_res_ip,filename_res,
+                                        P_analysis_strip,attribute,cost,False) # get Pareto optimal points
 
     my_dpi = 100
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
-
-    pareto, = plt.plot(x_data, y_data, '-d', color = 'm', linewidth = 4.0, markersize = 10.0 )
-    markersizes = [ (1/20)*(n**4) for n in reversed(range(3,len(cost_SBD[:10])+3)) ]
-    SBD_design = plt.scatter( cost_SBD[:10], attribute_SBD[:10], s = markersizes, color = [1,0,0], marker = '.' )
-    Robust_design = plt.scatter( cost_robust[:10], attribute_robust[:10], s = markersizes, color = [0,0,1], marker = '.' )
-    feasible, = plt.plot(cost, attribute, 'x', color = [0,0,0], linewidth = 1, markersize = 6 )
     
+    markersizes = [ (1/20)*(n**4) for n in reversed(range(3,len(cost_SBD[:10])+3)) ]
+
+    feasible, = plt.plot(cost, attribute, 'x', color = [0,0,0], linewidth = 1, markersize = 6 )
+    pareto, = plt.plot(x_data, y_data, '-d', color = 'm', linewidth = 4.0, markersize = 7.0 )
+    SBD_design = plt.scatter( cost_SBD[:5], attribute_SBD[:5], s = 600, color = [1,0,0], marker = '.' )
+    Robust_design = plt.scatter( cost_robust[:5], attribute_robust[:5], s = 300, color = [0,0,1], marker = '.' )
+
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14)
     # plt.ylabel('Requirement satisfaction ratio ($V_{{C}\cap{R}}/V_{R}$)', fontsize=14)
     plt.ylabel('Safety factor ($n_{safety}$)', fontsize=14)
     
     ax = plt.gca() 
     ax.tick_params(axis='both', which='major', labelsize=14) 
+    ax.legend((feasible, pareto, SBD_design, Robust_design), 
+              ('Feasible designs $\in \Omega$', 'Pareto optimal designs', 
+               'Set-based designs', 'Robust designs'), loc = 'lower right',
+               fontsize = 9.0)
     
-    ax.legend((feasible, pareto, SBD_design, Robust_design), ('Feasible designs $\in \Omega$', 'Pareto optimal designs', 'Set-based designs', 'Robust designs'))
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','tradespace_pareto.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
     
     # print(ax.get_xlim())
