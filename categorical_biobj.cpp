@@ -253,12 +253,15 @@ int main(int argc, char ** argv)
 {
 
 	int req_index = stoi(argv[1]);
+	string weight_file = argv[2];
+	string res_ip_file = argv[3];
+	string res_th_file = argv[4];
 
-	string input_file = "./Input_files/varout_opt_log.log";
+	string input_file = "./Input_files/" + weight_file;
 	vector< vector<double> > input_data = read_csv_file(input_file); // Make sure there are no empty lines !!
-	string input_file_ip = "./Input_files/resiliance_ip.log";
+	string input_file_ip = "./Input_files/" + res_ip_file;
 	vector< vector<double> > resiliance_ip_data = read_csv_file(input_file_ip); // Make sure there are no empty lines !!
-	string input_file_th = "./Input_files/resiliance_th.log";
+	string input_file_th = "./Input_files/" + res_th_file;
 	vector< vector<double> > resiliance_th_data = read_csv_file(input_file_th); // Make sure there are no empty lines !!
 
 	// NOMAD initializations:

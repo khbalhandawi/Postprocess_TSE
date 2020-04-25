@@ -509,7 +509,10 @@ int main ( int argc , char ** argv ) {
 	vector<double> r_thresh;
 	
 	call_type = stoi(argv[1]);
-	int n_sargs = 2; // number of static arguments
+	string weight_file = argv[2];
+	string res_ip_file = argv[3];
+	string res_th_file = argv[4];
+	int n_sargs = 5; // number of static arguments
 
 	for (int r_i = n_sargs; r_i < (n_stages + n_sargs); r_i++) {
 		r_n = stoi(argv[r_i]);
@@ -521,11 +524,11 @@ int main ( int argc , char ** argv ) {
 		r_thresh.push_back(r_thresh_n);
 	}
 
-	string input_file = "./Input_files/varout_opt_log.log";
+	string input_file = "./Input_files/" + weight_file;
 	vector< vector<double> > input_data = read_csv_file(input_file); // Make sure there are no empty lines !!
-	string input_file_ip = "./Input_files/resiliance_ip.log";
+	string input_file_ip = "./Input_files/" + res_ip_file;
 	vector< vector<double> > resiliance_ip_data = read_csv_file(input_file_ip); // Make sure there are no empty lines !!
-	string input_file_th = "./Input_files/resiliance_th.log";
+	string input_file_th = "./Input_files/" + res_th_file;
 	vector< vector<double> > resiliance_th_data = read_csv_file(input_file_th); // Make sure there are no empty lines !!
 
 	// NOMAD initializations:
@@ -551,7 +554,7 @@ int main ( int argc , char ** argv ) {
 		
 		// parameters creation:
 		NOMAD::Parameters p ( out );
-		if (call_type == 0) { p.set_DISPLAY_DEGREE(0); } // turn off display
+		//if (call_type == 0) { p.set_DISPLAY_DEGREE(0); } // turn off display
 		if (call_type == 1) { p.set_DISPLAY_DEGREE(0); } // turn off display
 		if (call_type == 2) { p.set_DISPLAY_DEGREE(0); } // turn off display
 		vector<NOMAD::bb_output_type> bbot(7);
