@@ -194,6 +194,25 @@ def import_feasibility(filename_feas):
     return data, feasiblity
     
 #==============================================================================
+# Calculate filtered outdegree
+def filtered_outdegree(dictionary_weight):
+    
+    design_list = []; FO = []
+    for data in zip(dictionary_weight['concept'],
+                    dictionary_weight['i1'],dictionary_weight['i2'],
+                    dictionary_weight['i3'],dictionary_weight['i4']):
+        design_list += [[int(x) for x in data]]
+
+        deposits = data[1:]
+        if data[0] == 0: # wave stiffener
+            FO += [2 - sum(d != -1 for d in deposits)]
+        elif data[0] == 1: # hatched stiffener
+            FO += [4 - sum(d != -1 for d in deposits)]
+
+    return FO
+    
+
+#==============================================================================
 # Call MADS and get Pareto optimal solutions from MADS
 def NOMAD_call_BIOBJ(req_index,weight_file,res_ip_file,res_th_file,
                      P_analysis_strip,attribute,cost,evaluate):
@@ -336,7 +355,7 @@ if __name__ == "__main__":
     
     plt.close('all')
 
-    filename_opt = 'req_opt_log_th0.99.log'
+    filename_opt = 'req_opt_log_R50.log'
     filename_res = 'resiliance_th.log'
     filename_res_ip = 'resiliance_ip.log'
     filename_weight = 'varout_opt_log.log'
@@ -358,9 +377,9 @@ if __name__ == "__main__":
     #==============================================================================
     # Set based sorting
 
-    x = range(0,len(histogram))
-    y = sorted(histogram,reverse = True)
-    indices = [x for _,x in sorted(zip(histogram,x),reverse = True)]
+    xS = range(0,len(histogram))
+    yS = sorted(histogram,reverse = True)
+    indices = [x for _,x in sorted(zip(histogram,xS),reverse = True)]
     sorted_designs = [x for _,x in sorted(zip(histogram,design_list),reverse = True)]
     
     print('Top 5 designs:')
@@ -397,9 +416,29 @@ if __name__ == "__main__":
     attribute_robust = attribute[indices_robust]
     cost_robust = cost[indices_robust]
 
+    #==============================================================================
+    # flexibility sorting
+    FO = filtered_outdegree(dictionary_weight)
+
+    xF = range(0,len(FO))
+    yF = sorted(FO,reverse = True)
+    indices_flexible = [x for _,x in sorted(zip(FO,xF),reverse = True)]
+    sorted_designs_flexible = [x for _,x in sorted(zip(FO,design_list),reverse = True)]
+    
+    print('Top 5 flexible designs:')
+    for design in sorted_designs_flexible[:5]:
+        print(design)
+    # data for constructing tradespace of feasible designs
+    # req_index = 50
+    # attribute = dictionary_res['req_index_%i' %(req_index)]
+
+    # Data for plotting SBD designs
+    attribute_flexible = attribute[indices_flexible]
+    cost_flexible = cost[indices_flexible]
+
     #==========================================================================
-    # Histogram plot
-    # data for plotting histogram SBD
+    # Histogram colors generator
+
     new_colors = False
     color_file = 'colors_histogram.pkl'
     # ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', ...]
@@ -426,36 +465,13 @@ if __name__ == "__main__":
         colors = pickle.load(fid)
         fid.close()
 
-    n_bins = 20
-    x = x[:n_bins]
-    y = y[:n_bins]/(sum(y)*0.01)
-    design_indices = [i + 1 for i in indices[:n_bins]]
-    design_colors = [colors[i] for i in indices[:n_bins]]
-
-    # design_indices = list(range(1,21)
-
-    mpl.rc('text', usetex = True)
-    rcParams['font.family'] = 'serif'
-    my_dpi = 100
-    fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
-    
-    barlist = plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
-    for bar in barlist[:5]: # set color of first five bars
-        bar.set_edgecolor('r')
-        bar.set_linewidth(2.3)
-
-    plt.xlabel('Design index', fontsize=14)
-    plt.ylabel('$\%$ of multi-stage problems solved', fontsize=14) 
-    plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
-    fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
-    
     #==========================================================================
-    # Histogram plot for feasible designs
+    # Histogram plot for robust designs
     # data for plotting histogram feasibility
 
     n_bins = 20
     x = xR[:n_bins]
-    y = yR[:n_bins]/(sum(y)*0.01)
+    y = yR[:n_bins]
     design_indices = [i + 1 for i in indices_robust[:n_bins]]
     design_colors = [colors[i] for i in indices_robust[:n_bins]]
 
@@ -467,15 +483,73 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
     
     barlist = plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
-    for bar in barlist[:5]: # set color of first five bars
-        bar.set_edgecolor('r')
-        bar.set_linewidth(2.3)
+    # for bar in barlist[:5]: # set color of first five bars
+    #     bar.set_edgecolor('r')
+    #     bar.set_linewidth(2.3)
 
     plt.xlabel('Design index', fontsize=14)
     plt.ylabel('$\%$ of multi-stage problems satisfied', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
-    fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE_R.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
 
+    tight_bbox = fig.get_tightbbox(fig.canvas.get_renderer()) # get bbox for figure canvas
+    fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE_R.pdf'), format='pdf', dpi=1000,bbox_inches=tight_bbox)
+
+    #==========================================================================
+    # Histogram plot for flexible designs
+    # data for plotting histogram feasibility
+
+    n_bins = 20
+    x = xF[:n_bins]
+    y = yF[:n_bins]
+    design_indices = [i + 1 for i in indices_flexible[:n_bins]]
+    design_colors = [colors[i] for i in indices_flexible[:n_bins]]
+
+    # design_indices = list(range(1,21)
+
+    mpl.rc('text', usetex = True)
+    rcParams['font.family'] = 'serif'
+    my_dpi = 100
+    fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
+    
+    barlist = plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
+    # for bar in barlist[:5]: # set color of first five bars
+    #     bar.set_edgecolor('r')
+    #     bar.set_linewidth(2.3)
+
+    plt.xlabel('Design index', fontsize=14)
+    plt.ylabel('Filtered outdegree', fontsize=14) 
+    plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
+    plt.yticks(list(range(max(yF)+1)), list(map(str,range(max(yF)+1)))) # Force integer ticks
+    fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE_F.pdf'), format='pdf', dpi=1000,bbox_inches=tight_bbox)
+
+    #==========================================================================
+    # Histogram plot
+    # data for plotting histogram SBD
+
+    n_bins = 20
+    x = xS[:n_bins]
+    y = yS[:n_bins]/(sum(yS)*0.01)
+    design_indices = [i + 1 for i in indices[:n_bins]]
+    design_colors = [colors[i] for i in indices[:n_bins]]
+
+    # design_indices = list(range(1,21)
+
+    mpl.rc('text', usetex = True)
+    rcParams['font.family'] = 'serif'
+    my_dpi = 100
+    fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
+    
+    barlist = plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
+    # for bar in barlist[:5]: # set color of first five bars
+    #     bar.set_edgecolor('r')
+    #     bar.set_linewidth(2.3)
+
+    plt.xlabel('Design index', fontsize=14)
+    plt.ylabel('$\%$ of multi-stage problems solved', fontsize=14) 
+    plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
+
+    fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE.pdf'), format='pdf', dpi=1000,bbox_inches=tight_bbox)
+    
     #==========================================================================
     # Tradespace plot
     # data for plotting Pareto front
@@ -489,20 +563,31 @@ if __name__ == "__main__":
 
     feasible, = plt.plot(cost, attribute, 'x', color = [0,0,0], linewidth = 1, markersize = 6 )
     pareto, = plt.plot(x_data, y_data, '-d', color = 'm', linewidth = 4.0, markersize = 7.0 )
-    SBD_design = plt.scatter( cost_SBD[:5], attribute_SBD[:5], s = 600, color = [1,0,0], marker = '.' )
-    Robust_design = plt.scatter( cost_robust[:5], attribute_robust[:5], s = 300, color = [0,0,1], marker = '.' )
-
+    Robust_design = plt.scatter( cost_robust[:5], attribute_robust[:5], s = 600, color = [0,0,1], marker = '.', zorder=3)
+    flexible_design = plt.scatter( cost_flexible[:5], attribute_flexible[:5], s = 300, color = [34/256,139/256,34/256], marker = '.', zorder=4 )
+    SBD_design = plt.scatter( cost_SBD[:5], attribute_SBD[:5], s = 150, color = [1,0,0], marker = '.', zorder=5 )
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14)
     # plt.ylabel('Requirement satisfaction ratio ($V_{{C}\cap{R}}/V_{R}$)', fontsize=14)
     plt.ylabel('Safety factor ($n_{safety}$)', fontsize=14)
     
     ax = plt.gca() 
-    ax.tick_params(axis='both', which='major', labelsize=14) 
-    ax.legend((feasible, pareto, SBD_design, Robust_design), 
+    ax.tick_params(axis='both', which='major', labelsize=14)
+    # ax.legend((feasible, pareto), 
+    #           ('Feasible designs $\in \Omega$', 'Pareto optimal designs'), loc = 'lower right',
+    #            fontsize = 9.0) 
+    # ax.legend((feasible, pareto, Robust_design), 
+    #           ('Feasible designs $\in \Omega$', 'Pareto optimal designs', 
+    #            'Robust designs'), loc = 'lower right',
+    #            fontsize = 9.0)
+    # ax.legend((feasible, pareto, Robust_design, flexible_design), 
+    #           ('Feasible designs $\in \Omega$', 'Pareto optimal designs', 
+    #            'Robust designs', 'Flexible designs'), loc = 'lower right',
+    #            fontsize = 9.0)
+    ax.legend((feasible, pareto, Robust_design, flexible_design, SBD_design), 
               ('Feasible designs $\in \Omega$', 'Pareto optimal designs', 
-               'Set-based designs', 'Robust designs'), loc = 'lower right',
+               'Robust designs', 'Flexible designs', 'Set-based designs'), loc = 'lower right',
                fontsize = 9.0)
-    
+
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','tradespace_pareto.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
     
     # print(ax.get_xlim())
