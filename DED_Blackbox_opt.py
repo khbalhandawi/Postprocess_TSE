@@ -1165,8 +1165,8 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     # resolution = 1296 # sampling resolution for capability calculation (must be a square number)!
     resolution = 50 # sampling resolution for capability calculation (must be a square number)!
     # threshold = 100000 # cutoff threshold for capability calculation
-    # threshold = 4.2 # cutoff threshold for capability calculation
-    threshold = 4.5 # cutoff threshold for capability calculation
+    threshold = 4.0 # cutoff threshold for capability calculation
+    threshold = 2.8 # cutoff threshold for capability calculation
     
     DOE_folder = 'Thermal_DOE_results'; base_name = ['DOE_th_inputs','thermal_out']
     variable_lbls_pc = ['T1','T2','T3','T4']
@@ -1561,8 +1561,8 @@ def main():
     index = 0
     # index = 63
     # P_analysis = [P_analysis[63]] # for testing
-    # index = 74
-    # P_analysis = P_analysis[74::] # for testing
+    # index = 306
+    # P_analysis = P_analysis[306::] # for testing
     for P_i in P_analysis:
         index += 1
         
@@ -1622,18 +1622,18 @@ def main():
         
         if index == 1:
             resultsfile=open(full_filename,'w')
-            resultsfile.write('index'+','+'concept'+','+'i1'+','+'i2'+','+'i3'+','+'i4'+','
+            resultsfile.write('index'+','+'concept'+','+'i1'+','+'i2'+','+'i3'+','+'i4'+','+'i5'+','
                               +'ax_pos'+','+'st_height'+','+'st_width'+','+'st_thick'+','
                               +'laser_power'+','+'scanning_speed'+','+'power_density'+','
                               +'n_layers'+','+'n_deposits'+','+'layer_thick'+','+'layer_width'+','+'layer_length'+','
                               +','.join(out_titles)+'\n')
             
             resultsfile_ip=open(full_filename_ip,'w')
-            resultsfile_ip.write('index'+','+'concept'+','+'i1'+','+'i2'+','+'i3'+','+'i4'+','
+            resultsfile_ip.write('index'+','+'concept'+','+'i1'+','+'i2'+','+'i3'+','+'i4'+','+'i5'+','
                               +','.join(req_titles)+'\n')
             
             resultsfile_th=open(full_filename_th,'w')
-            resultsfile_th.write('index'+','+'concept'+','+'i1'+','+'i2'+','+'i3'+','+'i4'+','
+            resultsfile_th.write('index'+','+'concept'+','+'i1'+','+'i2'+','+'i3'+','+'i4'+','+'i5'+','
                               +','.join(req_titles)+'\n')
         
         resultsfile=open(full_filename,'a+')

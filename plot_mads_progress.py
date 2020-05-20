@@ -54,8 +54,8 @@ class PlotOptimizationProgress():
         # Plot progress
         # generate random color for branch
                 
-        x_data = []
-        y_data = []
+        x_data = [0.0]; y_data = [2.378925]; # initial point
+        # x_data = [0.0]; y_data = [0.0] # initial point
         
         for it in range(len(self.state[1::])):
             ind = self.P_analysis_strip.index(self.state[0:it+2])
@@ -72,7 +72,7 @@ class PlotOptimizationProgress():
                     format='png', dpi=100,bbox_inches='tight')
         
         plt.pause(0.0005)
-        plt.show()
+        
         #=====================================================================#
         return e
 
@@ -85,24 +85,41 @@ P_analysis = loadmat('DOE_permutations.mat')['P_analysis']
 #P_analysis = P_analysis[0:44]
 
 attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-#attribute = ['resiliance_th','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$]
-
-P_analysis_strip = []
-for item in P_analysis:
-    # Get permutation index
-    permutation_index = []
-    for arg in item:
-        if not int(arg) == -1:
-            permutation_index += [int(arg)] # populate permutation index
-    P_analysis_strip += [permutation_index]
+#attribute = ['resiliance_th_gau','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$]
 
 [fig, ax, dictionary, start, wave, cross] = plot_tradespace(attribute)
+
+# Append initial base design to dictionary
+# Creating a Dictionary  
+new_dict = dict()
+for key in dictionary.keys():
+    if key == 'n_f_th':
+        new_key = np.append( dictionary[key], np.array([2.378925]) )
+    elif key in ['i1', 'i2', 'i3', 'i4', 'i5']:
+        new_key = np.append( dictionary[key], np.array([-1.0]) )
+    else:
+        new_key = np.append( dictionary[key], np.array([0.0]) )
+        
+    new_dict[key] = new_key
+
+dictionary = new_dict
+
+# Get unsorted design points
+P_analysis_strip = []
+for c,i1,i2,i3,i4,i5 in zip(dictionary['concept'],dictionary['i1'],dictionary['i2'],dictionary['i3'],dictionary['i4'],dictionary['i5']):
+    # Get permutation index
+    permutation_index = []
+    for arg in [c,i1,i2,i3,i4,i5]:
+        if not int(arg) == -1:
+            permutation_index += [int(arg)] # populate permutation index
+    
+    P_analysis_strip += [permutation_index]
 
 # %% Begin combinatorial optimization
 
 # read MADS log file
 bb_evals = []
-with open('mads_bb_calls.log') as csv_file:
+with open('MADS_output/mads_bb_calls.log') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     line_count = 0
     for row in csv_reader:
@@ -115,7 +132,6 @@ with open('mads_bb_calls.log') as csv_file:
         bb_evals += [row_strip]
         line_count += 1
 
-
 # iterate through MADS bb evals
 current_path = os.getcwd()
 optproblem = PlotOptimizationProgress(bb_evals[0],P_analysis_strip, dictionary, bb_evals, attribute, fig)
@@ -127,7 +143,7 @@ print('\nNumber of function calls: %i' %(optproblem.n_fcalls))
 
 # read MADS log file
 opt_points = []
-with open('mads_x_opt.log') as csv_file:
+with open('MADS_output/mads_x_opt.log') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=' ')
     line_count = 0
     for row in csv_reader:

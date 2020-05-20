@@ -30,7 +30,7 @@ def plot_tradespace_reduced(attribute):
     for key in dictionary.keys():
         if key == 'n_f_th':
             new_key = np.append( dictionary[key], np.array([2.378925]) )
-        elif key in ['i1', 'i2', 'i3', 'i4']:
+        elif key in ['i1', 'i2', 'i3', 'i4', 'i5']:
             new_key = np.append( dictionary[key], np.array([-1.0]) )
         else:
             new_key = np.append( dictionary[key], np.array([0.0]) )
@@ -41,10 +41,10 @@ def plot_tradespace_reduced(attribute):
     
     # Get unsorted design points
     P_analysis_strip = []
-    for c,i1,i2,i3,i4 in zip(dictionary['concept'],dictionary['i1'],dictionary['i2'],dictionary['i3'],dictionary['i4']):
+    for c,i1,i2,i3,i4,i5 in zip(dictionary['concept'],dictionary['i1'],dictionary['i2'],dictionary['i3'],dictionary['i4'],dictionary['i5']):
         # Get permutation index
         permutation_index = []
-        for arg in [c,i1,i2,i3,i4]:
+        for arg in [c,i1,i2,i3,i4,i5]:
             if not int(arg) == -1:
                 permutation_index += [int(arg)] # populate permutation index
         
@@ -60,13 +60,14 @@ def plot_tradespace_reduced(attribute):
     i2 = dictionary['i2'][i]
     i3 = dictionary['i3'][i]
     i4 = dictionary['i4'][i]
-    
+    i5 = dictionary['i5'][i]
+
     sorted_designs = []
     for n in range(len(n_f_th)):
         
         # Get permutation index
         permutation_index = []
-        for arg in [c[n],i1[n],i2[n],i3[n],i4[n]]:
+        for arg in [c[n],i1[n],i2[n],i3[n],i4[n],i5[n]]:
             if not int(arg) == -1:
                 permutation_index += [int(arg)] # populate permutation index
         
@@ -85,8 +86,8 @@ def plot_tradespace_reduced(attribute):
     ax.tick_params(axis='both', which='major', labelsize=14 * magnify) 
     # ax.set_xlim([3.2040081632482558, 27.856089113953463])
     # ax.set_ylim([1.4864630521225, 4.6238964381875])
-    ax.set_xlim([-1.1615516283612148, 24.392584195585513])
-    ax.set_ylim([-0.2240642914865, 4.7053501212165])
+    # ax.set_xlim([-1.1615516283612148, 24.392584195585513]) # used
+    # ax.set_ylim([-0.2240642914865, 4.7053501212165]) # used
     
     plt.title("Tradespace", fontsize=20 * magnify)
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14 * magnify)
@@ -109,7 +110,13 @@ def plot_tradespace_reduced(attribute):
     req_index = 0
     attribute = dictionary['n_f_th']
     cost = dictionary['weight']
-    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,P_analysis_strip,attribute,cost,False) # get Pareto optimal points
+
+    filename_res = 'resiliance_th.log'
+    filename_res_ip = 'resiliance_ip.log'
+    filename_weight = 'varout_opt_log.log'
+
+    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,filename_weight,filename_res_ip,filename_res,
+                                        P_analysis_strip,attribute,cost,False) # get Pareto optimal points
     pareto, = plt.plot(x_data, y_data, '-o', color = 'm', linewidth = 2.0, markersize = 5.0 )
 
     legend_handles += [pareto]
@@ -154,7 +161,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-    # attribute = ['resiliance_th','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$']
+    # attribute = ['resiliance_th_gau','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$']
     
     [fig, ax, dictionary, P_analysis_strip] = plot_tradespace_reduced(attribute)
     fig.savefig(os.path.join(os.getcwd(),'tradespace_pareto_reduced.svg'), format='svg')

@@ -35,14 +35,14 @@ for item in P_analysis:
             permutation_index += [int(arg)] # populate permutation index
     P_analysis_strip += [permutation_index]
 
-#attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-attribute = ['resiliance_th','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$']
+attribute = ['n_f_th','Safety factor ($n_{safety}$)']
+# attribute = ['resiliance_th_gau','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$']
 
 [fig, ax, dictionary, start, wave, cross] = plot_tradespace(attribute)
 
 # %% read MADS log file
 opt_points = []
-with open('mads_x_opt_pareto.log') as csv_file:
+with open('MADS_output/mads_x_opt_pareto.log') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=' ')
     line_count = 0
     for row in csv_reader:
@@ -67,3 +67,4 @@ pareto, = plt.plot(x_data, y_data, 'd', color = 'm', linewidth = 4.0, markersize
    
 ax.legend((start, cross, wave, pareto), ('initial design', 'cross concepts', 'wave concepts', 'Pareto point'))
 fig.savefig(os.path.join(current_path,'tradespace_pareto.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
+plt.show()

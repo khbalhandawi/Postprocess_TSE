@@ -4,6 +4,7 @@ Created on Tue Jan 14 01:52:11 2020
 
 @author: Khalil
 """
+import matplotlib.pyplot as plt
 
 def plot_tradespace(attribute):
     
@@ -54,18 +55,18 @@ def plot_tradespace(attribute):
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
     
     # CROSS CONCEPT
-    l = list(permutations(range(0, 4))) # permutate indices
+    l = list(permutations(range(0, 5))) # permutate indices
     branch_id = 0
     for branch in l:
         branch = list(branch)
         
         # loop over data points
         i = 0; x_data = []; y_data = []
-        for c,i1,i2,i3,i4 in zip(dictionary['concept'],dictionary['i1'],dictionary['i2'],dictionary['i3'],dictionary['i4']):
+        for c,i1,i2,i3,i4,i5 in zip(dictionary['concept'],dictionary['i1'],dictionary['i2'],dictionary['i3'],dictionary['i4'],dictionary['i5']):
                        
             # Get permutation index
             permutation_index = []
-            for arg in [i1,i2,i3,i4]:
+            for arg in [i1,i2,i3,i4,i5]:
                 if not int(arg) == -1:
                     permutation_index += [int(arg)] # populate permutation index
             
@@ -87,7 +88,7 @@ def plot_tradespace(attribute):
         b = random.random()
         rgb = [r,g,b]
         
-        plt.plot(x_data, y_data, ':', color = rgb, linewidth = 2.5 - (0.05*branch_id) )
+        plt.plot(x_data, y_data, ':', color = rgb, linewidth = 2.5 )
         plt.plot(x_data, y_data, 'o', markersize=10, markevery=len(x_data), color = [0,0,0])
         cross, = plt.plot(x_data, y_data, 'o', color = [0,0,1], markersize=6 )
         branch_id += 1
@@ -100,11 +101,11 @@ def plot_tradespace(attribute):
         
         # loop over data points
         i = 0; x_data = []; y_data = []
-        for c,i1,i2,i3,i4 in zip(dictionary['concept'],dictionary['i1'],dictionary['i2'],dictionary['i3'],dictionary['i4']):
+        for c,i1,i2,i3,i4,i5 in zip(dictionary['concept'],dictionary['i1'],dictionary['i2'],dictionary['i3'],dictionary['i4'],dictionary['i5']):
                        
             # Get permutation index
             permutation_index = []
-            for arg in [i1,i2,i3,i4]:
+            for arg in [i1,i2,i3,i4,i5]:
                 if not int(arg) == -1:
                     permutation_index += [int(arg)] # populate permutation index
             
@@ -126,7 +127,7 @@ def plot_tradespace(attribute):
         b = random.random()
         rgb = [r,g,b]
         
-        plt.plot(x_data, y_data, '-', color = rgb, linewidth = 2.5 - (0.05*branch_id) )
+        plt.plot(x_data, y_data, '-', color = rgb, linewidth = 2.5 )
         start, = plt.plot(x_data, y_data, 'o', markersize=10, markevery=len(x_data), color = [0,0,0])
         wave, = plt.plot(x_data, y_data, 'o', color = [1,0,0], markersize=6 )
         branch_id += 1
@@ -136,15 +137,14 @@ def plot_tradespace(attribute):
     
     plt.title("Tradespace", fontsize=20)
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14)
-    plt.ylabel('Requirement satisfaction ratio ($V_{{C}\cap{R}}/V_{R}$)', fontsize=14)
     plt.ylabel(attribute_label, fontsize=14)
-    plt.ylabel('Safety factor ($n_{safety}$)', fontsize=14)
     
     return fig, ax, dictionary, start, wave, cross
 
 if __name__ == "__main__":
     
-    #attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-    attribute = ['resiliance_th','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$']
+    attribute = ['n_f_th','Safety factor ($n_{safety}$)']
+    # attribute = ['resiliance_th_gau','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$']
     
     [fig, ax, dictionary, start, wave, cross] = plot_tradespace(attribute)
+    plt.show()
