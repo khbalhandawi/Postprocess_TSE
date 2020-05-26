@@ -591,8 +591,110 @@ def plot_loadcase_line_data(index,filename_e,filename_n,DOE_folder,current_path,
     return S_line, N_line, n_f_line, U_p_line
 
 #==============================================================================#
-# %% POSTPROCESS DOE DATA TO GET CAPABILITY
-def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,threshold,
+# %% POSTPROCESS DOE DATA TO GET CAPABILITY, RESILIANCE AND EXCESS
+        
+def Rspace_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,threshold,
+                           new_LHS_MCI,LHS_MCI_file):
+    
+    from abaqus_postprocess import gridsamp
+    import numpy as np
+    import copy 
+    from scipy import integrate
+    from pyDOE import lhs
+    import pickle
+    import os
+
+    lob = bounds[:,0]
+    upb = bounds[:,1]
+    
+    lob_req = bounds_req[:,0]
+    upb_req = bounds_req[:,1]
+
+    # LHS distribution
+    DOE_full_name = LHS_MCI_file +'.pkl'
+    DOE_filepath = os.path.join(os.getcwd(),'Optimization_studies',DOE_full_name)
+
+    if new_LHS_MCI: # generate new LHS for each Monte-Carlo Integration operation
+        # LHS distribution
+        dFF_lhs = lhs(len(lob), samples=res, criterion='center')
+        # Sample the requirements space only
+        dFF = scaling(dFF_lhs,lob_req,upb_req,2) # unscale latin hypercube points to req
+        dFF_n = scaling(dFF,lob,upb,1) # scale requirement to full space
+        
+        # Sample the parameter space only
+        dFF_Pspace = scaling(dFF_lhs,lob,upb,2) # unscale latin hypercube points to req
+        dFF_n_Pspace = dFF_lhs # scale requirement to full space
+
+        resultsfile=open(DOE_filepath,'wb')
+        
+        pickle.dump(dFF, resultsfile)
+        pickle.dump(dFF_n, resultsfile)
+        pickle.dump(dFF_Pspace, resultsfile)
+        pickle.dump(dFF_n_Pspace, resultsfile)
+
+        resultsfile.close()
+        
+    else:
+        resultsfile=open(DOE_filepath,'rb')
+        
+        dFF = pickle.load(resultsfile)
+        dFF_n = pickle.load(resultsfile)
+        dFF_Pspace = pickle.load(resultsfile)
+        dFF_n_Pspace = pickle.load(resultsfile)
+    
+        resultsfile.close()
+
+    if req_type == "guassian":
+
+        #===================================================================#
+        # Compute excess
+
+        # 1,2,3 Sigma level contour
+        L = []
+        for n in range(3):
+            # Pack X and Y into a single 3-dimensional array
+            pos = np.empty((1,1) + (len(lob),))
+            x_l = [ mu[0] + ((n+1) * np.sqrt(Sigma[0,0])), # evaluate at Sigma not Sigma^2
+                    mu[1]                                ,
+                    mu[2]                                ,
+                    mu[3]                                ]
+            
+            level_index = 0
+            for value in x_l:
+                pos[:, :, level_index] = value
+                level_index += 1
+                
+            LN = multivariate_gaussian(pos, mu, Sigma)
+            L += [LN]
+
+        # Evaluate multivariate guassian
+        pos = np.empty((res,1) + (len(lob),))
+           
+        for i in range(len(lob)):
+            X_norm = np.reshape(dFF_n_Pspace[:,i],(res,1))
+            # Pack X1, X2 ... Xk into a single 3-dimensional array
+            pos[:, :, i] = X_norm
+         
+        Z = multivariate_gaussian(pos, mu, Sigma)
+        Z = np.reshape(Z, np.shape(dFF_n_Pspace)[0])
+            
+        Z_req = copy.deepcopy(Z)
+        cond_requirement = (Z_req - L) >= 0
+        
+        # Design space volume
+        R_volume = len(cond_requirement[cond_requirement])/np.shape(dFF_n_Pspace)[0]
+
+    elif req_type == "uniform":
+            
+        UB_n = scaling(upb_req,lob,upb,1)
+        LB_n = scaling(lob_req,lob,upb,1)
+        
+        # Design space volume
+        R_volume = np.prod(UB_n - LB_n)
+
+    return R_volume
+
+def resiliance_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,threshold,
                            new_LHS_MCI,LHS_MCI_file):
     
     from abaqus_postprocess import gridsamp
@@ -620,11 +722,17 @@ def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
         dFF = scaling(dFF_lhs,lob_req,upb_req,2) # unscale latin hypercube points to req
         dFF_n = scaling(dFF,lob,upb,1) # scale requirement to full space
         
+        # Sample the parameter space only
+        dFF_Pspace = scaling(dFF_lhs,lob,upb,2) # unscale latin hypercube points to req
+        dFF_n_Pspace = dFF_lhs # scale requirement to full space
+
         resultsfile=open(DOE_filepath,'wb')
         
         pickle.dump(dFF, resultsfile)
         pickle.dump(dFF_n, resultsfile)
-    
+        pickle.dump(dFF_Pspace, resultsfile)
+        pickle.dump(dFF_n_Pspace, resultsfile)
+
         resultsfile.close()
         
     else:
@@ -632,17 +740,20 @@ def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
         
         dFF = pickle.load(resultsfile)
         dFF_n = pickle.load(resultsfile)
+        dFF_Pspace = pickle.load(resultsfile)
+        dFF_n_Pspace = pickle.load(resultsfile)
     
         resultsfile.close()
 
     if req_type == "guassian":
         
         [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n)
-         
+        
+        #===================================================================#
         # capability constraints
          
         YX_cstr = np.reshape(YX - threshold, np.shape(dFF_n)[0])
-         
+        
         # Evaluate multivariate guassian
         res_sq = np.ceil(res**(0.5*len(lob))).astype(int) # size of equivalent square matrix
         pos = np.empty((res,1) + (len(lob),))
@@ -660,7 +771,7 @@ def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
  
         # Design space volume
         resiliance = np.sum(Z_feasible)/np.sum(Z)
-    
+
     elif req_type == "uniform":
             
         [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n)
@@ -670,6 +781,65 @@ def capability_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
         resiliance = len(cond_req_feas[cond_req_feas])/np.shape(dFF)[0]
         
     return resiliance
+
+def capability_calculation(server,bounds_req,bounds,res,threshold,
+                           new_LHS_MCI,LHS_MCI_file):
+    
+    from abaqus_postprocess import gridsamp
+    import numpy as np
+    import copy 
+    from scipy import integrate
+    from pyDOE import lhs
+    import pickle
+    import os
+    
+    lob = bounds[:,0]
+    upb = bounds[:,1]
+    
+    lob_req = bounds_req[:,0]
+    upb_req = bounds_req[:,1]
+
+    # LHS distribution
+    DOE_full_name = LHS_MCI_file +'.pkl'
+    DOE_filepath = os.path.join(os.getcwd(),'Optimization_studies',DOE_full_name)
+
+    if new_LHS_MCI: # generate new LHS for each Monte-Carlo Integration operation
+        # LHS distribution
+        dFF_lhs = lhs(len(lob), samples=res, criterion='center')
+        # Sample the requirements space only
+        dFF = scaling(dFF_lhs,lob_req,upb_req,2) # unscale latin hypercube points to req
+        dFF_n = scaling(dFF,lob,upb,1) # scale requirement to full space
+        
+        # Sample the parameter space only
+        dFF_Pspace = scaling(dFF_lhs,lob,upb,2) # unscale latin hypercube points to req
+        dFF_n_Pspace = dFF_lhs # scale requirement to full space
+
+        resultsfile=open(DOE_filepath,'wb')
+        
+        pickle.dump(dFF, resultsfile)
+        pickle.dump(dFF_n, resultsfile)
+        pickle.dump(dFF_Pspace, resultsfile)
+        pickle.dump(dFF_n_Pspace, resultsfile)
+
+        resultsfile.close()
+        
+    else:
+        resultsfile=open(DOE_filepath,'rb')
+        
+        dFF = pickle.load(resultsfile)
+        dFF_n = pickle.load(resultsfile)
+        dFF_Pspace = pickle.load(resultsfile)
+        dFF_n_Pspace = pickle.load(resultsfile)
+    
+        resultsfile.close()
+
+    [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n_Pspace)
+    cond_req_feas = (YX - threshold) > 0
+    
+    # Design space volume
+    capability = len(cond_req_feas[cond_req_feas])/np.shape(dFF_Pspace)[0]
+        
+    return capability
 
 def integrand_multivariate_gaussian(*arg):
     import numpy as np
@@ -824,7 +994,7 @@ def postprocess_DOE(index,base_name,current_path,DOE_folder,bounds,variable_lbls
 
 def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,variable_lbls,
                          threshold,resolution,plot_R_space,new_LHS_MCI,LHS_MCI_file,
-                         req_index,server,DOE_inputs,outputs,plt):
+                         req_index,server,DOE_inputs,outputs,plt,compute_capability):
     
     from abaqus_postprocess import hyperplane_SGTE_vis_norm
     from matplotlib import rc
@@ -860,10 +1030,17 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
 
     Sigma = np.diag(Sigma)
     
-    resiliance = capability_calculation(server, bounds_req, mu, Sigma, req_type, 
-                                        bounds, resolution, threshold, new_LHS_MCI, 
+    resiliance = resiliance_calculation(server,bounds_req,mu,Sigma,req_type, 
+                                        bounds,resolution,threshold,new_LHS_MCI, 
                                         LHS_MCI_file)
-    
+
+    if compute_capability:
+        R_volume = Rspace_calculation(server,bounds_req,mu,Sigma,req_type,bounds,resolution,threshold,
+                                    new_LHS_MCI,LHS_MCI_file)
+        
+        capability = capability_calculation(server,bounds_req,bounds,resolution,threshold,
+                                            new_LHS_MCI,LHS_MCI_file)
+
     #===========================================================================
     # Plot 2D projections
     if plot_R_space:
@@ -876,8 +1053,11 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
         fig_name = '%i_req_%i_%s_RS.pdf' %(index,req_index,base_name[1])
         fig_file_name = os.path.join(current_path,'Job_results','Results_log',fig_name)
         fig.savefig(fig_file_name, bbox_inches='tight')
-        
-    return resiliance 
+    
+    if compute_capability:
+        return resiliance, R_volume, capability
+    else:
+        return resiliance 
 
 def postprocess_nominal(index,base_name,current_path,permutation_index,concept,process_DOE,S_hoop_res_line,press_hoop_res_line):
     from abaqus_postprocess import hyperplane_SGTE_vis_norm, parallel_plots
@@ -916,7 +1096,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                             ax_pos, st_thick, st_width, laser_power, scanning_speed,
                             power_density, layer_length, layer_width, layer_thick,
                             n_layers, n_deposit, mesh_size, mesh_AM_size,
-                            melting_T, b_thick, process_DOE_requirements, sampling, index):
+                            melting_T, b_thick, process_DOE_requirements, sampling, new_LHS_MCI, index):
 
     import os, time
     import numpy as np
@@ -997,7 +1177,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
         ip_results = [0.0, 0.0, 0.0, 0.0]
         th_results = [0.0, 0.0, 0.0, 0.0]
         
-    process_IP = False; new_LHS_MCI = False; LHS_MCI_file = 'LHS_MCI_IP'
+    process_IP = False; LHS_MCI_file = 'LHS_MCI_IP'
     #--------------------------------------------------------------------------#
     # IP loadcase
     bounds_ip = np.array( [[-1.0, 1.0]] )
@@ -1037,23 +1217,27 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     req_list = [[req_type_1, req_type_2], [mu_nominal], [Sigma_nominal] ]
     req_combinations = list(itertools.product(*req_list)) 
     
-    req_index = 0; resiliance_ip_vec_nominal = []
+    req_index = 0; resiliance_ip_vec_nominal = []; R_volume_ip_vec_nominal = []; capability_ip_vec_nominal = []
     for req in req_combinations: # iterate over all combinations of requirements
         
         req_index += 1
         [req_type, mu, Sigma] = req
         
         if process_IP:
-            resiliance_ip = process_requirements(index,['DOE_ip_inputs','static_out_nominal'],
-                                                 current_path,bounds_ip,
-                                                 mu,Sigma,req_type,variable_lbls,threshold,
-                                                 resolution,False,new_LHS_MCI,LHS_MCI_file,
-                                                 req_index,server,DOE_inputs,outputs,plt)
+            resiliance_ip,R_volume_ip,capability_ip = process_requirements(index,['DOE_ip_inputs','static_out_nominal'],
+                                                      current_path,bounds_ip,
+                                                      mu,Sigma,req_type,variable_lbls,threshold,
+                                                      resolution,False,new_LHS_MCI,LHS_MCI_file,
+                                                      req_index,server,DOE_inputs,outputs,plt,True)
         else:
-            resiliance_ip = 0.0
+            resiliance_ip = 0.0; R_volume_ip = 0.0; capability_ip = 0.0
         
         resiliance_ip_vec_nominal += [resiliance_ip]
+        R_volume_ip_vec_nominal += [R_volume_ip]  
+        capability_ip_vec_nominal += [capability_ip]
         print('Nominal resiliance against pressure loads: %f' %(resiliance_ip))
+        print('Nominal requirement volume: %f' %(R_volume_ip))
+        print('Nominal capability: %f' %(capability_ip))
     
     plt.show()
     
@@ -1130,7 +1314,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                 resiliance_ip = process_requirements(index,base_name,current_path,bounds_ip,
                                                     mu,Sigma,req_type,variable_lbls,threshold,
                                                     resolution,False,new_LHS_MCI,LHS_MCI_file,
-                                                    req_index,server,DOE_inputs,outputs,plt)
+                                                    req_index,server,DOE_inputs,outputs,plt,False)
             else:
                 resiliance_ip = 0.0
             
@@ -1148,7 +1332,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     print("ANALYSIS COMPLETE")
     print("+================================================================+") 
        
-    process_TH = True; new_LHS_MCI = True; LHS_MCI_file = 'LHS_MCI_TH'
+    process_TH = True; LHS_MCI_file = 'LHS_MCI_TH'
     #--------------------------------------------------------------------------#
     # Thermal loadcase
     bounds_th = np.array( [[-100, 100],
@@ -1163,7 +1347,8 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     
     process_DOE = False
     # resolution = 1296 # sampling resolution for capability calculation (must be a square number)!
-    resolution = 50 # sampling resolution for capability calculation (must be a square number)!
+    resolution = 10000 # sampling resolution for capability calculation (must be a square number)!
+    # resolution = 50 # sampling resolution for capability calculation (must be a square number)!
     # threshold = 100000 # cutoff threshold for capability calculation
     threshold = 4.0 # cutoff threshold for capability calculation
     threshold = 2.8 # cutoff threshold for capability calculation
@@ -1194,23 +1379,27 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     req_list = [[req_type_1, req_type_2], [mu_nominal], [Sigma_nominal] ]
     req_combinations = list(itertools.product(*req_list)) 
     
-    req_index = 0; resiliance_th_vec_nominal = []
+    req_index = 0; resiliance_th_vec_nominal = []; R_volume_th_vec_nominal = []; capability_th_vec_nominal = []
     for req in req_combinations: # iterate over all combinations of requirements
         
         req_index += 1
         [req_type, mu, Sigma] = req
         
         if process_TH:
-            resiliance_th = process_requirements(index,['DOE_th_inputs','thermal_out_nominal'],
-                                                 current_path,bounds_th,
-                                                 mu,Sigma,req_type,variable_lbls,threshold,
-                                                 resolution,False,new_LHS_MCI,LHS_MCI_file,
-                                                 req_index,server,DOE_inputs,outputs,plt)
+            resiliance_th,R_volume_th,capability_th = process_requirements(index,['DOE_th_inputs','thermal_out_nominal'],
+                                                      current_path,bounds_th,
+                                                      mu,Sigma,req_type,variable_lbls,threshold,
+                                                      resolution,False,new_LHS_MCI,LHS_MCI_file,
+                                                      req_index,server,DOE_inputs,outputs,plt,True)
         else:
-            resiliance_th = 0.0
-            
+            resiliance_th = 0.0; R_volume_th = 0.0; capability_th = 0.0
+
         resiliance_th_vec_nominal += [resiliance_th]
+        R_volume_th_vec_nominal += [R_volume_th]  
+        capability_th_vec_nominal += [capability_th]
         print('Nominal resiliance against thermal loads: %f' %(resiliance_th))
+        print('Nominal requirement volume: %f' %(R_volume_th))
+        print('Nominal capability: %f' %(capability_th))
     
     plt.show()
     #===========================================================================
@@ -1283,7 +1472,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                 resiliance_th = process_requirements(index,base_name,current_path,bounds_th,
                                                 mu,Sigma,req_type,variable_lbls,threshold,
                                                 resolution,False,new_LHS_MCI,LHS_MCI_file,
-                                                req_index,server,DOE_inputs,outputs,plt)
+                                                req_index,server,DOE_inputs,outputs,plt,False)
             else:
                 resiliance_th = 0.0
                 
@@ -1397,8 +1586,10 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     design_data = [base_ip_results, base_th_results, ip_results, th_results, 
                    min(t_max), np.mean(p_n), np.mean(a_n), max(s_res), U_res[0],
                    float(volume)*density, btime, max(U_p_res_line), max(S_res_line),
-                   resiliance_ip_vec_nominal, resiliance_th_vec_nominal]
-    
+                   resiliance_ip_vec_nominal, resiliance_th_vec_nominal,
+                   R_volume_ip_vec_nominal, R_volume_th_vec_nominal,
+                   capability_ip_vec_nominal, capability_th_vec_nominal]
+
     resiliance_data = [resiliance_ip_vec, resiliance_th_vec, req_index]
 
     return design_data, resiliance_data
@@ -1476,7 +1667,8 @@ def main():
     T_ref =          float(paramText[25])
     
     run_base = 1; run_nominal = 1; new_LHS = False; process_DOE_requirements = True; sampling = 'fullfact'
-  
+    new_LHS_MCI = True
+
     # %% Sampling
     #========================== REQUIREMENTS SPACE LHS ============================#
         
@@ -1577,15 +1769,20 @@ def main():
                                               ax_pos, st_thick, st_width, laser_power, scanning_speed, 
                                               power_density, layer_length, layer_width, layer_thick, 
                                               n_layers, n_deposit, mesh_size, mesh_AM_size, 
-                                              melting_T, b_thick, process_DOE_requirements, sampling, index)
+                                              melting_T, b_thick, process_DOE_requirements, sampling, new_LHS_MCI, index)
         
         [resiliance_ip_vec,resiliance_th_vec,n_reqs] = resiliance_data
+        
+        new_LHS_MCI = False
         
         # %% Postprocessing
         [base_ip_results, base_th_results, ip_results, th_results, 
          temp, h_flux, h_area, S_residual, U_res, weight, build_time, 
-         max_res_U, max_res_S, resiliance_ip_vec_nominal, resiliance_th_vec_nominal] = design_data
- 
+         max_res_U, max_res_S, 
+         resiliance_ip_vec_nominal, resiliance_th_vec_nominal,
+         R_volume_ip_vec_nominal, R_volume_th_vec_nominal,
+         capability_ip_vec_nominal, capability_th_vec_nominal] = design_data
+
         [S_ip,N_ip,n_f_ip,U_ip] = ip_results
         [S_th,N_th,n_f_th,U_th] = th_results
         
@@ -1598,8 +1795,13 @@ def main():
                       'S_ip', 'N_ip', 'n_f_ip', 'U_ip', 'S_th', 'N_th', 'n_f_th', 'U_th',
                       'weight', 'temp', 'h_flux', 'h_area', 'S_residual', 
                       'U_res', 'max_T_pool', 'build_time', 'max_res_U', 
-                      'max_res_S', 'resiliance_ip_uni','resiliance_ip_gau',
-                      'resiliance_th_uni','resiliance_th_gau']
+                      'max_res_S', 
+                      'resiliance_ip_uni','resiliance_ip_gau',
+                      'R_volume_ip_uni','R_volume_ip_gau',
+                      'capability_ip_uni','capability_ip_gau',
+                      'resiliance_th_uni','resiliance_th_gau'
+                      'R_volume_th_uni','R_volume_th_gau',
+                      'capability_th_uni','capability_th_gau']
         
         req_titles = []
         for r_i in range(n_reqs):
@@ -1643,7 +1845,11 @@ def main():
                           +str(n_layers)+','+str(n_deposit)+','+str(layer_thick)+','+str(layer_width)+','+str(layer_length)+','
                           +','.join(map(str,out_data))+','
                           +','.join(map(str,resiliance_ip_vec_nominal))+','
-                          +','.join(map(str,resiliance_th_vec_nominal))+'\n')
+                          +','.join(map(str,R_volume_ip_vec_nominal))+','
+                          +','.join(map(str,capability_ip_vec_nominal))+','
+                          +','.join(map(str,resiliance_th_vec_nominal))+','
+                          +','.join(map(str,R_volume_th_vec_nominal))+','
+                          +','.join(map(str,capability_th_vec_nominal))+'\n')
         resultsfile.close()
 
         resultsfile_ip=open(full_filename_ip,'a+')
