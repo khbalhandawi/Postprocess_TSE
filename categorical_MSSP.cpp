@@ -113,7 +113,7 @@ vector< vector<double> >  read_csv_file(string filename) {
 	while (file.good())
 	{
 		getline(file, line, '\n'); // read a string until next comma: http://www.cplusplus.com/reference/string/getline/
-		
+
 
 		if (i == 0) {
 			title_vec = split_string_titles(line);
@@ -284,26 +284,28 @@ bool writeTofile_vector(vector<double> & matrix, ofstream *file) {
 
 // Function to display permutation vectors to cout
 vector<double> lookup_function(const vector<int> & input_deposits,
-							   const vector<vector<double>> & design_data,
-							   const vector<double> & resiliance_th) {
+	const vector<vector<double>> & design_data,
+	const vector<double> & resiliance_th) {
 
 	double W, R, count_eval;
 
-	vector<double> concept, i1, i2, i3, i4, n_f_th, weight;
+	vector<double> concept, i1, i2, i3, i4, i5, n_f_th, weight;
 
 	concept = design_data[1];
 	i1 = design_data[2];
 	i2 = design_data[3];
 	i3 = design_data[4];
 	i4 = design_data[5];
-	n_f_th = design_data[32];
-	weight = design_data[34];
+	i5 = design_data[6];
+	n_f_th = design_data[33];
+	weight = design_data[35];
+	
 	//resiliance_th = design_data[45];
 	// number of deposits:
 	int value;
-	
+
 	vector<int> input;
-	for (int i = 0; i < 5; ++i)
+	for (int i = 0; i < 6; ++i)
 	{
 		if (i < input_deposits.size()) {
 			value = static_cast<int> (input_deposits[i]); // get input vector
@@ -325,7 +327,7 @@ vector<double> lookup_function(const vector<int> & input_deposits,
 	{
 		lookup = { static_cast<int> (concept[i]), static_cast<int> (i1[i]),
 			static_cast<int> (i2[i]), static_cast<int> (i3[i]),
-			static_cast<int> (i4[i]) };
+			static_cast<int> (i4[i]), static_cast<int> (i5[i]) };
 
 		if (input == lookup) {
 			W = weight[i];
@@ -355,14 +357,14 @@ vector<double> lookup_function(const vector<int> & input_deposits,
 /*----------------------------------------*/
 class My_Evaluator : public NOMAD::Evaluator {
 public:
-	My_Evaluator ( const NOMAD::Parameters & p ) :
-    Evaluator ( p ) {}
-	
-	~My_Evaluator ( void ) {}
+	My_Evaluator(const NOMAD::Parameters & p) :
+		Evaluator(p) {}
 
-	bool eval_x (NOMAD::Eval_Point   & x          ,
-				 const NOMAD::Double & h_max      ,
-				 bool         & count_eval        ) const;
+	~My_Evaluator(void) {}
+
+	bool eval_x(NOMAD::Eval_Point   & x,
+		const NOMAD::Double & h_max,
+		bool         & count_eval) const;
 
 	int run_type;
 	vector<int> req_vec;
@@ -376,25 +378,25 @@ public:
 /*  user class to define categorical neighborhoods  */
 /*--------------------------------------------------*/
 class My_Extended_Poll : public NOMAD::Extended_Poll {
-	
-	private:
-	
-	// signatures for 1, 2, 3 or 4 assets:
-	NOMAD::Signature * _s1, * _s2, * _s3, * _s4, *_s5, *_s6;
 
-	public:
-	
+private:
+
+	// signatures for 1, 2, 3 or 4 assets:
+	NOMAD::Signature * _s1, *_s2, *_s3, *_s4, *_s5, *_s6;
+
+public:
+
 	// constructor:
-	My_Extended_Poll (NOMAD::Parameters & );
-	
+	My_Extended_Poll(NOMAD::Parameters &);
+
 	// destructor:
-	virtual ~My_Extended_Poll ( void ) { delete _s1; delete _s2; delete _s3; delete _s4; delete _s5; delete _s6; }
-	
+	virtual ~My_Extended_Poll(void) { delete _s1; delete _s2; delete _s3; delete _s4; delete _s5; delete _s6; }
+
 	// construct the extended poll points:
-	virtual void construct_extended_points ( const NOMAD::Eval_Point & );
-	
+	virtual void construct_extended_points(const NOMAD::Eval_Point &);
+
 	// Generate additional padded neighbourhoods:
-	virtual void shuffle_padding( const NOMAD::Eval_Point & x, vector<NOMAD::Point> *extended );
+	virtual void shuffle_padding(const NOMAD::Eval_Point & x, vector<NOMAD::Point> *extended);
 	virtual void shuffle_padding(const NOMAD::Point & x, vector<NOMAD::Point> *extended);
 
 	// Generate filled neighbourhoods:
@@ -409,15 +411,16 @@ vector<double> feasiblity_loop(const vector<vector<double>> & design_data,
 	My_Evaluator *ev,
 	My_Extended_Poll *ep) {
 
-	vector<double> concept, i1, i2, i3, i4, n_f_th, weight;
+	vector<double> concept, i1, i2, i3, i4, i5, n_f_th, weight;
 
 	concept = design_data[1];
 	i1 = design_data[2];
 	i2 = design_data[3];
 	i3 = design_data[4];
 	i4 = design_data[5];
-	n_f_th = design_data[32];
-	weight = design_data[34];
+	i5 = design_data[6];
+	n_f_th = design_data[33];
+	weight = design_data[35];
 
 	// number of branches
 	size_t k = n_f_th.size();
@@ -431,7 +434,7 @@ vector<double> feasiblity_loop(const vector<vector<double>> & design_data,
 
 		lookup = { static_cast<int> (concept[i]), static_cast<int> (i1[i]),
 			static_cast<int> (i2[i]), static_cast<int> (i3[i]),
-			static_cast<int> (i4[i]) };
+			static_cast<int> (i4[i]), static_cast<int> (i5[i]) };
 
 		NOMAD::Point xt(8);
 		xt[0] = 6;
@@ -497,7 +500,7 @@ vector<double> feasiblity_loop(const vector<vector<double>> & design_data,
 /*------------------------------------------*/
 /*            NOMAD main function           */
 /*------------------------------------------*/
-int main ( int argc , char ** argv ) {
+int main(int argc, char ** argv) {
 
 	// Input arguments
 	int n_stages = 6;
@@ -507,7 +510,7 @@ int main ( int argc , char ** argv ) {
 	int call_type;
 	vector<int> r_vec, eval_point;
 	vector<double> r_thresh;
-	
+
 	call_type = stoi(argv[1]);
 	string weight_file = argv[2];
 	string res_ip_file = argv[3];
@@ -532,28 +535,28 @@ int main ( int argc , char ** argv ) {
 	vector< vector<double> > resiliance_th_data = read_csv_file(input_file_th); // Make sure there are no empty lines !!
 
 	// NOMAD initializations:
-	NOMAD::begin (argc, argv);
-	
+	NOMAD::begin(argc, argv);
+
 	// display:
 	NOMAD::Display out(cout);
 	out.precision(NOMAD::DISPLAY_PRECISION_STD);
 
 	// check the number of processess:
-	#ifdef USE_MPI
-		if ( Slave::get_nb_processes() < 2 )
-		{
-			if ( Slave::is_master() )
-				cerr << "usage: \'mpirun -np p ./categorical\' with p>1"
-				<< endl;
-			end();
-			return EXIT_FAILURE;
-		}
-	#endif
-	
+#ifdef USE_MPI
+	if (Slave::get_nb_processes() < 2)
+	{
+		if (Slave::is_master())
+			cerr << "usage: \'mpirun -np p ./categorical\' with p>1"
+			<< endl;
+		end();
+		return EXIT_FAILURE;
+	}
+#endif
+
 	try {
-		
+
 		// parameters creation:
-		NOMAD::Parameters p ( out );
+		NOMAD::Parameters p(out);
 		//if (call_type == 0) { p.set_DISPLAY_DEGREE(0); } // turn off display
 		if (call_type == 1) { p.set_DISPLAY_DEGREE(0); } // turn off display
 		if (call_type == 2) { p.set_DISPLAY_DEGREE(0); } // turn off display
@@ -568,9 +571,9 @@ int main ( int argc , char ** argv ) {
 
 		// initial point
 		NOMAD::Point x0(3, 7);
-		x0[0] =  1;  // 1 deposit
-		x0[1] =  0;  // wave concept
-		x0[2] =  1;  // deposit type 1
+		x0[0] = 1;  // 1 deposit
+		x0[1] = 0;  // wave concept
+		x0[2] = 1;  // deposit type 1
 
 		p.set_X0(x0);
 
@@ -579,7 +582,7 @@ int main ( int argc , char ** argv ) {
 		// Categorical variables don't need bounds
 		//lb[0] = 1; ub[0] = 6;
 		lb[1] = 0; ub[1] = 1;
-		lb[2] = -1; ub[2] = 3;
+		lb[2] = -1; ub[2] = 4;
 
 		p.set_DIMENSION(3);
 
@@ -588,18 +591,18 @@ int main ( int argc , char ** argv ) {
 		p.set_BB_INPUT_TYPE(1, NOMAD::INTEGER);
 		p.set_BB_INPUT_TYPE(2, NOMAD::INTEGER);
 
-        //p.set_DISPLAY_DEGREE ( NOMAD::FULL_DISPLAY );
+		//p.set_DISPLAY_DEGREE ( NOMAD::FULL_DISPLAY );
 
-		p.set_BB_OUTPUT_TYPE ( bbot );
+		p.set_BB_OUTPUT_TYPE(bbot);
 
 		p.set_INITIAL_MESH_SIZE(2.0);
 
-		p.set_LOWER_BOUND ( lb );
-		p.set_UPPER_BOUND ( ub );
-		
-		p.set_DISPLAY_STATS ( "bbe ( sol ) obj" );
-		p.set_MAX_BB_EVAL ( 1200 );
-		p.set_H_MIN ( 1e-4 );
+		p.set_LOWER_BOUND(lb);
+		p.set_UPPER_BOUND(ub);
+
+		p.set_DISPLAY_STATS("bbe ( sol ) obj");
+		p.set_MAX_BB_EVAL(3000);
+		p.set_H_MIN(1e-4);
 		p.set_DISABLE_MODELS();
 		// extended poll trigger:
 		p.set_EXTENDED_POLL_ENABLED(true);
@@ -611,7 +614,7 @@ int main ( int argc , char ** argv ) {
 		p.check();
 
 		// custom evaluator creation:
-		My_Evaluator ev (p);
+		My_Evaluator ev(p);
 
 		// Pass parameters to blackbox
 		ev.run_type = call_type;
@@ -622,7 +625,7 @@ int main ( int argc , char ** argv ) {
 		ev.resiliance_th_data = resiliance_th_data;
 
 		// extended poll:
-		My_Extended_Poll ep ( p );
+		My_Extended_Poll ep(p);
 
 		// clear bb eval log file:
 		ofstream file("./MADS_output/mads_bb_calls.log", ofstream::out);
@@ -710,15 +713,16 @@ int main ( int argc , char ** argv ) {
 			feas_file.close();
 		}
 
-	} catch ( exception & e ) {
-		string error = string ( "NOMAD has been interrupted: " ) + e.what();
-		if (NOMAD::Slave::is_master() )
+	}
+	catch (exception & e) {
+		string error = string("NOMAD has been interrupted: ") + e.what();
+		if (NOMAD::Slave::is_master())
 			cerr << endl << error << endl << endl;
 	}
-	
-	NOMAD::Slave::stop_slaves ( out );
+
+	NOMAD::Slave::stop_slaves(out);
 	NOMAD::end();
-	
+
 	return EXIT_SUCCESS;
 }
 
@@ -726,8 +730,8 @@ int main ( int argc , char ** argv ) {
 /*                         eval_x                     */
 /*----------------------------------------------------*/
 bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
-						  const NOMAD::Double & h_max,
-						  bool         & count_eval) const {
+	const NOMAD::Double & h_max,
+	bool         & count_eval) const {
 
 	NOMAD::Double f, g1; // objective function
 
@@ -755,12 +759,12 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 		for (size_t k = 0; k < (n_stages); ++k) {
 
 			req_index = req_vec[k];
-			resiliance_th = resiliance_th_data[req_index + 5];
+			resiliance_th = resiliance_th_data[req_index + 6];
 
 			if (k < (x.size() - 2)) {
 				input_deposits.push_back(int(x[k + 2].value())); // get input vector
 			}
-
+			
 			// remove -1 deposits from input:
 			vector<int> lookup_vector;
 			for (size_t m = 0; m < input_deposits.size(); ++m) {
@@ -768,7 +772,7 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 					lookup_vector.push_back(input_deposits[m]);
 				}
 			}
-
+			
 			outputs = lookup_function(lookup_vector, design_data, resiliance_th);
 
 			if (outputs[2] == 1.0) {
@@ -814,7 +818,8 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 		ofstream file("./MADS_output/mads_bb_calls.log", ofstream::app);
 		writeTofile(output_log, &file);
 
-	} else if (!count_eval_lookup) {
+	}
+	else if (!count_eval_lookup) {
 		x.set_bb_output(0, NOMAD::INF);
 		x.set_bb_output(1, NOMAD::INF);
 		x.set_bb_output(2, NOMAD::INF);
@@ -827,7 +832,7 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 
 	}
 
-	if (run_type == 1) 	{ // if run type is an evaluation
+	if (run_type == 1) { // if run type is an evaluation
 		ofstream weight_file("./MADS_output/weight_design.log", ofstream::out);
 		writeTofile_vector(W_vector, &weight_file);
 		weight_file.close();
@@ -1115,7 +1120,7 @@ My_Extended_Poll::My_Extended_Poll(NOMAD::Parameters & p)
 /*--------------------------------------*/
 
 void insert_i(vector<int> in_list, int n_insert, int n_deposit, vector< vector<int> > & outputs, int depth = 0, int shift = 0) {
-		
+
 	depth = depth + 1;
 	vector<int> temp, out;
 	int i = -1;
@@ -1125,7 +1130,7 @@ void insert_i(vector<int> in_list, int n_insert, int n_deposit, vector< vector<i
 			temp.insert(temp.end(), i);
 		}
 		else {
-			temp.insert(temp.begin()+k, i);
+			temp.insert(temp.begin() + k, i);
 		}
 
 		out = temp;
@@ -1137,7 +1142,7 @@ void insert_i(vector<int> in_list, int n_insert, int n_deposit, vector< vector<i
 			// recurisive call to go into a nest loop
 			insert_i(out, n_insert, n_deposit, outputs, depth, k);
 		}
-		
+
 	}
 }
 
@@ -1516,8 +1521,8 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			y[3] = cur_type;
 			y[4] = other_types[k];
 
-			add_extended_poll_point(y, *_s3);
-			extended.push_back(y);
+			//add_extended_poll_point(y, *_s3);
+			//extended.push_back(y);
 			shuffle_padding(y, &extended);
 			fill_point(y, &extended);
 		}
@@ -1546,8 +1551,8 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			NOMAD::Point y = x;
 			y[4] = other_types_change[k];
 
-			add_extended_poll_point(y, *_s3);
-			extended.push_back(y);
+			//add_extended_poll_point(y, *_s3);
+			//extended.push_back(y);
 			shuffle_padding(y, &extended);
 		}
 
@@ -1561,8 +1566,8 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			y[4] = cur_type;
 			y[5] = other_types[k];
 
-			add_extended_poll_point(y, *_s4);
-			extended.push_back(y);
+			//add_extended_poll_point(y, *_s4);
+			//extended.push_back(y);
 			shuffle_padding(y, &extended);
 		}
 
@@ -1593,8 +1598,8 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			NOMAD::Point y = x;
 			y[5] = other_types_change[k];
 
-			add_extended_poll_point(y, *_s4);
-			extended.push_back(y);
+			//add_extended_poll_point(y, *_s4);
+			//extended.push_back(y);
 			shuffle_padding(y, &extended);
 		}
 
@@ -1609,8 +1614,8 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			y[5] = cur_type;
 			y[6] = other_types[k];
 
-			add_extended_poll_point(y, *_s5);
-			extended.push_back(y);
+			//add_extended_poll_point(y, *_s5);
+			//extended.push_back(y);
 			shuffle_padding(y, &extended);
 		}
 
@@ -1642,8 +1647,8 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			NOMAD::Point y = x;
 			y[6] = other_types_change[k];
 
-			add_extended_poll_point(y, *_s5);
-			extended.push_back(y);
+			//add_extended_poll_point(y, *_s5);
+			//extended.push_back(y);
 			shuffle_padding(y, &extended);
 		}
 
@@ -1659,8 +1664,8 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			y[6] = cur_type;
 			y[7] = other_types[k];
 
-			add_extended_poll_point(y, *_s6);
-			extended.push_back(y);
+			//add_extended_poll_point(y, *_s6);
+			//extended.push_back(y);
 			shuffle_padding(y, &extended);
 		}
 

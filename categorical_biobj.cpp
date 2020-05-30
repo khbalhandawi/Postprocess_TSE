@@ -231,7 +231,7 @@ class My_Extended_Poll : public NOMAD::Extended_Poll
 private:
 
 	// signatures for 1, 2, 3 or 4 assets:
-	NOMAD::Signature * _s1, *_s2, *_s3, *_s4;
+	NOMAD::Signature * _s1, *_s2, *_s3, *_s4, *_s5;
 
 public:
 
@@ -303,8 +303,8 @@ int main(int argc, char ** argv)
 		NOMAD::Point lb(3);
 		NOMAD::Point ub(3);
 		// Categorical variables don't need bounds
-		lb[1] = 0; ub[1] = 3;
-		lb[2] = 0; ub[2] = 3;
+		lb[1] = 0; ub[1] = 1;
+		lb[2] = 0; ub[2] = 4;
 
 		//p.set_DISPLAY_DEGREE ( NOMAD::FULL_DISPLAY );
 
@@ -419,20 +419,21 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 
 	count_eval = false;
 
-	vector<double> concept, i1, i2, i3, i4, n_f_th, weight, attribute;
+	vector<double> concept, i1, i2, i3, i4, i5, n_f_th, weight, attribute;
 	concept = design_data[1];
 	i1 = design_data[2];
 	i2 = design_data[3];
 	i3 = design_data[4];
 	i4 = design_data[5];
-	n_f_th = design_data[32];
-	weight = design_data[34];
+	i5 = design_data[6];
+	n_f_th = design_data[33];
+	weight = design_data[35];
 
 	if (req_index == 0) {
 		attribute = n_f_th; //n_safety
 	}
 	else {
-		attribute = resiliance_th_data[(5 + req_index)]; //req_index_i
+		attribute = resiliance_th_data[(6 + req_index)]; //req_index_i
 	}
 
 
@@ -441,7 +442,7 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 	int value;
 
 	vector<int> input;
-	for (int i = 0; i < 5; ++i)
+	for (int i = 0; i < 6; ++i)
 	{
 		if (i < (n + 1)) {
 			value = static_cast<int> (x[i + 1].value()); // get input vector
@@ -451,8 +452,6 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 		}
 		input.push_back(value);
 	}
-
-	//print_vector(input);
 
 	// number of branches
 	size_t k = n_f_th.size();
@@ -465,7 +464,7 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 	{
 		lookup = { static_cast<int> (concept[i]), static_cast<int> (i1[i]),
 			static_cast<int> (i2[i]), static_cast<int> (i3[i]),
-			static_cast<int> (i4[i]) };
+			static_cast<int> (i4[i]), static_cast<int> (i5[i]) };
 
 		if (input == lookup) {
 			f1 = -attribute[i];
@@ -501,7 +500,8 @@ My_Extended_Poll::My_Extended_Poll(NOMAD::Parameters & p)
 	_s1(NULL),
 	_s2(NULL),
 	_s3(NULL),
-	_s4(NULL)
+	_s4(NULL),
+	_s5(NULL)
 {
 	// signature for 1 asset:
 	// ----------------------
@@ -656,6 +656,51 @@ My_Extended_Poll::My_Extended_Poll(NOMAD::Parameters & p)
 			_p.out());
 
 	}
+	// signature for 5 deposits:
+	// -----------------------
+	{
+		vector<NOMAD::bb_input_type> bbit_5(7);
+		bbit_5[0] = NOMAD::CATEGORICAL;
+		bbit_5[1] = bbit_5[2] = bbit_5[3] = bbit_5[4] = bbit_5[5] = bbit_5[6] = NOMAD::INTEGER;
+
+		NOMAD::Point d0_5(7);
+		NOMAD::Point lb_5(7);
+		NOMAD::Point ub_5(7);
+
+		// Categorical variables don't need bounds
+		for (int i = 0; i < 7; ++i)
+		{
+			if (i == 0) {
+				bbit_5[i] = bbit_1[0];
+				d0_5[i] = d0_1[0];
+				lb_5[i] = lb_1[0];
+				ub_5[i] = ub_1[0];
+			}
+			else if (i == 1) {
+				bbit_5[i] = bbit_1[1];
+				d0_5[i] = d0_1[1];
+				lb_5[i] = lb_1[1];
+				ub_5[i] = ub_1[1];
+			}
+			else {
+				bbit_5[i] = bbit_1[2];
+				d0_5[i] = d0_1[2];
+				lb_5[i] = lb_1[2];
+				ub_5[i] = ub_1[2];
+			}
+		}
+
+		_s5 = new NOMAD::Signature(7,
+			bbit_5,
+			d0_5,
+			lb_5,
+			ub_5,
+			p.get_direction_types(),
+			p.get_sec_poll_dir_types(),
+			p.get_int_poll_dir_types(),
+			_p.out());
+
+	}
 }
 
 /*--------------------------------------*/
@@ -754,7 +799,7 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 					other_types = { 0,1 };
 					break;
 				case 1:
-					other_types = { 0,1,2,3 };
+					other_types = { 0,1,2,3,4 };
 					break;
 				}
 
@@ -778,7 +823,7 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 	// --------
 	else if (n == 2) {
 
-		vector<int> deposits = { 0,1,2,3 };
+		vector<int> deposits = { 0,1,2,3,4 };
 		vector<int> other_types;
 		deposits.erase(remove(deposits.begin(), deposits.end(), x[2]), deposits.end());
 		deposits.erase(remove(deposits.begin(), deposits.end(), x[3]), deposits.end());
@@ -836,7 +881,7 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 	else if (n == 3)
 	{
 
-		vector<int> deposits = { 0,1,2,3 };
+		vector<int> deposits = { 0,1,2,3,4 };
 		vector<int> other_types;
 		deposits.erase(remove(deposits.begin(), deposits.end(), x[2]), deposits.end());
 		deposits.erase(remove(deposits.begin(), deposits.end(), x[3]), deposits.end());
@@ -890,22 +935,83 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 
 	// 4 deposits:
 	// ---------
-	else {
+	else if (n == 4)
+	{
+
+		vector<int> deposits = { 0,1,2,3,4 };
+		vector<int> other_types;
+		deposits.erase(remove(deposits.begin(), deposits.end(), x[2]), deposits.end());
+		deposits.erase(remove(deposits.begin(), deposits.end(), x[3]), deposits.end());
+		deposits.erase(remove(deposits.begin(), deposits.end(), x[4]), deposits.end());
+		deposits.erase(remove(deposits.begin(), deposits.end(), x[5]), deposits.end());
+		other_types = deposits;
+
 		// current type of deposit
 		int cur_type = static_cast<int> (x[5].value());
 
 		// current type of concept:
 		int c = static_cast<int> (x[1].value());
 
+		// remove 1 deposit (1 neighbor):
+		{
+			NOMAD::Point y(5);
+			y[0] = 3;
+			y[1] = c;
+			y[2] = x[2];
+			y[3] = x[3];
+			y[4] = x[4];
+
+			add_extended_poll_point(y, *_s3);
+			extended.push_back(y);
+		}
+
+		// change the type of one deposit (1 neighbor):
+		for (size_t k = 0; k < other_types.size(); ++k)
+		{
+			NOMAD::Point y = x;
+			y[5] = other_types[k];
+
+			add_extended_poll_point(y, *_s4);
+			extended.push_back(y);
+		}
+
+		// add one deposit (1 neighbor):
+		for (size_t k = 0; k < other_types.size(); ++k)
+		{
+			NOMAD::Point y(7);
+			y[0] = 5;
+			y[1] = c;
+			y[2] = x[2];
+			y[3] = x[3];
+			y[4] = x[4];
+			y[5] = cur_type;
+			y[6] = other_types[k];
+
+			add_extended_poll_point(y, *_s5);
+			extended.push_back(y);
+		}
+
+	}
+
+	// 5 deposits:
+	// ---------
+	else if (n == 5) {
+		// current type of deposit
+		int cur_type = static_cast<int> (x[6].value());
+
+		// current type of concept:
+		int c = static_cast<int> (x[1].value());
+
 		// remove one deposit (1 neighbor):
-		NOMAD::Point y(5);
-		y[0] = 3;
+		NOMAD::Point y(6);
+		y[0] = 4;
 		y[1] = c;
 		y[2] = x[2];
 		y[3] = x[3];
 		y[4] = x[4];
+		y[5] = x[5];
 
-		add_extended_poll_point(y, *_s3);
+		add_extended_poll_point(y, *_s4);
 		extended.push_back(y);
 	}
 
