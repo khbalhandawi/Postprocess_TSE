@@ -994,7 +994,7 @@ def postprocess_DOE(index,base_name,current_path,DOE_folder,bounds,variable_lbls
 
 def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,variable_lbls,
                          threshold,resolution,plot_R_space,new_LHS_MCI,LHS_MCI_file,
-                         req_index,server,DOE_inputs,outputs,plt,compute_capability):
+                         req_index,server,DOE_inputs,outputs,plt,compute_margins):
     
     from abaqus_postprocess import hyperplane_SGTE_vis_norm
     from matplotlib import rc
@@ -1034,12 +1034,15 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
                                         bounds,resolution,threshold,new_LHS_MCI, 
                                         LHS_MCI_file)
 
-    if compute_capability:
+    if compute_margins:
         R_volume = Rspace_calculation(server,bounds_req,mu,Sigma,req_type,bounds,resolution,threshold,
                                     new_LHS_MCI,LHS_MCI_file)
-        
+
         capability = capability_calculation(server,bounds_req,bounds,resolution,threshold,
                                             new_LHS_MCI,LHS_MCI_file)
+
+        Buffer = R_volume * resiliance
+        Excess = capability - Buffer
 
     #===========================================================================
     # Plot 2D projections
@@ -1054,8 +1057,8 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
         fig_file_name = os.path.join(current_path,'Job_results','Results_log',fig_name)
         fig.savefig(fig_file_name, bbox_inches='tight')
     
-    if compute_capability:
-        return resiliance, R_volume, capability
+    if compute_margins:
+        return resiliance, R_volume, capability, Buffer, Excess
     else:
         return resiliance 
 
@@ -1216,28 +1219,34 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     
     req_list = [[req_type_1, req_type_2], [mu_nominal], [Sigma_nominal] ]
     req_combinations = list(itertools.product(*req_list)) 
-    
+
     req_index = 0; resiliance_ip_vec_nominal = []; R_volume_ip_vec_nominal = []; capability_ip_vec_nominal = []
+    buffer_ip_vec_nominal = []; excess_ip_vec_nominal = []
     for req in req_combinations: # iterate over all combinations of requirements
         
         req_index += 1
         [req_type, mu, Sigma] = req
         
         if process_IP:
-            resiliance_ip,R_volume_ip,capability_ip = process_requirements(index,['DOE_ip_inputs','static_out_nominal'],
-                                                      current_path,bounds_ip,
-                                                      mu,Sigma,req_type,variable_lbls,threshold,
-                                                      resolution,False,new_LHS_MCI,LHS_MCI_file,
-                                                      req_index,server,DOE_inputs,outputs,plt,True)
+            resiliance_ip, R_volume_ip, capability_ip, buffer_ip, excess_ip = process_requirements(
+                index,['DOE_ip_inputs','static_out_nominal'],
+                current_path,bounds_ip,
+                mu,Sigma,req_type,variable_lbls,threshold,
+                resolution,False,new_LHS_MCI,LHS_MCI_file,
+                req_index,server,DOE_inputs,outputs,plt,True)
         else:
-            resiliance_ip = 0.0; R_volume_ip = 0.0; capability_ip = 0.0
+            resiliance_ip = 0.0; R_volume_ip = 0.0; capability_ip = 0.0; buffer_ip = 0.0; excess_ip = 0.0
         
         resiliance_ip_vec_nominal += [resiliance_ip]
         R_volume_ip_vec_nominal += [R_volume_ip]  
         capability_ip_vec_nominal += [capability_ip]
+        buffer_ip_vec_nominal += [buffer_ip]
+        excess_ip_vec_nominal += [excess_ip]
         print('Nominal resiliance against pressure loads: %f' %(resiliance_ip))
         print('Nominal requirement volume: %f' %(R_volume_ip))
         print('Nominal capability: %f' %(capability_ip))
+        print('Nominal buffer: %f' %(buffer_ip))
+        print('Nominal excess: %f' %(excess_ip))
     
     plt.show()
     
@@ -1304,22 +1313,25 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     
     if process_DOE_requirements:
 
-        req_index = 0; resiliance_ip_vec = []
+        req_index = 0; resiliance_ip_vec = []; buffer_ip_vec = []; excess_ip_vec = []
         for req in req_combinations: # iterate over all combinations of requirements
             
             req_index += 1
             [req_type, mu, Sigma] = req
             
             if process_IP:
-                resiliance_ip = process_requirements(index,base_name,current_path,bounds_ip,
-                                                    mu,Sigma,req_type,variable_lbls,threshold,
-                                                    resolution,False,new_LHS_MCI,LHS_MCI_file,
-                                                    req_index,server,DOE_inputs,outputs,plt,False)
+                resiliance_ip,_,_,buffer_ip, excess_ip = process_requirements(
+                    index,base_name,current_path,bounds_ip,
+                    mu,Sigma,req_type,variable_lbls,threshold,
+                    resolution,False,new_LHS_MCI,LHS_MCI_file,
+                    req_index,server,DOE_inputs,outputs,plt,True)
             else:
-                resiliance_ip = 0.0
+                resiliance_ip = 0.0; buffer_ip = 0.0; excess_ip = 0.0
             
             resiliance_ip_vec += [resiliance_ip]
-            print('Resiliance against pressure loads: %f' %(resiliance_ip))
+            buffer_ip_vec += [buffer_ip]
+            excess_ip_vec += [excess_ip]
+            print('(IP) Resiliance: %f, Buffer: %f, Excess: %f' %(resiliance_ip,buffer_ip,excess_ip))
             
         if process_IP:
             server.sgtelib_server_stop()
@@ -1328,6 +1340,8 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
         plt.show()
     else:
         resiliance_ip_vec = [0.0] * len(req_combinations)
+        buffer_ip_vec = [0.0] * len(req_combinations)
+        excess_ip_vec = [0.0] * len(req_combinations)
         
     print("ANALYSIS COMPLETE")
     print("+================================================================+") 
@@ -1380,26 +1394,32 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     req_combinations = list(itertools.product(*req_list)) 
     
     req_index = 0; resiliance_th_vec_nominal = []; R_volume_th_vec_nominal = []; capability_th_vec_nominal = []
+    buffer_th_vec_nominal = []; excess_th_vec_nominal = []
     for req in req_combinations: # iterate over all combinations of requirements
         
         req_index += 1
         [req_type, mu, Sigma] = req
         
         if process_TH:
-            resiliance_th,R_volume_th,capability_th = process_requirements(index,['DOE_th_inputs','thermal_out_nominal'],
-                                                      current_path,bounds_th,
-                                                      mu,Sigma,req_type,variable_lbls,threshold,
-                                                      resolution,False,new_LHS_MCI,LHS_MCI_file,
-                                                      req_index,server,DOE_inputs,outputs,plt,True)
+            resiliance_th,R_volume_th,capability_th,buffer_th, excess_th = process_requirements(
+                index,['DOE_th_inputs','thermal_out_nominal'],
+                current_path,bounds_th,
+                mu,Sigma,req_type,variable_lbls,threshold,
+                resolution,False,new_LHS_MCI,LHS_MCI_file,
+                req_index,server,DOE_inputs,outputs,plt,True)
         else:
-            resiliance_th = 0.0; R_volume_th = 0.0; capability_th = 0.0
+            resiliance_th = 0.0; R_volume_th = 0.0; capability_th = 0.0; buffer_th = 0.0; excess_th = 0.0
 
         resiliance_th_vec_nominal += [resiliance_th]
         R_volume_th_vec_nominal += [R_volume_th]  
         capability_th_vec_nominal += [capability_th]
+        buffer_th_vec_nominal += [buffer_th]
+        excess_th_vec_nominal += [excess_th]
         print('Nominal resiliance against thermal loads: %f' %(resiliance_th))
         print('Nominal requirement volume: %f' %(R_volume_th))
         print('Nominal capability: %f' %(capability_th))
+        print('Nominal buffer: %f' %(buffer_th))
+        print('Nominal excess: %f' %(excess_th))
     
     plt.show()
     #===========================================================================
@@ -1462,22 +1482,25 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     
 
     if process_DOE_requirements:
-        req_index = 0; resiliance_th_vec = []
+        req_index = 0; resiliance_th_vec = []; buffer_th_vec = []; excess_th_vec = []
         for req in req_combinations: # iterate over all combinations of requirements
             
             req_index += 1
             [req_type, mu, Sigma] = req
             
             if process_TH:
-                resiliance_th = process_requirements(index,base_name,current_path,bounds_th,
-                                                mu,Sigma,req_type,variable_lbls,threshold,
-                                                resolution,False,new_LHS_MCI,LHS_MCI_file,
-                                                req_index,server,DOE_inputs,outputs,plt,False)
+                resiliance_th,_,_,buffer_th, excess_th = process_requirements(
+                    index,base_name,current_path,bounds_th,
+                    mu,Sigma,req_type,variable_lbls,threshold,
+                    resolution,False,new_LHS_MCI,LHS_MCI_file,
+                    req_index,server,DOE_inputs,outputs,plt,True)
             else:
-                resiliance_th = 0.0
+                resiliance_th = 0.0; buffer_th = 0.0; excess_th = 0.0
                 
             resiliance_th_vec += [resiliance_th]
-            print('Resiliance against thermal loads: %f' %(resiliance_th))
+            buffer_th_vec += [buffer_th]
+            excess_th_vec += [excess_th]
+            print('(TH) Resiliance: %f, Buffer: %f, Excess: %f' %(resiliance_th,buffer_th,excess_th))
             
         if process_TH:
             server.sgtelib_server_stop()
@@ -1486,6 +1509,8 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
         plt.show()
     else:
         resiliance_th_vec = [0.0] * len(req_combinations)
+        buffer_th_vec = [0.0] * len(req_combinations)
+        excess_th_vec = [0.0] * len(req_combinations)
         
     print("ANALYSIS COMPLETE")
     print("+================================================================+")   
@@ -1588,9 +1613,13 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                    float(volume)*density, btime, max(U_p_res_line), max(S_res_line),
                    resiliance_ip_vec_nominal, resiliance_th_vec_nominal,
                    R_volume_ip_vec_nominal, R_volume_th_vec_nominal,
-                   capability_ip_vec_nominal, capability_th_vec_nominal]
+                   capability_ip_vec_nominal, capability_th_vec_nominal,
+                   buffer_ip_vec_nominal, buffer_th_vec_nominal,
+                   excess_ip_vec_nominal, excess_th_vec_nominal]
 
-    resiliance_data = [resiliance_ip_vec, resiliance_th_vec, req_index]
+    resiliance_data = [resiliance_ip_vec, buffer_ip_vec, excess_ip_vec, 
+                       resiliance_th_vec, buffer_th_vec, excess_th_vec, 
+                       req_index]
 
     return design_data, resiliance_data
 
@@ -1771,7 +1800,8 @@ def main():
                                               n_layers, n_deposit, mesh_size, mesh_AM_size, 
                                               melting_T, b_thick, process_DOE_requirements, sampling, new_LHS_MCI, index)
         
-        [resiliance_ip_vec,resiliance_th_vec,n_reqs] = resiliance_data
+        [resiliance_ip_vec, buffer_ip_vec, excess_ip_vec, 
+         resiliance_th_vec, buffer_th_vec, excess_th_vec, n_reqs] = resiliance_data
         
         new_LHS_MCI = False
         
@@ -1781,14 +1811,15 @@ def main():
          max_res_U, max_res_S, 
          resiliance_ip_vec_nominal, resiliance_th_vec_nominal,
          R_volume_ip_vec_nominal, R_volume_th_vec_nominal,
-         capability_ip_vec_nominal, capability_th_vec_nominal] = design_data
+         capability_ip_vec_nominal, capability_th_vec_nominal,
+         buffer_ip_vec_nominal, buffer_th_vec_nominal,
+         excess_ip_vec_nominal, excess_th_vec_nominal] = design_data
 
         [S_ip,N_ip,n_f_ip,U_ip] = ip_results
         [S_th,N_th,n_f_th,U_th] = th_results
         
         [base_S_ip,base_N_ip,base_n_f_ip,base_U_ip] = base_ip_results
         [base_S_th,base_N_th,base_n_f_th,base_U_th] = base_th_results
- 
  
         out_titles = ['base_S_ip', 'base_N_ip', 'base_n_f_ip', 'base_U_ip', 
                       'base_S_th', 'base_N_th', 'base_n_f_th', 'base_U_th',
@@ -1799,9 +1830,13 @@ def main():
                       'resiliance_ip_uni','resiliance_ip_gau',
                       'R_volume_ip_uni','R_volume_ip_gau',
                       'capability_ip_uni','capability_ip_gau',
+                      'buffer_ip_uni','buffer_ip_gau',
+                      'excess_ip_uni','excess_ip_gau',
                       'resiliance_th_uni','resiliance_th_gau'
                       'R_volume_th_uni','R_volume_th_gau',
-                      'capability_th_uni','capability_th_gau']
+                      'capability_th_uni','capability_th_gau',
+                      'buffery_th_uni','buffer_th_gau',
+                      'excess_th_uni','excess_th_gau']
         
         req_titles = []
         for r_i in range(n_reqs):
@@ -1818,9 +1853,17 @@ def main():
         filename = "varout_opt_log.log"
         filename_ip = "resiliance_ip.log"
         filename_th = "resiliance_th.log"
+        filename_buffer_ip = "buffer_ip.log"
+        filename_buffer_th = "buffer_th.log"
+        filename_excess_ip = "excess_ip.log"
+        filename_excess_th = "excess_th.log"
         full_filename = os.path.join(current_path,'Optimization_studies',filename)
         full_filename_ip = os.path.join(current_path,'Optimization_studies',filename_ip)
         full_filename_th = os.path.join(current_path,'Optimization_studies',filename_th)
+        full_filename_buffer_ip = os.path.join(current_path,'Optimization_studies',filename_buffer_ip)
+        full_filename_buffer_th = os.path.join(current_path,'Optimization_studies',filename_buffer_th)
+        full_filename_excess_ip = os.path.join(current_path,'Optimization_studies',filename_excess_ip)
+        full_filename_excess_th = os.path.join(current_path,'Optimization_studies',filename_excess_th)
         
         if index == 1:
             resultsfile=open(full_filename,'w')
@@ -1837,6 +1880,22 @@ def main():
             resultsfile_th=open(full_filename_th,'w')
             resultsfile_th.write('index'+','+'concept'+','+'i1'+','+'i2'+','+'i3'+','+'i4'+','+'i5'+','
                               +','.join(req_titles)+'\n')
+
+            resultsfile_buffer_ip=open(full_filename_buffer_ip,'w')
+            resultsfile_buffer_ip.write('index'+','+'concept'+','+'i1'+','+'i2'+','+'i3'+','+'i4'+','+'i5'+','
+                                        +','.join(req_titles)+'\n')
+
+            resultsfile_buffer_th=open(full_filename_buffer_th,'w')
+            resultsfile_buffer_th.write('index'+','+'concept'+','+'i1'+','+'i2'+','+'i3'+','+'i4'+','+'i5'+','
+                                        +','.join(req_titles)+'\n')
+
+            resultsfile_excess_ip=open(full_filename_excess_ip,'w')
+            resultsfile_excess_ip.write('index'+','+'concept'+','+'i1'+','+'i2'+','+'i3'+','+'i4'+','+'i5'+','
+                                        +','.join(req_titles)+'\n')
+
+            resultsfile_excess_th=open(full_filename_excess_th,'w')
+            resultsfile_excess_th.write('index'+','+'concept'+','+'i1'+','+'i2'+','+'i3'+','+'i4'+','+'i5'+','
+                                        +','.join(req_titles)+'\n')
         
         resultsfile=open(full_filename,'a+')
         resultsfile.write(str(index)+','+str(concept)+','+','.join(map(str,permutation_index))+','
@@ -1847,9 +1906,13 @@ def main():
                           +','.join(map(str,resiliance_ip_vec_nominal))+','
                           +','.join(map(str,R_volume_ip_vec_nominal))+','
                           +','.join(map(str,capability_ip_vec_nominal))+','
+                          +','.join(map(str,buffer_ip_vec_nominal))+','
+                          +','.join(map(str,excess_ip_vec_nominal))+','
                           +','.join(map(str,resiliance_th_vec_nominal))+','
                           +','.join(map(str,R_volume_th_vec_nominal))+','
-                          +','.join(map(str,capability_th_vec_nominal))+'\n')
+                          +','.join(map(str,capability_th_vec_nominal))+','
+                          +','.join(map(str,buffer_th_vec_nominal))+','
+                          +','.join(map(str,excess_th_vec_nominal))+'\n')
         resultsfile.close()
 
         resultsfile_ip=open(full_filename_ip,'a+')
@@ -1861,6 +1924,26 @@ def main():
         resultsfile_th.write(str(index)+','+str(concept)+','+','.join(map(str,permutation_index))+','
                           +','.join(map(str,resiliance_th_vec))+'\n')
         resultsfile_th.close()
+
+        resultsfile_buffer_ip=open(full_filename_buffer_ip,'a+')
+        resultsfile_buffer_ip.write(str(index)+','+str(concept)+','+','.join(map(str,permutation_index))+','
+                          +','.join(map(str,buffer_ip_vec))+'\n')
+        resultsfile_buffer_ip.close()
+        
+        resultsfile_buffer_th=open(full_filename_buffer_th,'a+')
+        resultsfile_buffer_th.write(str(index)+','+str(concept)+','+','.join(map(str,permutation_index))+','
+                          +','.join(map(str,buffer_th_vec))+'\n')
+        resultsfile_buffer_th.close()
+
+        resultsfile_excess_ip=open(full_filename_excess_ip,'a+')
+        resultsfile_excess_ip.write(str(index)+','+str(concept)+','+','.join(map(str,permutation_index))+','
+                          +','.join(map(str,excess_ip_vec))+'\n')
+        resultsfile_excess_ip.close()
+        
+        resultsfile_excess_th=open(full_filename_excess_th,'a+')
+        resultsfile_excess_th.write(str(index)+','+str(concept)+','+','.join(map(str,permutation_index))+','
+                          +','.join(map(str,excess_th_vec))+'\n')
+        resultsfile_excess_th.close()
         
         print("\n--------------------------------------------------------------------------------\n")
 

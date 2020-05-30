@@ -40,7 +40,6 @@ upb = bounds_th[:,1]
 lob_req = bounds_req[:,0]
 upb_req = bounds_req[:,1]
 
-
 UB_n = scaling(upb_req,lob,upb,1)
 LB_n = scaling(lob_req,lob,upb,1)
 

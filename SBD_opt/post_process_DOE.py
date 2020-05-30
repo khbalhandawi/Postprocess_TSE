@@ -135,8 +135,8 @@ def plot_tradespace(attribute,filename_opt,filename_res,filename_weight,plot_tru
                 i += 1
             
             design_index_padded = copy.deepcopy(design_index)
-            if len(design_index) < 5:
-                design_index_padded += [-1]*(5-len(design_index))
+            if len(design_index) < 6:
+                design_index_padded += [-1]*(6-len(design_index))
             
             designs_padded += [design_index_padded]
             designs += [design_index]
@@ -200,14 +200,15 @@ def filtered_outdegree(dictionary_weight):
     design_list = []; FO = []
     for data in zip(dictionary_weight['concept'],
                     dictionary_weight['i1'],dictionary_weight['i2'],
-                    dictionary_weight['i3'],dictionary_weight['i4']):
+                    dictionary_weight['i3'],dictionary_weight['i4'],
+                    dictionary_weight['i5']):
         design_list += [[int(x) for x in data]]
 
         deposits = data[1:]
         if data[0] == 0: # wave stiffener
             FO += [2 - sum(d != -1 for d in deposits)]
         elif data[0] == 1: # hatched stiffener
-            FO += [4 - sum(d != -1 for d in deposits)]
+            FO += [5 - sum(d != -1 for d in deposits)]
 
     return FO
     
@@ -355,11 +356,11 @@ if __name__ == "__main__":
     
     plt.close('all')
 
-    filename_opt = 'req_opt_log_R50.log'
+    filename_opt = 'req_opt_log.log'
     filename_res = 'resiliance_th.log'
     filename_res_ip = 'resiliance_ip.log'
     filename_weight = 'varout_opt_log.log'
-    filename_feas = 'feasiblity_log_th0.99.log'
+    filename_feas = 'feasiblity_log.log'
 
     #attribute = ['n_f_th','Safety factor ($n_{safety}$)']
     attribute = ['$\mathbb{P}(\mathbf{T} \in C)$']
@@ -367,11 +368,11 @@ if __name__ == "__main__":
     # [fig, ax, dictionary, plot_h, designs] = plot_tradespace(attribute,True)
     [dictionary, dictionary_res, dictionary_weight, designs, designs_padded] = plot_tradespace(attribute,filename_opt,filename_res,filename_weight,False)
     [histogram,P_analysis_strip] = rank_designs(designs)
-    
     design_list = []
     for data in zip(dictionary_weight['concept'],
                     dictionary_weight['i1'],dictionary_weight['i2'],
-                    dictionary_weight['i3'],dictionary_weight['i4']):
+                    dictionary_weight['i3'],dictionary_weight['i4'],
+                    dictionary_weight['i5']):
         design_list += [[int(x) for x in data]]
     
     #==============================================================================
@@ -469,7 +470,7 @@ if __name__ == "__main__":
     # Histogram plot for robust designs
     # data for plotting histogram feasibility
 
-    n_bins = 20
+    n_bins = 10
     x = xR[:n_bins]
     y = yR[:n_bins]
     design_indices = [i + 1 for i in indices_robust[:n_bins]]
@@ -498,7 +499,7 @@ if __name__ == "__main__":
     # Histogram plot for flexible designs
     # data for plotting histogram feasibility
 
-    n_bins = 20
+    n_bins = 10
     x = xF[:n_bins]
     y = yF[:n_bins]
     design_indices = [i + 1 for i in indices_flexible[:n_bins]]
@@ -526,7 +527,7 @@ if __name__ == "__main__":
     # Histogram plot
     # data for plotting histogram SBD
 
-    n_bins = 20
+    n_bins = 10
     x = xS[:n_bins]
     y = yS[:n_bins]/(sum(yS)*0.01)
     design_indices = [i + 1 for i in indices[:n_bins]]
@@ -596,17 +597,18 @@ if __name__ == "__main__":
     # Pie chart plot   
     import matplotlib.gridspec as gridspec
 
-    d_types = [0,1,2,3]
+    d_types = [0,1,2,3,4]
     i1 = get_dstribution(d_types,1,designs_padded)
     i2 = get_dstribution(d_types,2,designs_padded)
     i3 = get_dstribution(d_types,3,designs_padded)
     i4 = get_dstribution(d_types,4,designs_padded)
+    i5 = get_dstribution(d_types,5,designs_padded)
     
     d_types = [0,1]
     c = get_dstribution(d_types,0,designs_padded)
     
-    gs = gridspec.GridSpec(2,2, 
-                           width_ratios = np.ones(2,dtype=int), 
+    gs = gridspec.GridSpec(2,3, 
+                           width_ratios = np.ones(3,dtype=int), 
                            height_ratios = np.ones(2,dtype=int))
     
     my_dpi = 100
@@ -614,14 +616,14 @@ if __name__ == "__main__":
     
     # Plot all stages
     iteraton = -1
-    for item in [i1,i2,i3,i4]:
+    for item in [i1,i2,i3,i4,i5]:
         
         iteraton += 1
         
         # Pie chart, where the slices will be ordered and plotted counter-clockwise:
-        labels = 'deposit 0', 'deposit 1', 'deposit 2', 'deposit 3'
+        labels = 'deposit 0', 'deposit 1', 'deposit 2', 'deposit 3', 'deposit 4'
         sizes = item
-        explode = (0, 0, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
+        explode = (0, 0, 0, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
         
         ax = fig.add_subplot(gs[iteraton]) # subplot
         ax.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
@@ -633,9 +635,9 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
         
     # Pie chart, where the slices will be ordered and plotted counter-clockwise:
-    labels = 'deposit 0', 'deposit 1', 'deposit 2', 'deposit 3'
+    labels = 'deposit 0', 'deposit 1', 'deposit 2', 'deposit 3', 'deposit 4'
     sizes = i1
-    explode = (0, 0, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
+    explode = (0, 0, 0, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
     
     ax = plt.gca()
     patches, texts, autotexts = ax.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',

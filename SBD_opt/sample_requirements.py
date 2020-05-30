@@ -23,15 +23,17 @@ def system_command(command):
         print(line.rstrip()) # print line by line
         # rstrip() to reomove \n separator
 
-def NOMAD_call(call_type,weight_file,res_ip_file,res_th_file,
+def NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
+               res_th_file,excess_th_file,
                req_vec,req_thresh,eval_point,MADS_output_dir):
 
     req_vec_str = ' '.join(map(str,req_vec)) # print variables as space demilited string
     req_thresh_str = ' '.join(map(str,req_thresh)) # print parameters as space demilited string
     eval_point_str = ' '.join(map(str,eval_point)) # print parameters as space demilited string
     
-    command = "categorical_MSSP %i %s %s %s %s %s %s" %(call_type,weight_file,res_ip_file,res_th_file,
-                                                        req_vec_str,req_thresh_str,eval_point_str)
+    command = "categorical_MSSP %i %i %s %s %s %s %s %s %s %s" %(call_type,obj_type,weight_file,res_ip_file,res_ip_file,
+                                                                 res_th_file,excess_th_file,
+                                                                 req_vec_str,req_thresh_str,eval_point_str)
     print(command)
     system_command(command)
     
@@ -169,7 +171,9 @@ def main():
     input_folder = 'Input_files'
     weight_file = 'varout_opt_log.log'
     res_ip_file = 'resiliance_ip.log'
+    excess_ip_file = 'excess_ip.log'
     res_th_file = 'resiliance_th.log'
+    excess_th_file = 'excess_th.log'
 
     MADS_output_dir = os.path.join(current_path,MADS_output_folder)
     DOE_dir = os.path.join(current_path,DOE_folder)
@@ -195,6 +199,8 @@ def main():
     #========================== OUTPUT VARIABLES LOG ==============================#
     filename = "req_opt_log.log"
     full_filename = os.path.join(DOE_out_dir,filename)
+    filename = "req_opt_E_log.log"
+    full_filename_E = os.path.join(DOE_out_dir,filename)
     filename = "feasiblity_log.log"
     feasiblity_filename = os.path.join(DOE_out_dir,filename)
     design_titles = []
@@ -212,30 +218,65 @@ def main():
         print("+============================================================+\n")
 
         req_thresh = [ 0.01, 0.1, 0.3, 0.3, 0.3, 0.9 ]
+
+        #====================================================================#
+        # Optimize with respect to cumulative weight
         eval_point = []
-        call_type = 0
+        call_type = 0; obj_type = 0
         req_vec = point
-        [opt] = NOMAD_call(call_type,weight_file,res_ip_file,res_th_file,
+        [opt] = NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
+                           res_th_file,excess_th_file,
                            req_vec,req_thresh,eval_point,MADS_output_dir)
         print(opt)
         
         eval_point = opt
         call_type = 1
-        [outs,weights] = NOMAD_call(call_type,weight_file,res_ip_file,res_th_file,
+        [outs,weights] = NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
+                                    res_th_file,excess_th_file,
                                     req_vec,req_thresh,eval_point,MADS_output_dir)
         
         resiliance = [thresh - item  for thresh,item in zip(req_thresh,outs[1::])] # resiliance values (P_th - P)
         f = outs[0] # objective function
 
+        #====================================================================#
+        # Optimize with respect to cumulative excess
+
         eval_point = []
-        call_type = 2
-        feasibility_vector = NOMAD_call(call_type,weight_file,res_ip_file,res_th_file,
+        call_type = 0; obj_type = 1
+        req_vec = point
+        [opt_E] = NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
+                           res_th_file,excess_th_file,
+                           req_vec,req_thresh,eval_point,MADS_output_dir)
+        print(opt_E)
+        
+        eval_point = opt_E
+        call_type = 1
+        [outs,excesses] = NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
+                                     res_th_file,excess_th_file,
+                                     req_vec,req_thresh,eval_point,MADS_output_dir)
+        
+        resiliance_E = [thresh - item  for thresh,item in zip(req_thresh,outs[1::])] # resiliance values (P_th - P)
+        f_E = outs[0] # objective function
+
+        #====================================================================#
+        # Find feasible designs with respect to requirement profile
+
+        eval_point = []
+        call_type = 2; obj_type = 0
+        feasibility_vector = NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
+                                        res_th_file,excess_th_file,
                                         req_vec,req_thresh,eval_point,MADS_output_dir)
 
         if index == 1: # initialize log file for writing
             resultsfile=open(full_filename,'w')
             resultsfile.write('index'+','+'n_stages'+','+'concept'+','+'s1'+','+'s2'+','+'s3'+','+'s4'+','+'s5'+','+'s6'+','
                               +'w1'+','+'w2'+','+'w3'+','+'w4'+','+'w5'+','+'w6'+','
+                              +'R1'+','+'R2'+','+'R3'+','+'R4'+','+'R5'+','+'R6'+','
+                              +'Total_weight'+'\n')
+
+            resultsfile_E=open(full_filename_E,'w')
+            resultsfile_E.write('index'+','+'n_stages'+','+'concept'+','+'s1'+','+'s2'+','+'s3'+','+'s4'+','+'s5'+','+'s6'+','
+                              +'E1'+','+'E2'+','+'E3'+','+'E4'+','+'E5'+','+'E6'+','
                               +'R1'+','+'R2'+','+'R3'+','+'R4'+','+'R5'+','+'R6'+','
                               +'Total_weight'+'\n')
             
@@ -247,6 +288,12 @@ def main():
                           +','.join(map(str,weights))+','
                           +','.join(map(str,resiliance))+','+str(f)+'\n')
         resultsfile.close()
+
+        resultsfile_E=open(full_filename_E,'a+')
+        resultsfile_E.write(str(index)+','+','.join(map(str,opt_E))+','
+                          +','.join(map(str,excesses))+','
+                          +','.join(map(str,resiliance_E))+','+str(f_E)+'\n')
+        resultsfile_E.close()
 
         feasiblityfile=open(feasiblity_filename,'a+')
         feasiblityfile.write(str(index)+','+','.join(map(str,feasibility_vector))+'\n')
