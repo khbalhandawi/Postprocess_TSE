@@ -285,9 +285,10 @@ bool writeTofile_vector(vector<double> & matrix, ofstream *file) {
 // Function to display permutation vectors to cout
 vector<double> lookup_function(const vector<int> & input_deposits,
 	const vector<vector<double>> & design_data,
-	const vector<double> & resiliance_th) {
+	const vector<double> & resiliance_th,
+	const vector<double> & excess_th) {
 
-	double W, R, count_eval;
+	double W, R, E, count_eval;
 
 	vector<double> concept, i1, i2, i3, i4, i5, n_f_th, weight;
 
@@ -299,7 +300,7 @@ vector<double> lookup_function(const vector<int> & input_deposits,
 	i5 = design_data[6];
 	n_f_th = design_data[33];
 	weight = design_data[35];
-	
+
 	//resiliance_th = design_data[45];
 	// number of deposits:
 	int value;
@@ -332,6 +333,7 @@ vector<double> lookup_function(const vector<int> & input_deposits,
 		if (input == lookup) {
 			W = weight[i];
 			R = resiliance_th[i];
+			E = excess_th[i];
 			count_eval = 1.0;
 			found = true;
 
@@ -345,7 +347,7 @@ vector<double> lookup_function(const vector<int> & input_deposits,
 		count_eval = 0.0;
 	}
 
-	return { W, R, count_eval };
+	return { W, R, E, count_eval };
 
 }
 //****************End of lookup_function funtion****************
@@ -366,10 +368,11 @@ public:
 		const NOMAD::Double & h_max,
 		bool         & count_eval) const;
 
-	int run_type;
+	int run_type, obj_type;
 	vector<int> req_vec;
 	vector<double> req_thresh;
-	vector<vector<double>> design_data, resiliance_ip_data, resiliance_th_data;
+	vector<vector<double>> design_data, resiliance_ip_data, excess_ip_data,
+		resiliance_th_data, excess_th_data;
 
 };
 
@@ -507,15 +510,18 @@ int main(int argc, char ** argv) {
 	int r_n, eval_point_n;
 	double r_thresh_n;
 
-	int call_type;
+	int call_type, obj_type;
 	vector<int> r_vec, eval_point;
 	vector<double> r_thresh;
 
 	call_type = stoi(argv[1]);
-	string weight_file = argv[2];
-	string res_ip_file = argv[3];
-	string res_th_file = argv[4];
-	int n_sargs = 5; // number of static arguments
+	obj_type = stoi(argv[2]);
+	string weight_file = argv[3];
+	string res_ip_file = argv[4];
+	string exc_ip_file = argv[5];
+	string res_th_file = argv[6];
+	string exc_th_file = argv[7];
+	int n_sargs = 8; // number of static arguments
 
 	for (int r_i = n_sargs; r_i < (n_stages + n_sargs); r_i++) {
 		r_n = stoi(argv[r_i]);
@@ -531,8 +537,12 @@ int main(int argc, char ** argv) {
 	vector< vector<double> > input_data = read_csv_file(input_file); // Make sure there are no empty lines !!
 	string input_file_ip = "./Input_files/" + res_ip_file;
 	vector< vector<double> > resiliance_ip_data = read_csv_file(input_file_ip); // Make sure there are no empty lines !!
+	string input_file_exc_ip = "./Input_files/" + exc_ip_file;
+	vector< vector<double> > excess_ip_data = read_csv_file(input_file_exc_ip); // Make sure there are no empty lines !!
 	string input_file_th = "./Input_files/" + res_th_file;
 	vector< vector<double> > resiliance_th_data = read_csv_file(input_file_th); // Make sure there are no empty lines !!
+	string input_file_exc_th = "./Input_files/" + exc_th_file;
+	vector< vector<double> > excess_th_data = read_csv_file(input_file_exc_th); // Make sure there are no empty lines !!
 
 	// NOMAD initializations:
 	NOMAD::begin(argc, argv);
@@ -618,11 +628,14 @@ int main(int argc, char ** argv) {
 
 		// Pass parameters to blackbox
 		ev.run_type = call_type;
+		ev.obj_type = obj_type;
 		ev.req_vec = r_vec;
 		ev.req_thresh = r_thresh;
 		ev.design_data = input_data;
 		ev.resiliance_ip_data = resiliance_ip_data;
+		ev.excess_ip_data = excess_ip_data;
 		ev.resiliance_th_data = resiliance_th_data;
+		ev.excess_th_data = excess_th_data;
 
 		// extended poll:
 		My_Extended_Poll ep(p);
@@ -736,35 +749,39 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 	NOMAD::Double f, g1; // objective function
 
 	int run_type = My_Evaluator::run_type;
+	int obj_type = My_Evaluator::obj_type;
 	vector<int> r_vec = My_Evaluator::req_vec; // get requirement vector
 	vector<double> r_thresh = My_Evaluator::req_thresh; // get threshold vector
 	vector<vector<double>> design_data = My_Evaluator::design_data; // get design data
 	vector<vector<double>> resiliance_ip_data = My_Evaluator::resiliance_ip_data; // get requirement matrix (IP)
+	vector<vector<double>> excess_ip_data = My_Evaluator::excess_ip_data; // get requirement matrix (IP)
 	vector<vector<double>> resiliance_th_data = My_Evaluator::resiliance_th_data; // get requirement matrix (TH)
+	vector<vector<double>> excess_th_data = My_Evaluator::excess_th_data; // get requirement matrix (TH)
 	//--------------------------------------------------------------//
 	// Read from data file
 
 	count_eval = false;
 	bool count_eval_lookup;
-	vector<double> outputs, W_vector, R_vector;
+	vector<double> outputs, W_vector, R_vector, E_vector;
 
 	int n_stages = 6;
-	double W_vector_sum = 0.0;
+	double W_vector_sum = 0.0, E_vector_sum = 0.0;
 	vector<int> input_deposits; // extract different deposit types
 	input_deposits.push_back(int(x[1].value())); // push back concept type
 	int req_index;
-	vector<double> resiliance_th;
+	vector<double> resiliance_th, excess_th;
 
 	if (x[0] == (x.size() - 2)) {
 		for (size_t k = 0; k < (n_stages); ++k) {
 
 			req_index = req_vec[k];
 			resiliance_th = resiliance_th_data[req_index + 6];
+			excess_th = excess_th_data[req_index + 6];
 
 			if (k < (x.size() - 2)) {
 				input_deposits.push_back(int(x[k + 2].value())); // get input vector
 			}
-			
+
 			// remove -1 deposits from input:
 			vector<int> lookup_vector;
 			for (size_t m = 0; m < input_deposits.size(); ++m) {
@@ -772,12 +789,13 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 					lookup_vector.push_back(input_deposits[m]);
 				}
 			}
-			
-			outputs = lookup_function(lookup_vector, design_data, resiliance_th);
+
+			outputs = lookup_function(lookup_vector, design_data, resiliance_th, excess_th);
 
 			if (outputs[2] == 1.0) {
 				W_vector.push_back(outputs[0]);
 				R_vector.push_back(outputs[1]);
+				E_vector.push_back(outputs[2]);
 				count_eval_lookup = true;
 				count_eval = true;
 
@@ -785,7 +803,7 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 				//cout << outputs[1] << endl;
 
 			}
-			else if (outputs[2] == 0.0) {
+			else if (outputs[3] == 0.0) {
 				count_eval_lookup = false;
 				count_eval = true;
 				break;
@@ -793,6 +811,7 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 
 
 			W_vector_sum += W_vector.back();
+			E_vector_sum += E_vector.back();
 		}
 	}
 
@@ -800,7 +819,12 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 	vector<double> Resiliance_constraint = r_thresh;
 
 	if (count_eval_lookup) {
-		x.set_bb_output(0, W_vector_sum);
+		if (obj_type == 0) { // set cumilative weight as objective
+			x.set_bb_output(0, W_vector_sum);
+		}
+		else if (obj_type == 1) { // set cumilative excess as objective
+			x.set_bb_output(0, E_vector_sum);
+		}
 		//x.set_bb_output(0, W_vector[5]);
 
 		// assign constraint vector:

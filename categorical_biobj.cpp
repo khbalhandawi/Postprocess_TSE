@@ -324,11 +324,11 @@ int main(int argc, char ** argv)
 		p.set_UPPER_BOUND(ub);
 
 		p.set_DISPLAY_STATS("bbe ( sol ) obj");
-		p.set_MAX_BB_EVAL(2000);
+		p.set_MAX_BB_EVAL(500);
 		p.set_MULTI_NB_MADS_RUNS(20);
 
 		// extended poll trigger:
-		p.set_EXTENDED_POLL_TRIGGER(10, true);
+		p.set_EXTENDED_POLL_TRIGGER(10, false);
 
 		// parameters validation:
 		p.check();
@@ -731,27 +731,42 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 		switch (cur_type) {
 		case 0:
 			other_types_c0.push_back(1);
+			other_types_c0.push_back(2);
 
 			other_types_c1.push_back(1);
 			other_types_c1.push_back(2);
 			other_types_c1.push_back(3);
+			other_types_c1.push_back(4);
 			break;
 		case 1:
 			other_types_c0.push_back(0);
+			other_types_c0.push_back(2);
 
 			other_types_c1.push_back(0);
 			other_types_c1.push_back(2);
 			other_types_c1.push_back(3);
+			other_types_c1.push_back(4);
 			break;
 		case 2:
+			other_types_c0.push_back(0);
+			other_types_c0.push_back(1);
+
 			other_types_c1.push_back(0);
 			other_types_c1.push_back(1);
 			other_types_c1.push_back(3);
+			other_types_c1.push_back(4);
 			break;
 		case 3:
 			other_types_c1.push_back(0);
 			other_types_c1.push_back(1);
 			other_types_c1.push_back(2);
+			other_types_c1.push_back(4);
+			break;
+		case 4:
+			other_types_c1.push_back(0);
+			other_types_c1.push_back(1);
+			other_types_c1.push_back(2);
+			other_types_c1.push_back(3);
 			break;
 		}
 
