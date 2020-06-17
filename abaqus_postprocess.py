@@ -462,7 +462,7 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 
 		ax.axis([lob[i[0]],upb[i[0]],lob[i[1]],upb[i[1]]]) # fix the axis limits
 		
-		ax.plot(dFF[:,i[0]],dFF[:,i[1]],'.k', markersize = 3) # plot DOE points for surrogate
+		ax.plot(dFF[:50,i[0]],dFF[:50,i[1]],'.k', markersize = 3) # plot DOE points for surrogate (first 50 only)
 		a_MCI = mlines.Line2D([], [], color='black', marker='.', markersize=5, linestyle='')
 		# ax.plot(S[:,i[0]],S[:,i[1]],'.k') # plot DOE points for surrogate
 	

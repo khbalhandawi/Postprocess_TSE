@@ -692,6 +692,8 @@ def Rspace_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,threshold,
         # Design space volume
         R_volume = np.prod(UB_n - LB_n)
 
+    print('Requirement volume: %f' %(R_volume))
+
     return R_volume
 
 def resiliance_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,threshold,
@@ -748,7 +750,11 @@ def resiliance_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
     if req_type == "guassian":
         
         [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n)
-        
+        print("================== RESILIANCE ====================")
+        print(np.min(dFF_n, axis=0))
+        print(min(np.min(YX, axis=0)))
+        print(np.max(dFF_n, axis=0))
+        print(min(np.max(YX, axis=0)))
         #===================================================================#
         # capability constraints
          
@@ -776,7 +782,12 @@ def resiliance_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
             
         [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n)
         cond_req_feas = (YX - threshold) > 0
-        
+
+        print("================== RESILIANCE ====================")
+        print(np.min(dFF_n, axis=0))
+        print(min(np.min(YX, axis=0)))
+        print(np.max(dFF_n, axis=0))
+        print(min(np.max(YX, axis=0)))
         # Design space volume
         resiliance = len(cond_req_feas[cond_req_feas])/np.shape(dFF)[0]
         
@@ -834,6 +845,11 @@ def capability_calculation(server,bounds_req,bounds,res,threshold,
         resultsfile.close()
 
     [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n_Pspace)
+    
+    print("================== CAPABILITY ====================")
+    print(min(np.min(YX, axis=0)))
+    print(min(np.max(YX, axis=0)))
+
     cond_req_feas = (YX - threshold) > 0
     
     # Design space volume
@@ -950,6 +966,8 @@ def postprocess_DOE(index,base_name,current_path,DOE_folder,bounds,variable_lbls
         permutation_index = pickle.load(backupfile)
         backupfile.close()
         
+        print(backup_filepath)
+
         # Load results as outputs
         index_DOE = 0; outputs = np.array([])
         print("+================================================================+")
@@ -1029,7 +1047,7 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
     #===========================================================================
 
     Sigma = np.diag(Sigma)
-    
+
     resiliance = resiliance_calculation(server,bounds_req,mu,Sigma,req_type, 
                                         bounds,resolution,threshold,new_LHS_MCI, 
                                         LHS_MCI_file)
@@ -1189,8 +1207,8 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     
     process_DOE = False
     resolution = 100 # sampling resolution for capability calculation (must be a square number)!
-    threshold = 4.0 # cutoff threshold for capability calculation
-    threshold = 2.6 # cutoff threshold for capability calculation
+    # threshold = 4.0 # cutoff threshold for capability calculation
+    threshold = 2.8 # cutoff threshold for capability calculation
     
     DOE_folder = 'IP_DOE_results'; base_name = ['DOE_ip_inputs','static_out']
     variable_lbls_pc = ['IP_V']
@@ -1232,7 +1250,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                 index,['DOE_ip_inputs','static_out_nominal'],
                 current_path,bounds_ip,
                 mu,Sigma,req_type,variable_lbls,threshold,
-                resolution,False,new_LHS_MCI,LHS_MCI_file,
+                resolution,True,new_LHS_MCI,LHS_MCI_file,
                 req_index,server,DOE_inputs,outputs,plt,True)
         else:
             resiliance_ip = 0.0; R_volume_ip = 0.0; capability_ip = 0.0; buffer_ip = 0.0; excess_ip = 0.0
@@ -1248,7 +1266,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
         print('Nominal buffer: %f' %(buffer_ip))
         print('Nominal excess: %f' %(excess_ip))
     
-    plt.show()
+    # plt.show()
     
     #===========================================================================
     # IP loadcase guassian parameters (DOE values)
@@ -1337,7 +1355,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
             server.sgtelib_server_stop()
             server.server_print(server.server_process) # print console output
     
-        plt.show()
+        # plt.show()
     else:
         resiliance_ip_vec = [0.0] * len(req_combinations)
         buffer_ip_vec = [0.0] * len(req_combinations)
@@ -1364,7 +1382,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     resolution = 10000 # sampling resolution for capability calculation (must be a square number)!
     # resolution = 50 # sampling resolution for capability calculation (must be a square number)!
     # threshold = 100000 # cutoff threshold for capability calculation
-    threshold = 4.0 # cutoff threshold for capability calculation
+    # threshold = 4.0 # cutoff threshold for capability calculation
     threshold = 2.8 # cutoff threshold for capability calculation
     
     DOE_folder = 'Thermal_DOE_results'; base_name = ['DOE_th_inputs','thermal_out']
@@ -1421,7 +1439,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
         print('Nominal buffer: %f' %(buffer_th))
         print('Nominal excess: %f' %(excess_th))
     
-    plt.show()
+    # plt.show()
     #===========================================================================
     # Thermal loadcase guassian parameters (DOE values)
     DOE_full_name = 'req_distribution_TH_LHS_data'+'.pkl'
@@ -1506,7 +1524,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
             server.sgtelib_server_stop()
             server.server_print(server.server_process) # print console output
         
-        plt.show()
+        # plt.show()
     else:
         resiliance_th_vec = [0.0] * len(req_combinations)
         buffer_th_vec = [0.0] * len(req_combinations)
@@ -1620,6 +1638,8 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     resiliance_data = [resiliance_ip_vec, buffer_ip_vec, excess_ip_vec, 
                        resiliance_th_vec, buffer_th_vec, excess_th_vec, 
                        req_index]
+
+    plt.close('all')
 
     return design_data, resiliance_data
 
@@ -1782,11 +1802,11 @@ def main():
     index = 0
     # index = 63
     # P_analysis = [P_analysis[63]] # for testing
-    # index = 306
-    # P_analysis = P_analysis[306::] # for testing
+    index = 39
+    P_analysis = P_analysis[39::] # for testing
     for P_i in P_analysis:
         index += 1
-        
+        print(P_i)
         concept = P_i[0]
         permutation_index = P_i[1::]
         
@@ -1802,9 +1822,7 @@ def main():
         
         [resiliance_ip_vec, buffer_ip_vec, excess_ip_vec, 
          resiliance_th_vec, buffer_th_vec, excess_th_vec, n_reqs] = resiliance_data
-        
-        new_LHS_MCI = False
-        
+
         # %% Postprocessing
         [base_ip_results, base_th_results, ip_results, th_results, 
          temp, h_flux, h_area, S_residual, U_res, weight, build_time, 
@@ -1832,7 +1850,7 @@ def main():
                       'capability_ip_uni','capability_ip_gau',
                       'buffer_ip_uni','buffer_ip_gau',
                       'excess_ip_uni','excess_ip_gau',
-                      'resiliance_th_uni','resiliance_th_gau'
+                      'resiliance_th_uni','resiliance_th_gau',
                       'R_volume_th_uni','R_volume_th_gau',
                       'capability_th_uni','capability_th_gau',
                       'buffery_th_uni','buffer_th_gau',
