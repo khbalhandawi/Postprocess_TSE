@@ -646,43 +646,51 @@ def Rspace_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,threshold,
 
     if req_type == "guassian":
 
-        #===================================================================#
-        # Compute excess
+        # #===================================================================#
+        # # Compute excess
 
-        # 1,2,3 Sigma level contour
-        L = []
-        for n in range(3):
-            # Pack X and Y into a single 3-dimensional array
-            pos = np.empty((1,1) + (len(lob),))
-            x_l = [ mu[0] + ((n+1) * np.sqrt(Sigma[0,0])), # evaluate at Sigma not Sigma^2
-                    mu[1]                                ,
-                    mu[2]                                ,
-                    mu[3]                                ]
+        # # 1,2,3 Sigma level contour
+        # L = []
+        # for n in range(3):
+        #     # Pack X and Y into a single 3-dimensional array
+        #     pos = np.empty((1,1) + (len(lob),))
+        #     x_l = [ mu[0] + ((n+1) * np.sqrt(Sigma[0,0])), # evaluate at Sigma not Sigma^2
+        #             mu[1]                                ,
+        #             mu[2]                                ,
+        #             mu[3]                                ]
             
-            level_index = 0
-            for value in x_l:
-                pos[:, :, level_index] = value
-                level_index += 1
+        #     level_index = 0
+        #     for value in x_l:
+        #         pos[:, :, level_index] = value
+        #         level_index += 1
                 
-            LN = multivariate_gaussian(pos, mu, Sigma)
-            L += [LN]
+        #     LN = multivariate_gaussian(pos, mu, Sigma)
+        #     L += [LN]
 
-        # Evaluate multivariate guassian
-        pos = np.empty((res,1) + (len(lob),))
+        # # Evaluate multivariate guassian
+        # pos = np.empty((res,1) + (len(lob),))
            
-        for i in range(len(lob)):
-            X_norm = np.reshape(dFF_n_Pspace[:,i],(res,1))
-            # Pack X1, X2 ... Xk into a single 3-dimensional array
-            pos[:, :, i] = X_norm
+        # for i in range(len(lob)):
+        #     X_norm = np.reshape(dFF_n_Pspace[:,i],(res,1))
+        #     # Pack X1, X2 ... Xk into a single 3-dimensional array
+        #     pos[:, :, i] = X_norm
          
-        Z = multivariate_gaussian(pos, mu, Sigma)
-        Z = np.reshape(Z, np.shape(dFF_n_Pspace)[0])
+        # Z = multivariate_gaussian(pos, mu, Sigma)
+        # Z = np.reshape(Z, np.shape(dFF_n_Pspace)[0])
             
-        Z_req = copy.deepcopy(Z)
-        cond_requirement = (Z_req - L) >= 0
+        # Z_req = copy.deepcopy(Z)
+        
+        # cond_requirement = (Z_req - L[-1]) >= 0
+
+        # # Design space volume
+        # R_volume = len(cond_requirement[cond_requirement])/np.shape(dFF_n_Pspace)[0]
+
+        # Analytical volume of an ellipsoid
+        UB_n = scaling(upb_req,lob,upb,1)
+        LB_n = scaling(lob_req,lob,upb,1)
         
         # Design space volume
-        R_volume = len(cond_requirement[cond_requirement])/np.shape(dFF_n_Pspace)[0]
+        R_volume = np.prod(UB_n - LB_n) * ((np.pi**2)/32)
 
     elif req_type == "uniform":
             
@@ -692,7 +700,7 @@ def Rspace_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,threshold,
         # Design space volume
         R_volume = np.prod(UB_n - LB_n)
 
-    print('Requirement volume: %f' %(R_volume))
+    # print('Requirement volume: %f' %(R_volume))
 
     return R_volume
 
@@ -750,11 +758,11 @@ def resiliance_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
     if req_type == "guassian":
         
         [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n)
-        print("================== RESILIANCE ====================")
-        print(np.min(dFF_n, axis=0))
-        print(min(np.min(YX, axis=0)))
-        print(np.max(dFF_n, axis=0))
-        print(min(np.max(YX, axis=0)))
+        # print("================== RESILIANCE ====================")
+        # print(np.min(dFF_n, axis=0))
+        # print(min(np.min(YX, axis=0)))
+        # print(np.max(dFF_n, axis=0))
+        # print(min(np.max(YX, axis=0)))
         #===================================================================#
         # capability constraints
          
@@ -783,11 +791,11 @@ def resiliance_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
         [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n)
         cond_req_feas = (YX - threshold) > 0
 
-        print("================== RESILIANCE ====================")
-        print(np.min(dFF_n, axis=0))
-        print(min(np.min(YX, axis=0)))
-        print(np.max(dFF_n, axis=0))
-        print(min(np.max(YX, axis=0)))
+        # print("================== RESILIANCE ====================")
+        # print(np.min(dFF_n, axis=0))
+        # print(min(np.min(YX, axis=0)))
+        # print(np.max(dFF_n, axis=0))
+        # print(min(np.max(YX, axis=0)))
         # Design space volume
         resiliance = len(cond_req_feas[cond_req_feas])/np.shape(dFF)[0]
         
@@ -846,9 +854,9 @@ def capability_calculation(server,bounds_req,bounds,res,threshold,
 
     [YX, std, ei, cdf] = server.sgtelib_server_predict(dFF_n_Pspace)
     
-    print("================== CAPABILITY ====================")
-    print(min(np.min(YX, axis=0)))
-    print(min(np.max(YX, axis=0)))
+    # print("================== CAPABILITY ====================")
+    # print(min(np.min(YX, axis=0)))
+    # print(min(np.max(YX, axis=0)))
 
     cond_req_feas = (YX - threshold) > 0
     
