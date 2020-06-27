@@ -996,7 +996,7 @@ def postprocess_DOE(index,base_name,current_path,DOE_folder,bounds,variable_lbls
     Y = outputs; S_n = scaling(DOE_inputs, lob, upb, 1)
     # fitting_names = ['KRIGING','LOWESS','KS','RBF','PRS','ENSEMBLE'];
     # fit_type = 1; run_type = 2; # use pre-optimized hyperparameters
-    fit_type = 5; run_type = 1 # optimize all hyperparameters
+    fit_type = 5; run_type = 2 # optimize all hyperparameters
     model,sgt_file = define_SGTE_model(fit_type,run_type)
     server = SGTE_server(model)
     server.sgtelib_server_start()
@@ -1073,7 +1073,7 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
     #===========================================================================
     # Plot 2D projections
     if plot_R_space:
-        nominal = [0.5]*len(variable_lbls); nn = 150
+        nominal = [0.5]*len(variable_lbls); nn = 50
         fig = plt.figure()  # create a figure object
         
         hyperplane_SGTE_vis_norm(server,DOE_inputs,bounds,bounds_req,LHS_MCI_file,mu,Sigma,req_type,variable_lbls,
@@ -1310,7 +1310,13 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
         mus = list(linfit([1,2,3,4,5]))
         linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
         Sigmas = list(linfit([1,2,3,4,5]))
-    
+
+        # # USE THIS IF YOU WANT TO PLOT A FEW CASES AS AN EXAMPLE
+        # linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
+        # mus = list(linfit([2,4]))
+        # linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
+        # Sigmas = list(linfit([2,5]))
+
         Sigma_2s = []
         for Sigma in Sigmas:
             Sigma_2 = (Sigma/3)**2
@@ -1431,7 +1437,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                 index,['DOE_th_inputs','thermal_out_nominal'],
                 current_path,bounds_th,
                 mu,Sigma,req_type,variable_lbls,threshold,
-                resolution,False,new_LHS_MCI,LHS_MCI_file,
+                resolution,True,new_LHS_MCI,LHS_MCI_file,
                 req_index,server,DOE_inputs,outputs,plt,True)
         else:
             resiliance_th = 0.0; R_volume_th = 0.0; capability_th = 0.0; buffer_th = 0.0; excess_th = 0.0
@@ -1475,14 +1481,20 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
         Sigma_1 = lob_req[4::] # Sigma^2
         Sigma_2 = upb_req[4::] # Sigma^2
     
-        # linearly interpolate between two vectors
+        # # linearly interpolate between two vectors
         from scipy.interpolate import interp1d
     
-        linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
-        mus = list(linfit([1,2,3,4,5]))
-        linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
-        Sigmas = list(linfit([1,2,3,4,5]))
+        # linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
+        # mus = list(linfit([1,2,3,4,5]))
+        # linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
+        # Sigmas = list(linfit([1,2,3,4,5]))
     
+        # USE THIS IF YOU WANT TO PLOT A FEW CASES AS AN EXAMPLE
+        linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
+        mus = list(linfit([2,4]))
+        linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
+        Sigmas = list(linfit([2,5]))
+
         Sigma_2s = []
         for Sigma in Sigmas:
             Sigma_2 = (Sigma/3)**2
@@ -1518,7 +1530,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                 resiliance_th,_,_,buffer_th, excess_th = process_requirements(
                     index,base_name,current_path,bounds_th,
                     mu,Sigma,req_type,variable_lbls,threshold,
-                    resolution,False,new_LHS_MCI,LHS_MCI_file,
+                    resolution,True,new_LHS_MCI,LHS_MCI_file,
                     req_index,server,DOE_inputs,outputs,plt,True)
             else:
                 resiliance_th = 0.0; buffer_th = 0.0; excess_th = 0.0
@@ -1723,7 +1735,7 @@ def main():
     H_subs =         float(paramText[24])
     T_ref =          float(paramText[25])
     
-    run_base = 1; run_nominal = 1; new_LHS = False; process_DOE_requirements = True; sampling = 'fullfact'
+    run_base = 0; run_nominal = 1; new_LHS = False; process_DOE_requirements = True; sampling = 'fullfact'
     new_LHS_MCI = True
 
     # %% Sampling
@@ -1808,10 +1820,10 @@ def main():
     #============================= MAIN EXECUTION =================================#
     
     index = 0
-    # index = 63
-    # P_analysis = [P_analysis[63]] # for testing
-    index = 39
-    P_analysis = P_analysis[39::] # for testing
+    index = 110 - 1
+    P_analysis = [P_analysis[110 - 1]] # for testing
+    # index = 340
+    # P_analysis = P_analysis[340::] # for testing
     for P_i in P_analysis:
         index += 1
         print(P_i)
@@ -1861,7 +1873,7 @@ def main():
                       'resiliance_th_uni','resiliance_th_gau',
                       'R_volume_th_uni','R_volume_th_gau',
                       'capability_th_uni','capability_th_gau',
-                      'buffery_th_uni','buffer_th_gau',
+                      'buffer_th_uni','buffer_th_gau',
                       'excess_th_uni','excess_th_gau']
         
         req_titles = []

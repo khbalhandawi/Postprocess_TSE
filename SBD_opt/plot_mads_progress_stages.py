@@ -25,7 +25,8 @@ class PlotOptimizationProgress():
     """
 
     # pass extra data (the distance matrix) into the constructor
-    def __init__(self, state, req_vec, req_thresh, MADS_output_dir, opt_bb_calls, fig_R, fig_W):
+    def __init__(self, state, req_vec, req_thresh, MADS_output_dir, opt_bb_calls, fig_R, fig_W,
+                 obj_type, weight_file,res_ip_file,excess_ip_file,res_th_file,excess_th_file):
         self.req_vec = req_vec
         self.req_thresh = req_thresh
         self.MADS_output_dir = MADS_output_dir
@@ -36,6 +37,12 @@ class PlotOptimizationProgress():
         self.state = []
         self.line_R = []
         self.line_W = []
+        self.obj_type = obj_type
+        self.weight_file = weight_file
+        self.res_ip_file = res_ip_file
+        self.excess_ip_file = excess_ip_file
+        self.res_th_file = res_th_file
+        self.excess_th_file = excess_th_file
 
     def move(self):
         """Get the branch components"""
@@ -48,9 +55,16 @@ class PlotOptimizationProgress():
         req_thresh = self.req_thresh
         MADS_output_dir = self.MADS_output_dir
 
+        obj_type = self.obj_type
+        weight_file = self.weight_file
+        res_ip_file = self.res_ip_file
+        excess_ip_file = self.excess_ip_file
+        res_th_file = self.res_th_file
+        excess_th_file = self.excess_th_file
+
         eval_point = self.state
         call_type = 1
-        [outs,weight] = NOMAD_call(call_type,req_vec,req_thresh,eval_point,MADS_output_dir)
+        [outs,weight] = NOMAD_call(call_type,obj_type,req_vec,req_thresh,eval_point,MADS_output_dir)
         resiliance = [thresh - item  for thresh,item in zip(req_thresh,outs[1::])]
 
         self.n_fcalls += 1
@@ -100,11 +114,19 @@ def main():
     from scipy.io import loadmat
     from plot_stage_space import plot_stagespace
 
-    attribute = ['$\mathbb{P}(\mathbf{T} \in C)$']
+    attribute = ['Reliability ($\mathbb{P}(\mathbf{p} \in C)$)']
 
     current_path = os.getcwd()
     MADS_output_folder = 'MADS_output'
     MADS_output_dir = os.path.join(current_path,MADS_output_folder)
+
+    weight_file = 'varout_opt_log.log'
+    res_ip_file = 'resiliance_ip.log'
+    excess_ip_file = 'excess_ip.log'
+    res_th_file = 'resiliance_th.log'
+    excess_th_file = 'excess_th.log'
+
+    obj_type = 1 # optimize with respect to excess
 
     # plot 1
     plot_id = 1
@@ -112,7 +134,9 @@ def main():
     ds_s = [ [5 , 1 , 2 , 1 , -1 , -1 , 0 ] ]
     req_vec = [36, 36, 36, 36, 36, 36]
 
-    [fig1, fig2] = plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id)
+    [fig1, fig2] = plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
+                                   weight_file, res_ip_file, excess_ip_file, res_th_file, 
+                                   excess_th_file)
 
     # %% Begin combinatorial optimization
 
@@ -129,7 +153,8 @@ def main():
 
     # iterate through MADS bb evals
     current_path = os.getcwd()
-    optproblem = PlotOptimizationProgress(bb_evals[0], req_vec, req_thresh, MADS_output_dir, bb_evals, fig1, fig2)
+    optproblem = PlotOptimizationProgress(bb_evals[0], req_vec, req_thresh, MADS_output_dir, bb_evals, fig1, fig2,
+                                          obj_type,weight_file,res_ip_file,excess_ip_file,res_th_file,excess_th_file)
         
     for bb_call in bb_evals:
         optproblem.move()

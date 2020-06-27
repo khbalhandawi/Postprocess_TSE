@@ -329,6 +329,7 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 		YX_obj = np.reshape(YX_obj, np.shape(X1))
 		
 		cmax = 6; cmin = 1 # set colorbar limits
+		# cmax = 3.6; cmin = 2.2 # set colorbar limits (for plotting lambda = 109)
 		# cmax = 100000; cmin = 0 # set colorbar limits
 		# cmax = 4.4; cmin = 1.2; # set colorbar limits
 		
@@ -339,10 +340,13 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 		
 		cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
 		cbar.set_array(YX_obj)
-		# cbar.set_clim(cmin, cmax)
+
+		boundaries = np.linspace(cmin, cmax, 51)
+		# boundaries = np.linspace(cmin, cmax, int(np.round(((cmax-cmin)/0.2)*6))-1) # (for plotting lambda = 109)
 		# cbar_h = fig.colorbar(cbar)
-		cbar_h = fig.colorbar(cbar, boundaries=np.linspace(cmin, cmax, 51))
-		cbar_h.set_label('$n_{safety}(\mathbf{T})$', rotation=90, labelpad=3)
+		cbar_h = fig.colorbar(cbar, boundaries=boundaries)
+		cbar_h.set_label('$g_{f1}(\mathbf{p})$', rotation=90, labelpad=3)
+		# cbar_h.set_label('$n_{safety}(\mathbf{T})$', rotation=90, labelpad=3)
 		
 		artists, labels = cf.legend_elements()
 		af = artists[0]
@@ -353,8 +357,8 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 		YX_cstr = np.reshape(YX_cstr, np.shape(X1))
 		c1 = ax.contourf( X1, X2, YX_cstr, alpha=0.0, levels=[-20, 0, 20], colors=['#FF0000','#FF0000'], 
 						  hatches=['//', None])
-		ax.contour(c1, colors='#FF0000', linewidths = 2.0)
-		a1 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#FF0000', facecolor='none', fill='None', hatch='//')
+		ax.contour(c1, colors='#FF0000', linewidths = 2.0, zorder=1)
+		a1 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#FF0000', facecolor='none', fill='None', hatch='///')
 		
 	#====================== REQUIREMENTS CONSTRAINTS ==========================#	
 	# %% Requirements bounds
@@ -371,8 +375,8 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 			
 			c2 = ax.contourf( X1, X2, YX_req, alpha=0.1, levels=[-10, 0, 10], colors=['#39FFF2','#39FFF2'], 
 								hatches=[None, None])
-			ax.contour(c2, colors='#39FFF2', linewidths = 2.0)
-			a2 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#39FFF2', facecolor='none', fill='None', hatch=None)
+			ax.contour(c2, colors='#39FFF2', linewidths = 5.0, zorder=2)
+			a2 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#39FFF2', facecolor='none', fill='None', hatch=None)
 				
 		elif req_type == 'guassian':
 			
@@ -407,8 +411,8 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 			# c2 = ax.contourf( X1, X2, Z, colors=['#39FFF2'], alpha=0.0);
 			c2 = ax.contourf( X1, X2, Z, alpha=0.25, cmap=plt.cm.Blues)
 			
-			ax.contour(c2, colors='#39FFF2', levels=L, linewidths = 1.5)
-			a2 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#39FFF2', facecolor='none', fill='None', hatch=None)
+			ax.contour(c2, colors='#39FFF2', levels=L, linewidths = 4.5)
+			a2 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#39FFF2', facecolor='none', fill='None', hatch=None)
 
 	#========================= REGION OF INTEREST =============================#	
 	# %% Requirements
@@ -426,13 +430,13 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 			
 			c3 = ax.contourf( X1, X2, YX_req, alpha=0.0, levels=[-10, 0, 10], colors=['#1E7C37','#1E7C37'], 
 							hatches=[None, '+'])
-			ax.contour(c3, colors='#1E7C37', alpha=0.1, linewidths = 2.0)
+			ax.contour(c3, colors='#1E7C37', linewidths = 2.0, zorder = 3)
 
 			#=======================================================================
 			# artists, labels = c3.legend_elements()
 			# a3 = artists[1];
 			#=======================================================================
-			a3 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#1E7C37', facecolor='none', fill='None', hatch='+')
+			a3 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#1E7C37', facecolor='none', fill='None', hatch='++')
 
 		elif req_type == 'guassian':
 			
@@ -454,7 +458,7 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 			c3 = ax.contourf( X1, X2, Z, alpha=0.25, cmap=plt.cm.Greens)
 			
 			ax.contour(c3, colors='#1E7C37', levels=L, linewidths = 1.5)
-			a3 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#1E7C37', facecolor='none', fill='None', hatch=None)
+			a3 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#1E7C37', facecolor='none', fill='None', hatch='None')
 
 	#========================= MONTE CARLO POINTS =============================#
 
@@ -471,21 +475,21 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 		ax.set_xlabel(variable_lbls[i[0]], labelpad=-1)
 		ax.set_ylabel(variable_lbls[i[1]], labelpad=-16)
 	
-	# handles, labels = [[a1], ["$n_{safety}(\mathbf{T})<n_{th}$"]]
+	# handles, labels = [[a1], ["C':~$\hat{g}_{f1}(\mathbf{p}) - t_1 > 0$", ]]
 	# fig.legend(handles, labels, loc='upper center', ncol=1, fontsize = 14)
 
-	# handles, labels = [[a1,a2], ["$n_{safety}(\mathbf{T})<n_{th}$", 
-	# 							 "Joint PDF $F_{\mathbf{X}}(\mathbf{T})$"]]
+	# handles, labels = [[a1,a2], ["C':~$\hat{g}_{f1}(\mathbf{p}) - t_1 > 0$", 
+	# 							 "Joint PDF:~$F_{\mathbf{X}}(\mathbf{p})$"]]
 	# fig.legend(handles, labels, loc='upper center', ncol=2, fontsize = 14)
 
-	# handles, labels = [[a1,a2,a3], ["$n_{safety}(\mathbf{T})<n_{th}$", 
-	# 								"Joint PDF $F_{\mathbf{X}}(\mathbf{T})$",
-	# 								"$F_{\mathbf{X}}(\mathbf{T})$ and $n_{safety}(\mathbf{T}) \ge n_{th}$"]]
+	# handles, labels = [[a1,a2,a3], ["C':~$\hat{g}_{f1}(\mathbf{p}) - t_1 > 0$", 
+	# 								"Joint PDF:~$F_{\mathbf{X}}(\mathbf{p})$",
+	# 								"$F_{\mathbf{X}}(\mathbf{p})$ | \mathbf{p} \in C$"]]
 	# fig.legend(handles, labels, loc='upper center', ncol=3, fontsize = 14)
 
-	handles, labels = [[a1,a2,a3,a_MCI], ["$n_{safety}(\mathbf{T})<n_{th}$", 
-										  "Joint PDF $F_{\mathbf{X}}(\mathbf{T})$",
-										  "$F_{\mathbf{X}}(\mathbf{T})$ and $n_{safety}(\mathbf{T}) \ge n_{th}$",
+	handles, labels = [[a1,a2,a3,a_MCI], ["$C'$: $\hat{g}_{f1}(\mathbf{p}) - t_1 > 0$", 
+										  "Joint PDF: $F_{\mathbf{X}}(\mathbf{p})$",
+										  "$F_{\mathbf{X}}(\mathbf{p}) | \mathbf{p} \in C$",
 										  "Monte Carlo samples" ]]
 	fig.legend(handles, labels, loc='upper center', ncol=4, fontsize = 14)
 
@@ -586,7 +590,7 @@ def hyperplane_SGTE_vis_norm(server,LHS_f,bounds,bounds_req,LHS_MCI_file,mu,Sigm
 	lob = bounds[:,0]
 	upb = bounds[:,1]
 	
-	Y = objs; S = LHS_f;
+	Y = objs; S = LHS_f
 	
 	lob_n = np.zeros(np.size(lob)); upb_n = np.ones(np.size(upb)); 
 	bounds_n = np.zeros(np.shape(bounds))
@@ -596,7 +600,7 @@ def hyperplane_SGTE_vis_norm(server,LHS_f,bounds,bounds_req,LHS_MCI_file,mu,Sigm
 	# %% Activate 2 out 4 variables up to 4 variables
 	d = len(LHS_f[0,:]); #<-------- Number of variables
 	if d > 4: # maximum of four variables allowed
-	    d = 4;
+	    d = 4
 	    
 	if d == 1:
 		sp_shape = [1,1]; ax_h = -0.08; ax_bot = 0; ax_left = 0.0; ann_pos = 0.45;    #<-------- Edit as necessary to fit figure properl

@@ -212,16 +212,16 @@ def filtered_outdegree(dictionary_weight):
 
     return FO
     
-
 #==============================================================================
 # Call MADS and get Pareto optimal solutions from MADS
-def NOMAD_call_BIOBJ(req_index,weight_file,res_ip_file,res_th_file,
-                     P_analysis_strip,attribute,cost,evaluate):
+def NOMAD_call_BIOBJ(req_index,weight_file,res_ip_file,excess_ip_file,
+                     res_th_file,excess_th_file,P_analysis_strip,
+                     attribute,cost,evaluate):
     
     if evaluate: # run bi-objective optimization
         from sample_requirements import system_command
 
-        command = "categorical_biobj %i %s %s %s" %(req_index,weight_file,res_ip_file,res_th_file)
+        command = "categorical_biobj %i %s %s %s %s %s" %(req_index,weight_file,res_ip_file,excess_ip_file,res_th_file,excess_th_file)
         print(command)
         system_command(command)
     
@@ -340,6 +340,17 @@ def rgb2hex(color):
     return f"#{''.join(f'{hex(c)[2:].upper():0>2}' for c in color)}"
 
 #==============================================================================
+# Extract designs inside specific concept
+def extract_designs(designs,concept):
+    
+    designs_extract = []
+    for design in designs:
+        if design[0] == concept:
+            designs_extract += [design]
+
+    return designs_extract
+
+#==============================================================================
 # MAIN CALL
 if __name__ == "__main__":
     
@@ -356,14 +367,16 @@ if __name__ == "__main__":
     
     plt.close('all')
 
-    filename_opt = 'req_opt_log.log'
-    filename_res = 'resiliance_th.log'
-    filename_res_ip = 'resiliance_ip.log'
-    filename_weight = 'varout_opt_log.log'
-    filename_feas = 'feasiblity_log.log'
+    filename_opt = 'req_opt_E_log_R0.log'
+    filename_res = 'resiliance_th_R0.log'
+    filename_excess = 'excess_th_R0.log'
+    filename_res_ip = 'resiliance_ip_R0.log'
+    filename_excess_ip = 'excess_ip_R0.log'
+    filename_weight = 'varout_opt_log_R0.log'
+    filename_feas = 'feasiblity_log_R0.log'
 
     #attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-    attribute = ['$\mathbb{P}(\mathbf{T} \in C)$']
+    attribute = ['Reliability ($\mathbb{P}(\mathbf{p} \in C)$)']
     
     # [fig, ax, dictionary, plot_h, designs] = plot_tradespace(attribute,True)
     [dictionary, dictionary_res, dictionary_weight, designs, designs_padded] = plot_tradespace(attribute,filename_opt,filename_res,filename_weight,False)
@@ -390,7 +403,7 @@ if __name__ == "__main__":
     # req_index = 50
     # attribute = dictionary_res['req_index_%i' %(req_index)]
     req_index = 0
-    attribute = dictionary_weight['n_f_th']
+    attribute = dictionary_weight['capability_th_uni']
     cost = dictionary_weight['weight']
 
     # Data for plotting SBD designs
@@ -398,7 +411,7 @@ if __name__ == "__main__":
     cost_SBD = cost[indices]
     
     #==============================================================================
-    # Feasiblity sorting
+    # robustness sorting
     [data,robustness] = import_feasibility(filename_feas)
 
     xR = range(0,len(robustness))
@@ -489,7 +502,7 @@ if __name__ == "__main__":
     #     bar.set_linewidth(2.3)
 
     plt.xlabel('Design index', fontsize=14)
-    plt.ylabel('$\%$ of multi-stage problems satisfied', fontsize=14) 
+    plt.ylabel('$\%$ of requirement arcs satisfied', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
 
     tight_bbox = fig.get_tightbbox(fig.canvas.get_renderer()) # get bbox for figure canvas
@@ -518,7 +531,7 @@ if __name__ == "__main__":
     #     bar.set_linewidth(2.3)
 
     plt.xlabel('Design index', fontsize=14)
-    plt.ylabel('Filtered outdegree', fontsize=14) 
+    plt.ylabel('Filtered outdegree ($FO$)', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
     plt.yticks(list(range(max(yF)+1)), list(map(str,range(max(yF)+1)))) # Force integer ticks
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE_F.pdf'), format='pdf', dpi=1000,bbox_inches=tight_bbox)
@@ -546,7 +559,7 @@ if __name__ == "__main__":
     #     bar.set_linewidth(2.3)
 
     plt.xlabel('Design index', fontsize=14)
-    plt.ylabel('$\%$ of multi-stage problems solved', fontsize=14) 
+    plt.ylabel('Relative frequency as optimizer', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
 
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE.pdf'), format='pdf', dpi=1000,bbox_inches=tight_bbox)
@@ -554,8 +567,8 @@ if __name__ == "__main__":
     #==========================================================================
     # Tradespace plot
     # data for plotting Pareto front
-    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,filename_weight,filename_res_ip,filename_res,
-                                        P_analysis_strip,attribute,cost,False) # get Pareto optimal points
+    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,filename_weight,filename_res_ip,filename_excess_ip,
+                                        filename_res,filename_excess,P_analysis_strip,attribute,cost,False) # get Pareto optimal points
 
     my_dpi = 100
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
@@ -569,7 +582,7 @@ if __name__ == "__main__":
     SBD_design = plt.scatter( cost_SBD[:5], attribute_SBD[:5], s = 150, color = [1,0,0], marker = '.', zorder=5 )
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14)
     # plt.ylabel('Requirement satisfaction ratio ($V_{{C}\cap{R}}/V_{R}$)', fontsize=14)
-    plt.ylabel('Safety factor ($n_{safety}$)', fontsize=14)
+    plt.ylabel('Volume of capability set ($V_c$)', fontsize=14)
     
     ax = plt.gca() 
     ax.tick_params(axis='both', which='major', labelsize=14)
@@ -585,8 +598,8 @@ if __name__ == "__main__":
     #            'Robust designs', 'Flexible designs'), loc = 'lower right',
     #            fontsize = 9.0)
     ax.legend((feasible, pareto, Robust_design, flexible_design, SBD_design), 
-              ('Feasible designs $\in \Omega$', 'Pareto optimal designs', 
-               'Robust designs', 'Flexible designs', 'Set-based designs'), loc = 'lower right',
+              ('$\Omega_{cD}$', 'Pareto optimal design arcs', 
+               'Robust design arcs', 'Flexible design arcs', 'Set-based design arcs'), loc = 'lower right',
                fontsize = 9.0)
 
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','tradespace_pareto.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
@@ -597,14 +610,18 @@ if __name__ == "__main__":
     # Pie chart plot   
     import matplotlib.gridspec as gridspec
 
+    designs_padded_c0 = extract_designs(designs_padded,0)
+    designs_padded_c1 = extract_designs(designs_padded,1)
+    designs_padded_c2 = extract_designs(designs_padded,2)
+
     d_types = [0,1,2,3,4]
-    i1 = get_dstribution(d_types,1,designs_padded)
-    i2 = get_dstribution(d_types,2,designs_padded)
-    i3 = get_dstribution(d_types,3,designs_padded)
-    i4 = get_dstribution(d_types,4,designs_padded)
-    i5 = get_dstribution(d_types,5,designs_padded)
+    i1 = get_dstribution(d_types,1,designs_padded_c1)
+    i2 = get_dstribution(d_types,2,designs_padded_c1)
+    i3 = get_dstribution(d_types,3,designs_padded_c1)
+    i4 = get_dstribution(d_types,4,designs_padded_c1)
+    i5 = get_dstribution(d_types,5,designs_padded_c1)
     
-    d_types = [0,1]
+    d_types = [0,1,2]
     c = get_dstribution(d_types,0,designs_padded)
     
     gs = gridspec.GridSpec(2,3, 
@@ -660,9 +677,9 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
         
     # Pie chart, where the slices will be ordered and plotted counter-clockwise:
-    labels = 'concept 1', 'concept 2'
+    labels = 'concept 0', 'concept 1', 'concept 2'
     sizes = c
-    explode = (0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
+    explode = (0, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
     
     ax = plt.gca()
     ax.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',

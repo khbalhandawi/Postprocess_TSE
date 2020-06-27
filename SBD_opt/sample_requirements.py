@@ -62,7 +62,7 @@ def NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
                 row = [float(item) for item in row]
             
             outs = row
-        
+
         # read weight log file
         weight_file = os.path.join(MADS_output_dir,'weight_design.log')
         
@@ -73,7 +73,17 @@ def NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
             
             weights = row
             
-        return outs,weights
+        # read excess log file
+        excess_file = os.path.join(MADS_output_dir,'excess_design.log')
+        
+        with open(excess_file) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            for row in csv_reader:
+                row = [float(item) for item in row]
+            
+            excesses = row
+
+        return outs,weights,excesses
 
     elif call_type == 2: # read feasibility check out file
 
@@ -157,8 +167,8 @@ def main():
     from scipy.io import loadmat
 
     index = 1
-    n_points = 1600
-    lb = 1; ub = 1600
+    n_points = 100000
+    lb = 1; ub = 50
     n_var = 6
     
     current_path = os.getcwd()
@@ -231,7 +241,7 @@ def main():
         
         eval_point = opt
         call_type = 1
-        [outs,weights] = NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
+        [outs,weights_W,excesses_W] = NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
                                     res_th_file,excess_th_file,
                                     req_vec,req_thresh,eval_point,MADS_output_dir)
         
@@ -251,7 +261,7 @@ def main():
         
         eval_point = opt_E
         call_type = 1
-        [outs,excesses] = NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
+        [outs,weights_E,excesses_E] = NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
                                      res_th_file,excess_th_file,
                                      req_vec,req_thresh,eval_point,MADS_output_dir)
         
@@ -271,36 +281,37 @@ def main():
             resultsfile=open(full_filename,'w')
             resultsfile.write('index'+','+'n_stages'+','+'concept'+','+'s1'+','+'s2'+','+'s3'+','+'s4'+','+'s5'+','+'s6'+','
                               +'w1'+','+'w2'+','+'w3'+','+'w4'+','+'w5'+','+'w6'+','
+                              +'E1'+','+'E2'+','+'E3'+','+'E4'+','+'E5'+','+'E6'+','
                               +'R1'+','+'R2'+','+'R3'+','+'R4'+','+'R5'+','+'R6'+','
                               +'Total_weight'+'\n')
 
             resultsfile_E=open(full_filename_E,'w')
             resultsfile_E.write('index'+','+'n_stages'+','+'concept'+','+'s1'+','+'s2'+','+'s3'+','+'s4'+','+'s5'+','+'s6'+','
+                              +'w1'+','+'w2'+','+'w3'+','+'w4'+','+'w5'+','+'w6'+','
                               +'E1'+','+'E2'+','+'E3'+','+'E4'+','+'E5'+','+'E6'+','
                               +'R1'+','+'R2'+','+'R3'+','+'R4'+','+'R5'+','+'R6'+','
-                              +'Total_weight'+'\n')
+                              +'Total_excess'+'\n')
             
             feasiblityfile=open(feasiblity_filename,'w')
             feasiblityfile.write('index'+','+','.join(design_titles)+'\n')
         
         resultsfile=open(full_filename,'a+')
         resultsfile.write(str(index)+','+','.join(map(str,opt))+','
-                          +','.join(map(str,weights))+','
+                          +','.join(map(str,weights_W))+','
+                          +','.join(map(str,excesses_W))+','
                           +','.join(map(str,resiliance))+','+str(f)+'\n')
         resultsfile.close()
 
         resultsfile_E=open(full_filename_E,'a+')
         resultsfile_E.write(str(index)+','+','.join(map(str,opt_E))+','
-                          +','.join(map(str,excesses))+','
+                          +','.join(map(str,weights_E))+','
+                          +','.join(map(str,excesses_E))+','
                           +','.join(map(str,resiliance_E))+','+str(f_E)+'\n')
         resultsfile_E.close()
 
         feasiblityfile=open(feasiblity_filename,'a+')
         feasiblityfile.write(str(index)+','+','.join(map(str,feasibility_vector))+'\n')
         feasiblityfile.close()
-
-        print(resiliance)
-        print(weights)
         
     
 if __name__ == "__main__":
