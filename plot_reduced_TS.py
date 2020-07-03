@@ -10,6 +10,7 @@ def plot_tradespace_reduced(attribute):
     from scipy.io import loadmat
     from plot_tradespace import plot_tradespace
     from SBD_opt.post_process_DOE import NOMAD_call_BIOBJ
+    from SBD_opt.post_process_DOE import color_generator
     import numpy as np
     import matplotlib as mpl
     import matplotlib.pyplot as plt
@@ -21,7 +22,7 @@ def plot_tradespace_reduced(attribute):
     attribute_name = attribute[0]
     attribute_label = attribute[1]
     
-    [fig, ax, dictionary, start, wave, cross] = plot_tradespace(attribute)
+    [fig, ax, dictionary, start, wave, cross, tube] = plot_tradespace(attribute)
     
     # Append initial base design to dictionary
     
@@ -84,12 +85,12 @@ def plot_tradespace_reduced(attribute):
     
     ax = plt.gca() 
     ax.tick_params(axis='both', which='major', labelsize=14 * magnify) 
-    # ax.set_xlim([3.2040081632482558, 27.856089113953463])
-    # ax.set_ylim([1.4864630521225, 4.6238964381875])
-    # ax.set_xlim([-1.1615516283612148, 24.392584195585513]) # used
-    # ax.set_ylim([-0.2240642914865, 4.7053501212165]) # used
-    
-    plt.title("Tradespace", fontsize=20 * magnify)
+    # ax.set_xlim([3.2040081632482553, 27.85608911395347]) # used
+    # ax.set_ylim([-0.05000000000000002, 1.0500000000000003]) # used
+    ax.set_xlim([3.2040081632482553, 17.5]) # used
+    ax.set_ylim([-0.05000000000000002, 1.0500000000000003]) # used
+
+    # plt.title("Tradespace", fontsize=20 * magnify)
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14 * magnify)
     plt.ylabel(attribute_label, fontsize=14 * magnify)
 
@@ -99,24 +100,50 @@ def plot_tradespace_reduced(attribute):
     #marker_widths = [ 2, 2, 3, 2 ]
     # reduced_designs = [[1,0,3,1,2],[1,0,1,2],[0,0,1,2]] # Interesting cases in P(R) domain
     # reduced_designs = [[1,2,1,0],[1,3,2],[1,1,2,0]] # Interesting cases in n_safety domain
-    reduced_designs = [[1, 1, 0],[1, 3, 2],[1, 1, 0, 2],[1, 3],[1, 1, 2, 0]] # Top 5 design for R50 DOE
-    pt_labels = ['+', 's', 'o', 'x', '*']
-    marker_sizes = [ 16, 8, 8, 8, 8]
-    marker_widths = [ 3, 2, 2, 2, 8]
+    # reduced_designs = [[1, 1, 0],[1, 3, 2],[1, 1, 0, 2],[1, 3],[1, 1, 2, 0]] # Top 5 design for R50 DOE
+    # pt_labels = ['+', 's', 'o', 'x', '*']
+    # marker_sizes = [ 16, 8, 8, 8, 8]
+    # marker_widths = [ 3, 2, 2, 2, 8]
+
+    # reduced_designs = [[1, 1, 0],
+    #                    [1, 3],
+    #                    [1, 0, 1],
+    #                    [1, 0, 1, 4],
+    #                    [1, 2, 0, 1],
+    #                    [1, 1, 0, 4, 2],
+    #                    [1, 0, 1, 4, 2],
+    #                    [1, 1, 0, 3],
+    #                    [1, 1, 0, 2, 3],
+    #                    [1, 1, 0, 2, 4]]
+    reduced_designs = [[1, 1, 0],
+                       [1, 3],
+                       [1, 0, 1],
+                       [1, 0, 1, 4],
+                       [1, 2, 0, 1]]
+    pt_labels = ['.'] * len(reduced_designs)
+    marker_sizes = [8] * len(reduced_designs)
+    marker_widths = [ 2 ] * len(reduced_designs)
     
     legend_handles = []; legend_labels = []; d_i = 1
-    colors = plt.rcParams['axes.prop_cycle'].by_key()['color'] # ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', ...]
-    
+
+    new_colors = False
+    color_file = '.\SBD_opt\colors_histogram.pkl'
+    colors = color_generator(new_colors,color_file)
+
     req_index = 0
-    attribute = dictionary['n_f_th']
+    attribute = dictionary[attribute_name]
     cost = dictionary['weight']
 
-    filename_res = 'resiliance_th.log'
-    filename_res_ip = 'resiliance_ip.log'
-    filename_weight = 'varout_opt_log.log'
+    filename_res = 'resiliance_th_5D_R50_th0_2.8_th1_2.8_th2_2.8_Rv_approx.log'
+    filename_excess = 'excess_th_5D_R50_th0_2.8_th1_2.8_th2_2.8_Rv_approx.log'
+    filename_res_ip = 'resiliance_ip_5D_R50_th0_2.8_th1_2.8_th2_2.8_Rv_approx.log'
+    filename_excess_ip = 'excess_ip_5D_R50_th0_2.8_th1_2.8_th2_2.8_Rv_approx.log'
+    filename_weight = 'varout_opt_log_5D_R50_th0_2.8_th1_2.8_th2_2.8_Rv_approx.log'
 
-    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,filename_weight,filename_res_ip,filename_res,
-                                        P_analysis_strip,attribute,cost,False) # get Pareto optimal points
+    [x_data, y_data] = NOMAD_call_BIOBJ(req_index,filename_weight,filename_res_ip,filename_excess_ip,
+                                        filename_res,filename_excess,P_analysis_strip,
+                                        attribute,cost,False) # get Pareto optimal points
+    
     pareto, = plt.plot(x_data, y_data, '-o', color = 'm', linewidth = 2.0, markersize = 5.0 )
 
     legend_handles += [pareto]
@@ -127,29 +154,31 @@ def plot_tradespace_reduced(attribute):
     for design,pt_label,e_width,e_size in zip(reduced_designs,pt_labels,marker_widths,marker_sizes):
     
         # x_data = [0.0]; y_data = [2.378925]
-        x_data = [0.0]; y_data = [0.0]
-        print(design)
+        # x_data = [0.0]; y_data = [0.0] # Use if you want to show base design
+        x_data = []; y_data = []
         for it in range(len(design[1::])):
             ind = P_analysis_strip.index(design[0:it+2])
             x_data += [dictionary['weight'][ind]]
             y_data += [dictionary[attribute_name][ind]]
         
-        plt.plot(x_data, y_data, '-', color = [0,0,0], linewidth = 1.5 )
-        plt.plot(x_data, y_data, 'o', color = [0,0,0], markersize=6 )
+        print('plotting design: %i' %(ind+1))
+
+        plt.plot(x_data, y_data, '-', color = [0,0,0], linewidth = 1 )
+        plt.plot(x_data, y_data, 'o', color = [0,0,0], markersize = 2 )
         design_lg, = plt.plot( x_data[-1], y_data[-1], pt_label, markersize = e_size, markeredgewidth = e_width, color = colors[d_i] )
         
         legend_handles += [design_lg]
         # legend label generation
-        label = ''.join(['$n = %i,' %(len(design[1::])),
+        label = ''.join(['$\lambda = %i,' %(ind+1),
                          '~c = %i,' %(design[0]),
-                         '~D = \{', 
-                         ',~'.join(map(str,design[1::])),'\}$'])
+                         '~\mathbf{D} = [', 
+                         ',~'.join(map(str,design[1::])),']$'])
 
         legend_labels += [label]
         ax.legend(legend_handles, legend_labels, loc = 'lower right', fontsize=10 * magnify )
 
         d_i += 1
-        fig.savefig('progress/tradespace_%i.pdf' %d_i, format='pdf', dpi=100,bbox_inches='tight')
+        # fig.savefig('progress/tradespace_%i.pdf' %d_i, format='pdf', dpi=100,bbox_inches='tight')
     
     # print(ax.get_xlim())
     # print(ax.get_ylim())
@@ -160,10 +189,11 @@ if __name__ == "__main__":
     import os
     import matplotlib.pyplot as plt
 
-    attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-    # attribute = ['resiliance_th_gau','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$']
-    
+    # attribute = ['n_f_th','Safety factor ($n_{safety}$)']
+    # attribute = ['resiliance_th_gau','Reliability $\mathbb{P}(\mathbf{p} \in C)$']
+    attribute = ['capability_th_uni','Volume of capability set ($V_c$)']
+
     [fig, ax, dictionary, P_analysis_strip] = plot_tradespace_reduced(attribute)
-    fig.savefig(os.path.join(os.getcwd(),'tradespace_pareto_reduced.svg'), format='svg')
+    fig.savefig(os.path.join(os.getcwd(),'tradespace_pareto_reduced.pdf'), format='pdf')
 
     plt.show()

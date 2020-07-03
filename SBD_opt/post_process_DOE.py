@@ -214,12 +214,24 @@ def filtered_outdegree(dictionary_weight):
     
 #==============================================================================
 # Call MADS and get Pareto optimal solutions from MADS
+def system_command(command):
+    import subprocess
+    from subprocess import PIPE,STDOUT
+    #CREATE_NO_WINDOW = 0x08000000 # Creat no console window flag
+
+    p = subprocess.Popen(command,shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT,
+                         ) # disable windows errors
+
+    for line in iter(p.stdout.readline, b''):
+        line = line.decode('utf-8')
+        print(line.rstrip()) # print line by line
+        # rstrip() to reomove \n separator
+
 def NOMAD_call_BIOBJ(req_index,weight_file,res_ip_file,excess_ip_file,
                      res_th_file,excess_th_file,P_analysis_strip,
                      attribute,cost,evaluate):
     
     if evaluate: # run bi-objective optimization
-        from sample_requirements import system_command
 
         command = "categorical_biobj %i %s %s %s %s %s" %(req_index,weight_file,res_ip_file,excess_ip_file,res_th_file,excess_th_file)
         print(command)
@@ -351,110 +363,42 @@ def extract_designs(designs,concept):
     return designs_extract
 
 #==============================================================================
-# MAIN CALL
-if __name__ == "__main__":
+# compute convex hull and hyper rectangle volume
+def get_HP_volume(points_x,points_y,lb,ub):
+    lb_CV = np.array([min(points_x),min(points_y)])
+    ub_CV = np.array([max(points_x),max(points_y)])
+
+    lb_CV_n = scaling(lb_CV,lb,ub,1)
+    ub_CV_n = scaling(ub_CV,lb,ub,1)
+
+    v_HP = np.prod(ub_CV_n - lb_CV_n)
     
-    import os
-    import random
-    import pickle
+    return v_HP
+
+#==============================================================================
+# compute convex hull shortest distance to pareto
+def shortest_distance(x_pareto,y_pareto,point_x,point_y):
+
     import numpy as np
-    import matplotlib as mpl
+
+    distances = []
+    for x_p, y_p in zip(x_pareto,y_pareto):
+        diff = np.array([x_p - point_x, y_p - point_y])
+        dist = np.linalg.norm(diff)
+        distances += [dist]
+
+    shortest = min(distances)
+
+    return shortest
+
+#==============================================================================
+# Histogram colors generator
+def color_generator(new_colors,color_file,indices = [],histogram = []):
+
+    from numpy import random
     import matplotlib.pyplot as plt
-    from matplotlib import rcParams
-    from matplotlib.ticker import MaxNLocator
-    
-    mpl.rcParams['font.size'] = 14.0
-    
-    plt.close('all')
+    import pickle
 
-    filename_opt = 'req_opt_E_log_R0.log'
-    filename_res = 'resiliance_th_R0.log'
-    filename_excess = 'excess_th_R0.log'
-    filename_res_ip = 'resiliance_ip_R0.log'
-    filename_excess_ip = 'excess_ip_R0.log'
-    filename_weight = 'varout_opt_log_R0.log'
-    filename_feas = 'feasiblity_log_R0.log'
-
-    #attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-    attribute = ['Reliability ($\mathbb{P}(\mathbf{p} \in C)$)']
-    
-    # [fig, ax, dictionary, plot_h, designs] = plot_tradespace(attribute,True)
-    [dictionary, dictionary_res, dictionary_weight, designs, designs_padded] = plot_tradespace(attribute,filename_opt,filename_res,filename_weight,False)
-    [histogram,P_analysis_strip] = rank_designs(designs)
-    design_list = []
-    for data in zip(dictionary_weight['concept'],
-                    dictionary_weight['i1'],dictionary_weight['i2'],
-                    dictionary_weight['i3'],dictionary_weight['i4'],
-                    dictionary_weight['i5']):
-        design_list += [[int(x) for x in data]]
-    
-    #==============================================================================
-    # Set based sorting
-
-    xS = range(0,len(histogram))
-    yS = sorted(histogram,reverse = True)
-    indices = [x for _,x in sorted(zip(histogram,xS),reverse = True)]
-    sorted_designs = [x for _,x in sorted(zip(histogram,design_list),reverse = True)]
-    
-    print('Top 5 designs:')
-    for design in sorted_designs[:5]:
-        print(design)
-    # data for constructing tradespace of feasible designs
-    # req_index = 50
-    # attribute = dictionary_res['req_index_%i' %(req_index)]
-    req_index = 0
-    attribute = dictionary_weight['capability_th_uni']
-    cost = dictionary_weight['weight']
-
-    # Data for plotting SBD designs
-    attribute_SBD = attribute[indices]
-    cost_SBD = cost[indices]
-    
-    #==============================================================================
-    # robustness sorting
-    [data,robustness] = import_feasibility(filename_feas)
-
-    xR = range(0,len(robustness))
-    yR = sorted(robustness,reverse = True)
-    indices_robust = [x for _,x in sorted(zip(robustness,xR),reverse = True)]
-    sorted_designs_robust = [x for _,x in sorted(zip(robustness,design_list),reverse = True)]
-    
-    print('Top 5 robust designs:')
-    for design in sorted_designs_robust[:5]:
-        print(design)
-    # data for constructing tradespace of feasible designs
-    # req_index = 50
-    # attribute = dictionary_res['req_index_%i' %(req_index)]
-
-    # Data for plotting SBD designs
-    attribute_robust = attribute[indices_robust]
-    cost_robust = cost[indices_robust]
-
-    #==============================================================================
-    # flexibility sorting
-    FO = filtered_outdegree(dictionary_weight)
-
-    xF = range(0,len(FO))
-    yF = sorted(FO,reverse = True)
-    indices_flexible = [x for _,x in sorted(zip(FO,xF),reverse = True)]
-    sorted_designs_flexible = [x for _,x in sorted(zip(FO,design_list),reverse = True)]
-    
-    print('Top 5 flexible designs:')
-    for design in sorted_designs_flexible[:5]:
-        print(design)
-    # data for constructing tradespace of feasible designs
-    # req_index = 50
-    # attribute = dictionary_res['req_index_%i' %(req_index)]
-
-    # Data for plotting SBD designs
-    attribute_flexible = attribute[indices_flexible]
-    cost_flexible = cost[indices_flexible]
-
-    #==========================================================================
-    # Histogram colors generator
-
-    new_colors = False
-    color_file = 'colors_histogram.pkl'
     # ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', ...]
     colors_default = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
@@ -479,16 +423,130 @@ if __name__ == "__main__":
         colors = pickle.load(fid)
         fid.close()
 
+    return colors
+
+#==============================================================================
+# MAIN CALL
+if __name__ == "__main__":
+    
+    import os
+    import random
+    import pickle
+    import numpy as np
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+    from matplotlib import rcParams
+    from matplotlib.ticker import MaxNLocator
+    from scipy.spatial import ConvexHull, convex_hull_plot_2d
+    from sample_requirements import scaling
+
+    mpl.rcParams['font.size'] = 14.0
+    
+    plt.close('all')
+
+    # filename_opt = 'req_opt_E_log_R0.log'
+    filename_opt = 'req_opt_log_R0.log'
+    filename_res = 'resiliance_th_R0.log'
+    filename_excess = 'excess_th_R0.log'
+    filename_res_ip = 'resiliance_ip_R0.log'
+    filename_excess_ip = 'excess_ip_R0.log'
+    filename_weight = 'varout_opt_log_R0.log'
+    filename_feas = 'feasiblity_log_R0.log'
+
+    #attribute = ['n_f_th','Safety factor ($n_{safety}$)']
+    attribute = ['Reliability ($\mathbb{P}(\mathbf{p} \in C)$)']
+    
+    # [fig, ax, dictionary, plot_h, designs] = plot_tradespace(attribute,True)
+    [dictionary, dictionary_res, dictionary_weight, designs, designs_padded] = plot_tradespace(attribute,filename_opt,filename_res,filename_weight,False)
+    [histogram,P_analysis_strip] = rank_designs(designs)
+    design_list = []
+    for data in zip(dictionary_weight['concept'],
+                    dictionary_weight['i1'],dictionary_weight['i2'],
+                    dictionary_weight['i3'],dictionary_weight['i4'],
+                    dictionary_weight['i5']):
+        design_list += [[int(x) for x in data]]
+    
+    alpha = 10 # number of top designs to analyze
+
+    #==============================================================================
+    # Set based sorting
+
+    xS = range(0,len(histogram))
+    yS = sorted(histogram,reverse = True)
+    indices = [x for _,x in sorted(zip(histogram,xS),reverse = True)]
+    sorted_designs = [x for _,x in sorted(zip(histogram,design_list),reverse = True)]
+    
+    print('Top 5 designs:')
+    for design in sorted_designs[:alpha]:
+        print(design)
+    # data for constructing tradespace of feasible designs
+    # req_index = 50
+    # attribute = dictionary_res['req_index_%i' %(req_index)]
+    req_index = 0
+    attribute = dictionary_weight['capability_th_uni']
+    cost = dictionary_weight['weight']
+
+    # Data for plotting SBD designs
+    attribute_SBD = attribute[indices]
+    cost_SBD = cost[indices]
+    
+    #==============================================================================
+    # robustness sorting
+    [data,robustness] = import_feasibility(filename_feas)
+
+    xR = range(0,len(robustness))
+    yR = sorted(robustness,reverse = True)
+    indices_robust = [x for _,x in sorted(zip(robustness,xR),reverse = True)]
+    sorted_designs_robust = [x for _,x in sorted(zip(robustness,design_list),reverse = True)]
+    
+    print('Top 5 robust designs:')
+    for design in sorted_designs_robust[:alpha]:
+        print(design)
+    # data for constructing tradespace of feasible designs
+    # req_index = 50
+    # attribute = dictionary_res['req_index_%i' %(req_index)]
+
+    # Data for plotting SBD designs
+    attribute_robust = attribute[indices_robust]
+    cost_robust = cost[indices_robust]
+
+    #==============================================================================
+    # flexibility sorting
+    FO = filtered_outdegree(dictionary_weight)
+
+    xF = range(0,len(FO))
+    yF = sorted(FO,reverse = True)
+    indices_flexible = [x for _,x in sorted(zip(FO,xF),reverse = True)]
+    sorted_designs_flexible = [x for _,x in sorted(zip(FO,design_list),reverse = True)]
+    
+    print('Top 5 flexible designs:')
+    for design in sorted_designs_flexible[:alpha]:
+        print(design)
+    # data for constructing tradespace of feasible designs
+    # req_index = 50
+    # attribute = dictionary_res['req_index_%i' %(req_index)]
+
+    # Data for plotting SBD designs
+    attribute_flexible = attribute[indices_flexible]
+    cost_flexible = cost[indices_flexible]
+
+    #==========================================================================
+    # Histogram colors generator
+
+    new_colors = False
+    color_file = 'colors_histogram.pkl'
+    colors = color_generator(new_colors,color_file,indices,histogram)
+
     #==========================================================================
     # Histogram plot for robust designs
     # data for plotting histogram feasibility
-
-    n_bins = 10
+    
+    n_bins = 15
     x = xR[:n_bins]
     y = yR[:n_bins]
     design_indices = [i + 1 for i in indices_robust[:n_bins]]
-    design_colors = [colors[i] for i in indices_robust[:n_bins]]
-
+    # design_colors = [colors[i] for i in indices_robust[:n_bins]] # Colored bars
+    design_colors = [1,1,1] # Black and white bars
     # design_indices = list(range(1,21)
 
     mpl.rc('text', usetex = True)
@@ -497,11 +555,17 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
     
     barlist = plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
-    # for bar in barlist[:5]: # set color of first five bars
-    #     bar.set_edgecolor('r')
-    #     bar.set_linewidth(2.3)
+    bar_i = 0
+    for bar in barlist: # set color of first five bars
+        if bar_i < alpha:
+            bar.set_edgecolor('r')
+            bar.set_linewidth(2.3)
+        else:
+            bar.set_edgecolor('k')
+            bar.set_linewidth(1.0)
+        bar_i += 1
 
-    plt.xlabel('Design index', fontsize=14)
+    plt.xlabel('Design arc index ($\lambda$)', fontsize=14)
     plt.ylabel('$\%$ of requirement arcs satisfied', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
 
@@ -512,11 +576,12 @@ if __name__ == "__main__":
     # Histogram plot for flexible designs
     # data for plotting histogram feasibility
 
-    n_bins = 10
+    n_bins = 15
     x = xF[:n_bins]
     y = yF[:n_bins]
     design_indices = [i + 1 for i in indices_flexible[:n_bins]]
-    design_colors = [colors[i] for i in indices_flexible[:n_bins]]
+    # design_colors = [colors[i] for i in indices_robust[:n_bins]] # Colored bars
+    design_colors = [1,1,1] # Black and white bars
 
     # design_indices = list(range(1,21)
 
@@ -526,11 +591,17 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
     
     barlist = plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
-    # for bar in barlist[:5]: # set color of first five bars
-    #     bar.set_edgecolor('r')
-    #     bar.set_linewidth(2.3)
+    bar_i = 0
+    for bar in barlist: # set color of first five bars
+        if bar_i < alpha:
+            bar.set_edgecolor('r')
+            bar.set_linewidth(2.3)
+        else:
+            bar.set_edgecolor('k')
+            bar.set_linewidth(1.0)
+        bar_i += 1
 
-    plt.xlabel('Design index', fontsize=14)
+    plt.xlabel('Design arc index ($\lambda$)', fontsize=14)
     plt.ylabel('Filtered outdegree ($FO$)', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
     plt.yticks(list(range(max(yF)+1)), list(map(str,range(max(yF)+1)))) # Force integer ticks
@@ -540,11 +611,12 @@ if __name__ == "__main__":
     # Histogram plot
     # data for plotting histogram SBD
 
-    n_bins = 10
+    n_bins = 15
     x = xS[:n_bins]
     y = yS[:n_bins]/(sum(yS)*0.01)
     design_indices = [i + 1 for i in indices[:n_bins]]
-    design_colors = [colors[i] for i in indices[:n_bins]]
+    # design_colors = [colors[i] for i in indices_robust[:n_bins]] # Colored bars
+    design_colors = [1,1,1] # Black and white bars
 
     # design_indices = list(range(1,21)
 
@@ -554,11 +626,17 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
     
     barlist = plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
-    # for bar in barlist[:5]: # set color of first five bars
-    #     bar.set_edgecolor('r')
-    #     bar.set_linewidth(2.3)
+    bar_i = 0
+    for bar in barlist: # set color of first five bars
+        if bar_i < alpha:
+            bar.set_edgecolor('r')
+            bar.set_linewidth(2.3)
+        else:
+            bar.set_edgecolor('k')
+            bar.set_linewidth(1.0)
+        bar_i += 1
 
-    plt.xlabel('Design index', fontsize=14)
+    plt.xlabel('Design arc index ($\lambda$)', fontsize=14)
     plt.ylabel('Relative frequency as optimizer', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
 
@@ -577,13 +655,108 @@ if __name__ == "__main__":
 
     feasible, = plt.plot(cost, attribute, 'x', color = [0,0,0], linewidth = 1, markersize = 6 )
     pareto, = plt.plot(x_data, y_data, '-d', color = 'm', linewidth = 4.0, markersize = 7.0 )
-    Robust_design = plt.scatter( cost_robust[:5], attribute_robust[:5], s = 600, color = [0,0,1], marker = '.', zorder=3)
-    flexible_design = plt.scatter( cost_flexible[:5], attribute_flexible[:5], s = 300, color = [34/256,139/256,34/256], marker = '.', zorder=4 )
-    SBD_design = plt.scatter( cost_SBD[:5], attribute_SBD[:5], s = 150, color = [1,0,0], marker = '.', zorder=5 )
+    Robust_design = plt.scatter( cost_robust[:alpha], attribute_robust[:alpha], s = 600, color = [0,0,1], marker = '.', zorder=3)
+    flexible_design = plt.scatter( cost_flexible[:alpha], attribute_flexible[:alpha], s = 300, color = [34/256,139/256,34/256], marker = '.', zorder=4 )
+    SBD_design = plt.scatter( cost_SBD[:alpha], attribute_SBD[:alpha], s = 150, color = [1,0,0], marker = '.', zorder=5 )
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14)
     # plt.ylabel('Requirement satisfaction ratio ($V_{{C}\cap{R}}/V_{R}$)', fontsize=14)
     plt.ylabel('Volume of capability set ($V_c$)', fontsize=14)
     
+
+    # Convert data into a nx2 array
+    pts_FE = np.hstack((np.reshape(cost, (-1, 1)), np.reshape(attribute, (-1, 1))))
+    pts_R = np.hstack((np.reshape(cost_robust[:alpha], (-1, 1)), np.reshape(attribute_robust[:alpha], (-1, 1))))
+    pts_F = np.hstack((np.reshape(cost_flexible[:alpha], (-1, 1)), np.reshape(attribute_flexible[:alpha], (-1, 1))))
+    pts_SBD = np.hstack((np.reshape(cost_SBD[:alpha], (-1, 1)), np.reshape(attribute_SBD[:alpha], (-1, 1))))
+    
+    lb = np.array([min(cost),min(attribute)])
+    ub = np.array([max(cost),max(attribute)])
+
+    pts_FE = scaling(pts_FE,lb,ub,1)
+    pts_R = scaling(pts_R,lb,ub,1)
+    pts_F = scaling(pts_F,lb,ub,1)
+    pts_SBD = scaling(pts_SBD,lb,ub,1)
+    
+    # get set-based convex hull data
+    hull_FE = ConvexHull(pts_FE)
+    CV_FE = hull_FE.volume
+    # Get centroid
+    cx_FE_n = np.mean(hull_FE.points[hull_FE.vertices,0])
+    cy_FE_n = np.mean(hull_FE.points[hull_FE.vertices,1])
+    cx_FE = scaling(cx_FE_n,lb[0],ub[0],2)
+    cy_FE = scaling(cy_FE_n,lb[1],ub[1],2)
+    print('Feasible set: Centroid: (%f, %f), Area: %f' %(cx_FE,cy_FE,CV_FE))
+    print('Feasible set: LB: (%f, %f), UB: (%f, %f)' %(min(cost),min(attribute),
+                                                       max(cost),max(attribute)))
+    HV_FE = get_HP_volume(cost,attribute,lb,ub)
+    print('Feasible set hyper rectangle volume: %f' %(HV_FE))
+
+    # get set-based convex hull data
+    hull_R = ConvexHull(pts_R)
+    CV_R = hull_R.volume
+    # Get centroid
+    cx_R_n = np.mean(hull_R.points[hull_R.vertices,0])
+    cy_R_n = np.mean(hull_R.points[hull_R.vertices,1])
+    cx_R = scaling(cx_R_n,lb[0],ub[0],2)
+    cy_R = scaling(cy_R_n,lb[1],ub[1],2)
+    print('Robust set: Centroid: (%f, %f), Area: %f' %(cx_R,cy_R,CV_R))
+    print('Robust set: LB: (%f, %f), UB: (%f, %f)' %(min(cost_robust[:alpha]),min(attribute_robust[:alpha]),
+                                                     max(cost_robust[:alpha]),max(attribute_robust[:alpha])))
+    HV_R = get_HP_volume(cost_robust[:alpha],attribute_robust[:alpha],lb,ub)
+    print('Robust set hyper rectangle volume: %f' %(HV_R))
+    
+    # get set-based convex hull data
+    hull_F = ConvexHull(pts_F)
+    CV_F = hull_F.volume
+    # Get centroid
+    cx_F_n = np.mean(hull_F.points[hull_F.vertices,0])
+    cy_F_n = np.mean(hull_F.points[hull_F.vertices,1])
+    cx_F = scaling(cx_F_n,lb[0],ub[0],2)
+    cy_F = scaling(cy_F_n,lb[1],ub[1],2)
+    print('Flexible set: Centroid: (%f, %f), Area: %f' %(cx_F,cy_F,CV_F))
+    print('Flexible set: LB: (%f, %f), UB: (%f, %f)' %(min(cost_flexible[:alpha]),min(attribute_flexible[:alpha]),
+                                                       max(cost_flexible[:alpha]),max(attribute_flexible[:alpha])))
+    HV_F = get_HP_volume(cost_flexible[:alpha],attribute_flexible[:alpha],lb,ub)
+    print('Flexible set hyper rectangle volume: %f' %(HV_F))
+
+    # get set-based convex hull data
+    hull_SBD = ConvexHull(pts_SBD)
+    CV_SBD = hull_SBD.volume
+    # Get centoid
+    cx_SBD_n = np.mean(hull_SBD.points[hull_SBD.vertices,0])
+    cy_SBD_n = np.mean(hull_SBD.points[hull_SBD.vertices,1])
+    cx_SBD = scaling(cx_SBD_n,lb[0],ub[0],2)
+    cy_SBD = scaling(cy_SBD_n,lb[1],ub[1],2)
+    print('SBD set: Centroid: (%f, %f), Area: %f' %(cx_SBD,cy_SBD,CV_SBD))
+    print('SBD set: LB: (%f, %f), UB: (%f, %f)' %(min(cost_SBD[:alpha]),min(attribute_SBD[:alpha]),
+                                                  max(cost_SBD[:alpha]),max(attribute_SBD[:alpha])))
+    
+    HV_SBD = get_HP_volume(cost_SBD[:alpha],attribute_SBD[:alpha],lb,ub)
+    print('SBD set hyper rectangle volume: %f' %(HV_SBD))
+
+    # compute distance to nearest pareto point
+    x_data_n = scaling(x_data,lb[0],ub[0],1)
+    y_data_n = scaling(y_data,lb[1],ub[1],1)
+
+    dp_FE = shortest_distance(x_data_n,y_data_n,cx_FE_n,cy_FE_n)
+    dp_R = shortest_distance(x_data_n,y_data_n,cx_R_n,cy_R_n)
+    dp_F = shortest_distance(x_data_n,y_data_n,cx_F_n,cy_F_n)
+    dp_SBD = shortest_distance(x_data_n,y_data_n,cx_SBD_n,cy_SBD_n)
+    print('Feasible set shortest: %f' %(dp_FE))
+    print('R set shortest: %f' %(dp_R))
+    print('F set shortest: %f' %(dp_F))
+    print('SBD set shortest: %f' %(dp_SBD))
+
+    # # Show convex hull (robust)
+    # plt.plot(hull_R.points[hull_R.vertices,0], hull_R.points[hull_R.vertices,1], 'b--', lw=2)
+    # plt.plot(hull_R.points[hull_R.vertices[0],0], hull_R.points[hull_R.vertices[0],1], 'bo')
+    # # Show convex hull (flexible)
+    # plt.plot(hull_F.points[hull_F.vertices,0], hull_F.points[hull_F.vertices,1], 'g--', lw=2)
+    # plt.plot(hull_F.points[hull_F.vertices[0],0], hull_F.points[hull_F.vertices[0],1], 'go')
+    # # Show convex hull (SBD)
+    # plt.plot(hull_SBD.points[hull_SBD.vertices,0], hull_SBD.points[hull_SBD.vertices,1], 'r--', lw=2)
+    # plt.plot(hull_SBD.points[hull_SBD.vertices[0],0], hull_SBD.points[hull_SBD.vertices[0],1], 'ro')
+
     ax = plt.gca() 
     ax.tick_params(axis='both', which='major', labelsize=14)
     # ax.legend((feasible, pareto), 
@@ -598,14 +771,14 @@ if __name__ == "__main__":
     #            'Robust designs', 'Flexible designs'), loc = 'lower right',
     #            fontsize = 9.0)
     ax.legend((feasible, pareto, Robust_design, flexible_design, SBD_design), 
-              ('$\Omega_{cD}$', 'Pareto optimal design arcs', 
+              ('$\{c,\mathbf{D}\} \in \Omega_{cD}$', 'Pareto optimal design arcs', 
                'Robust design arcs', 'Flexible design arcs', 'Set-based design arcs'), loc = 'lower right',
                fontsize = 9.0)
 
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','tradespace_pareto.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
     
-    # print(ax.get_xlim())
-    # print(ax.get_ylim())
+    print(ax.get_xlim())
+    print(ax.get_ylim())
     #==========================================================================
     # Pie chart plot   
     import matplotlib.gridspec as gridspec
@@ -652,7 +825,7 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
         
     # Pie chart, where the slices will be ordered and plotted counter-clockwise:
-    labels = 'deposit 0', 'deposit 1', 'deposit 2', 'deposit 3', 'deposit 4'
+    labels = '$D_1 = 0$', '$D_1 = 1$', '$D_1 = 2$', '$D_1 = 3$', '$D_1 = 4$'
     sizes = i1
     explode = (0, 0, 0, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
     
@@ -665,9 +838,9 @@ if __name__ == "__main__":
         autotexts[i].set_fontsize(18)
     
     # Color a section of the pie
-    # patches[1].set_edgecolor('b')
-    # patches[1].set_linewidth(3)
-    # patches[1].set_hatch('\\')
+    patches[1].set_edgecolor('b')
+    patches[1].set_linewidth(3)
+    patches[1].set_hatch('\\')
         
     ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','1st_stage_pie.pdf'), format='pdf', dpi=1000,bbox_inches='tight')

@@ -996,7 +996,7 @@ def postprocess_DOE(index,base_name,current_path,DOE_folder,bounds,variable_lbls
     Y = outputs; S_n = scaling(DOE_inputs, lob, upb, 1)
     # fitting_names = ['KRIGING','LOWESS','KS','RBF','PRS','ENSEMBLE'];
     # fit_type = 1; run_type = 2; # use pre-optimized hyperparameters
-    fit_type = 5; run_type = 2 # optimize all hyperparameters
+    fit_type = 5; run_type = 1 # optimize all hyperparameters
     model,sgt_file = define_SGTE_model(fit_type,run_type)
     server = SGTE_server(model)
     server.sgtelib_server_start()
@@ -1397,7 +1397,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     # resolution = 50 # sampling resolution for capability calculation (must be a square number)!
     # threshold = 100000 # cutoff threshold for capability calculation
     # threshold = 4.0 # cutoff threshold for capability calculation
-    threshold = 2.8 # cutoff threshold for capability calculation
+    threshold = 2.2 # cutoff threshold for capability calculation
     
     DOE_folder = 'Thermal_DOE_results'; base_name = ['DOE_th_inputs','thermal_out']
     variable_lbls_pc = ['T1','T2','T3','T4']
@@ -1437,7 +1437,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                 index,['DOE_th_inputs','thermal_out_nominal'],
                 current_path,bounds_th,
                 mu,Sigma,req_type,variable_lbls,threshold,
-                resolution,True,new_LHS_MCI,LHS_MCI_file,
+                resolution,False,new_LHS_MCI,LHS_MCI_file,
                 req_index,server,DOE_inputs,outputs,plt,True)
         else:
             resiliance_th = 0.0; R_volume_th = 0.0; capability_th = 0.0; buffer_th = 0.0; excess_th = 0.0
@@ -1484,16 +1484,16 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
         # # linearly interpolate between two vectors
         from scipy.interpolate import interp1d
     
-        # linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
-        # mus = list(linfit([1,2,3,4,5]))
-        # linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
-        # Sigmas = list(linfit([1,2,3,4,5]))
+        linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
+        mus = list(linfit([1,2,3,4,5]))
+        linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
+        Sigmas = list(linfit([1,2,3,4,5]))
     
         # USE THIS IF YOU WANT TO PLOT A FEW CASES AS AN EXAMPLE
-        linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
-        mus = list(linfit([2,4]))
-        linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
-        Sigmas = list(linfit([2,5]))
+        # linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
+        # mus = list(linfit([2,4]))
+        # linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
+        # Sigmas = list(linfit([2,5]))
 
         Sigma_2s = []
         for Sigma in Sigmas:
@@ -1530,7 +1530,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                 resiliance_th,_,_,buffer_th, excess_th = process_requirements(
                     index,base_name,current_path,bounds_th,
                     mu,Sigma,req_type,variable_lbls,threshold,
-                    resolution,True,new_LHS_MCI,LHS_MCI_file,
+                    resolution,False,new_LHS_MCI,LHS_MCI_file,
                     req_index,server,DOE_inputs,outputs,plt,True)
             else:
                 resiliance_th = 0.0; buffer_th = 0.0; excess_th = 0.0
@@ -1820,10 +1820,10 @@ def main():
     #============================= MAIN EXECUTION =================================#
     
     index = 0
-    index = 110 - 1
-    P_analysis = [P_analysis[110 - 1]] # for testing
-    # index = 340
-    # P_analysis = P_analysis[340::] # for testing
+    # index = 110 - 1
+    # P_analysis = [P_analysis[110 - 1]] # for testing
+    index = 0
+    P_analysis = P_analysis[0:15] # for testing
     for P_i in P_analysis:
         index += 1
         print(P_i)

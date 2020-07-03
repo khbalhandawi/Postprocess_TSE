@@ -31,7 +31,7 @@ def NOMAD_call(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
     req_thresh_str = ' '.join(map(str,req_thresh)) # print parameters as space demilited string
     eval_point_str = ' '.join(map(str,eval_point)) # print parameters as space demilited string
     
-    command = "categorical_MSSP %i %i %s %s %s %s %s %s %s %s" %(call_type,obj_type,weight_file,res_ip_file,res_ip_file,
+    command = "categorical_MSSP %i %i %s %s %s %s %s %s %s %s" %(call_type,obj_type,weight_file,res_ip_file,excess_ip_file,
                                                                  res_th_file,excess_th_file,
                                                                  req_vec_str,req_thresh_str,eval_point_str)
     print(command)
@@ -179,11 +179,11 @@ def main():
     # one-liner to read a single variable
     input_filename = 'DOE_permutations.mat'
     input_folder = 'Input_files'
-    weight_file = 'varout_opt_log.log'
-    res_ip_file = 'resiliance_ip.log'
-    excess_ip_file = 'excess_ip.log'
-    res_th_file = 'resiliance_th.log'
-    excess_th_file = 'excess_th.log'
+    weight_file = 'varout_opt_log_R4.log'
+    res_ip_file = 'resiliance_ip_R4.log'
+    excess_ip_file = 'excess_ip_R4.log'
+    res_th_file = 'resiliance_th_R4.log'
+    excess_th_file = 'excess_th_R4.log'
 
     MADS_output_dir = os.path.join(current_path,MADS_output_folder)
     DOE_dir = os.path.join(current_path,DOE_folder)
@@ -207,11 +207,11 @@ def main():
     # ('guassian', array([0.625, 0.2  , 0.2  , 0.375]), array([0.015625  , 0.00694444, 0.00694444, 0.015625  ]))] mu_2, sigma_2
     
     #========================== OUTPUT VARIABLES LOG ==============================#
-    filename = "req_opt_log.log"
+    filename = "req_opt_log_R4.log"
     full_filename = os.path.join(DOE_out_dir,filename)
-    filename = "req_opt_E_log.log"
+    filename = "req_opt_E_log_R4.log"
     full_filename_E = os.path.join(DOE_out_dir,filename)
-    filename = "feasiblity_log.log"
+    filename = "feasiblity_log_R4.log"
     feasiblity_filename = os.path.join(DOE_out_dir,filename)
     design_titles = []
     for d_i in range(len(P_analysis)):

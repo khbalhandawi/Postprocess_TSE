@@ -16,7 +16,7 @@ def plot_tradespace(attribute):
     import random
     from itertools import permutations 
     
-    filename = 'varout_opt_log.log'
+    filename = 'varout_opt_log_5D_R50_th0_2.8_th1_2.8_th2_2.8_Rv_approx.log'
     current_path = os.getcwd()
     filepath = os.path.join(current_path,'Optimization_studies',filename)
     
@@ -132,6 +132,45 @@ def plot_tradespace(attribute):
         wave, = plt.plot(x_data, y_data, 'o', color = [1,0,0], markersize=6 )
         branch_id += 1
     
+    # TUBE CONCEPT
+    l = list(permutations(range(0, 4))) # permutate indices
+    branch_id = 0
+    for branch in l:
+        branch = list(branch)
+        
+        # loop over data points
+        i = 0; x_data = []; y_data = []
+        for c,i1,i2,i3,i4,i5 in zip(dictionary['concept'],dictionary['i1'],dictionary['i2'],dictionary['i3'],dictionary['i4'],dictionary['i5']):
+                       
+            # Get permutation index
+            permutation_index = []
+            for arg in [i1,i2,i3,i4,i5]:
+                if not int(arg) == -1:
+                    permutation_index += [int(arg)] # populate permutation index
+            
+            if c == 2: # tube concept
+                k = []
+                for item in permutation_index:
+                    k += [pos for pos,x in enumerate(branch) if x == item]
+                
+                 # check if permutation index contained within branch
+                if k == list(range(len(permutation_index))):
+                    x_data += [dictionary['weight'][i]]
+                    y_data += [dictionary[attribute_name][i]]
+        
+            i += 1
+        
+        # generate random color for branch
+        r = random.random()
+        g = random.random()
+        b = random.random()
+        rgb = [r,g,b]
+        
+        plt.plot(x_data, y_data, '--', color = rgb, linewidth = 1.5 )
+        start, = plt.plot(x_data, y_data, 'o', markersize=10, markevery=len(x_data), color = [0,0,0])
+        tube, = plt.plot(x_data, y_data, 'o', color = [0,1,0], markersize=6 )
+        branch_id += 1
+
     ax = plt.gca() 
     ax.tick_params(axis='both', which='major', labelsize=14) 
     
@@ -139,12 +178,13 @@ def plot_tradespace(attribute):
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14)
     plt.ylabel(attribute_label, fontsize=14)
     
-    return fig, ax, dictionary, start, wave, cross
+    return fig, ax, dictionary, start, wave, cross, tube
 
 if __name__ == "__main__":
     
-    attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-    # attribute = ['resiliance_th_gau','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$']
-    
-    [fig, ax, dictionary, start, wave, cross] = plot_tradespace(attribute)
+    # attribute = ['n_f_th','Safety factor ($n_{safety}$)']
+    # attribute = ['resiliance_th_gau','Reliability $\mathbb{P}(\mathbf{p} \in C)$']
+    attribute = ['capability_th_uni','Volume of capability set ($V_c$)']
+
+    [fig, ax, dictionary, start, wave, cross, tube] = plot_tradespace(attribute)
     plt.show()
