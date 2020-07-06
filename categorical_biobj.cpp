@@ -253,16 +253,23 @@ int main(int argc, char ** argv)
 {
 
 	int req_index = stoi(argv[1]);
+
 	string weight_file = argv[2];
 	string res_ip_file = argv[3];
-	string res_th_file = argv[4];
+	string exc_ip_file = argv[4];
+	string res_th_file = argv[5];
+	string exc_th_file = argv[6];
 
 	string input_file = "./Input_files/" + weight_file;
 	vector< vector<double> > input_data = read_csv_file(input_file); // Make sure there are no empty lines !!
 	string input_file_ip = "./Input_files/" + res_ip_file;
 	vector< vector<double> > resiliance_ip_data = read_csv_file(input_file_ip); // Make sure there are no empty lines !!
+	string input_file_exc_ip = "./Input_files/" + exc_ip_file;
+	vector< vector<double> > excess_ip_data = read_csv_file(input_file_exc_ip); // Make sure there are no empty lines !!
 	string input_file_th = "./Input_files/" + res_th_file;
 	vector< vector<double> > resiliance_th_data = read_csv_file(input_file_th); // Make sure there are no empty lines !!
+	string input_file_exc_th = "./Input_files/" + exc_th_file;
+	vector< vector<double> > excess_th_data = read_csv_file(input_file_exc_th); // Make sure there are no empty lines !!
 
 	// NOMAD initializations:
 	NOMAD::begin(argc, argv);
@@ -419,7 +426,7 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 
 	count_eval = false;
 
-	vector<double> concept, i1, i2, i3, i4, i5, n_f_th, weight, attribute;
+	vector<double> concept, i1, i2, i3, i4, i5, n_f_th, V_c, weight, attribute;
 	concept = design_data[1];
 	i1 = design_data[2];
 	i2 = design_data[3];
@@ -427,10 +434,11 @@ bool My_Evaluator::eval_x(NOMAD::Eval_Point   & x,
 	i4 = design_data[5];
 	i5 = design_data[6];
 	n_f_th = design_data[33];
+	V_c = design_data[59];
 	weight = design_data[35];
 
 	if (req_index == 0) {
-		attribute = n_f_th; //n_safety
+		attribute = V_c; //volume of capability
 	}
 	else {
 		attribute = resiliance_th_data[(6 + req_index)]; //req_index_i
@@ -723,10 +731,14 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 		int c = static_cast<int> (x[1].value());
 
 		// list of concepts
-		vector<int> concepts = { 0,1 };
+		vector<int> concepts = { 0,1,2 };
+		vector<int> deposits_c2 = { 0,1,2,3 };
+		vector<int> deposits_c1 = { 0,1,2,3,4 };
+		vector<int> deposits_c0 = { 0,1,2 };
+		vector<int> deposits;
 
 		// this vector contains the types of the other deposits:
-		vector<int> other_types_c0, other_types_c1, other_types, other_concepts;
+		vector<int> other_types_c0, other_types_c1, other_types_c2, other_types, other_concepts;
 
 		switch (cur_type) {
 		case 0:
@@ -737,6 +749,10 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			other_types_c1.push_back(2);
 			other_types_c1.push_back(3);
 			other_types_c1.push_back(4);
+
+			other_types_c2.push_back(1);
+			other_types_c2.push_back(2);
+			other_types_c2.push_back(3);
 			break;
 		case 1:
 			other_types_c0.push_back(0);
@@ -746,6 +762,10 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			other_types_c1.push_back(2);
 			other_types_c1.push_back(3);
 			other_types_c1.push_back(4);
+
+			other_types_c2.push_back(0);
+			other_types_c2.push_back(2);
+			other_types_c2.push_back(3);
 			break;
 		case 2:
 			other_types_c0.push_back(0);
@@ -755,12 +775,20 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			other_types_c1.push_back(1);
 			other_types_c1.push_back(3);
 			other_types_c1.push_back(4);
+
+			other_types_c2.push_back(0);
+			other_types_c2.push_back(1);
+			other_types_c2.push_back(3);
 			break;
 		case 3:
 			other_types_c1.push_back(0);
 			other_types_c1.push_back(1);
 			other_types_c1.push_back(2);
 			other_types_c1.push_back(4);
+
+			other_types_c2.push_back(0);
+			other_types_c2.push_back(1);
+			other_types_c2.push_back(2);
 			break;
 		case 4:
 			other_types_c1.push_back(0);
@@ -774,11 +802,18 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 		switch (c) {
 		case 0:
 			other_concepts.push_back(1);
+			other_concepts.push_back(2);
 			other_types = other_types_c0;
 			break;
 		case 1:
 			other_concepts.push_back(0);
+			other_concepts.push_back(2);
 			other_types = other_types_c1;
+			break;
+		case 2:
+			other_concepts.push_back(0);
+			other_concepts.push_back(1);
+			other_types = other_types_c2;
 			break;
 		}
 
@@ -805,32 +840,77 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			extended.push_back(y);
 		}
 
-		// loop over concepts
-		if (x[2] == 0 || x[2] == 1) { // change concept allowed
-			for (size_t j = 0; j < other_concepts.size(); ++j) {
+		//// loop over concepts
+		//if (x[2] == 0 || x[2] == 1) { // change concept allowed
+		//	for (size_t j = 0; j < other_concepts.size(); ++j) {
 
-				switch (other_concepts[j]) {
-				case 0:
-					other_types = { 0,1 };
-					break;
-				case 1:
-					other_types = { 0,1,2,3,4 };
-					break;
-				}
+		//		switch (other_concepts[j]) {
+		//		case 0:
+		//			other_types = { 0,1 };
+		//			break;
+		//		case 1:
+		//			other_types = { 0,1,2,3,4 };
+		//			break;
+		//		case 2:
+		//			other_types = { 0,1,2,3 };
+		//			break;
+		//		}
 
-				// change the type of the deposit to the other types (1 or 3 neighbors):
-				for (size_t k = 0; k < other_types.size(); ++k)
-				{
-					NOMAD::Point y = x;
-					y[1] = other_concepts[j];
-					y[2] = other_types[k];
+		//		// change the type of the deposit to the other types (1 or 3 neighbors):
+		//		for (size_t k = 0; k < other_types.size(); ++k)
+		//		{
+		//			NOMAD::Point y = x;
+		//			y[1] = other_concepts[j];
+		//			y[2] = other_types[k];
 
-					add_extended_poll_point(y, *_s1);
-					extended.push_back(y);
-				}
+		//			add_extended_poll_point(y, *_s1);
+		//			extended.push_back(y);
+		//		}
 
+		//	}
+		//}
+
+		// check if all deposits are common with another concept
+		for (size_t j = 0; j < other_concepts.size(); ++j) {
+
+			switch (other_concepts[j]) {
+			case 1:
+				deposits = deposits_c1;
+				break;
+			case 2:
+				deposits = deposits_c2;
+				break;
+			case 0:
+				deposits = deposits_c0;
+				break;
 			}
+
+			bool vector_contained = true;
+
+			vector<int> input_deposits; // extract different deposit types
+
+			for (size_t k = 0; k < (x.size() - 2); ++k) {
+				input_deposits.push_back(int(x[k + 2].value())); // get input vector
+			}
+
+			for (size_t a = 0; a < input_deposits.size(); ++a) {// loop over deposit vector
+
+				if (!(find(deposits.begin(), deposits.end(), cur_type) != deposits.end())) {
+					vector_contained = false;
+				}
+			}
+
+			if (vector_contained) {
+				// change the concept type:
+				NOMAD::Point y = x;
+				y[1] = other_concepts[j];
+
+				add_extended_poll_point(y, *_s1);
+				extended.push_back(y);
+			}
+
 		}
+
 
 	}
 

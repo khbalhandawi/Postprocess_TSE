@@ -1466,6 +1466,30 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 	other_types_add = other_types;
 	other_types_add.push_back(-1); // -1 allowed only if adding a stiffener
 
+
+	// Extract design vector from decision vector (strip the -1 decisions)
+	int n_stages = 6;
+	vector<int> input_deposits; // extract different deposit types
+	input_deposits.push_back(int(x[1].value())); // push back concept type
+
+	for (size_t k = 0; k < (n_stages); ++k) {
+
+		if (k < (x.size() - 2)) {
+			input_deposits.push_back(int(x[k + 2].value())); // get input vector
+		}
+
+	}
+
+	// remove -1 deposits from input:
+	vector<int> lookup_vector;
+	for (size_t m = 0; m < input_deposits.size(); ++m) {
+		if (input_deposits[m] != -1) {
+			lookup_vector.push_back(input_deposits[m]);
+		}
+	}
+
+	bool check_other_concepts = true;
+
 	//cout << x << endl;
 
 	// 1 deposit:
@@ -1610,6 +1634,45 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			shuffle_padding(y, &extended);
 			fill_point(y, &extended);
 		}
+
+		// check if all deposits are common with another concept
+		for (size_t j = 0; j < other_concepts.size(); ++j) {
+
+			switch (other_concepts[j]) {
+			case 1:
+				deposits = deposits_c1;
+				other_types = deposits;
+				break;
+			case 2:
+				deposits = deposits_c2;
+				other_types = deposits;
+				break;
+			case 0:
+				deposits = deposits_c0;
+				other_types = deposits;
+				break;
+			}
+
+			bool vector_contained = check_other_concepts;
+
+			for (size_t a = 0; a < lookup_vector.size(); ++a) {// loop over deposit vector
+
+				if (!(find(deposits.begin(), deposits.end(), cur_type) != deposits.end())) {
+					vector_contained = false;
+				}
+			}
+
+			if (vector_contained) {
+				// change the concept type:
+				NOMAD::Point y = x;
+				y[1] = other_concepts[j];
+
+				add_extended_poll_point(y, *_s2);
+				extended.push_back(y);
+			}
+
+		}
+
 		fill_point(x, &extended);
 	}
 
@@ -1656,6 +1719,44 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 		}
 
 		shuffle_padding(x, &extended);
+
+		// check if all deposits are common with another concept
+		for (size_t j = 0; j < other_concepts.size(); ++j) {
+
+			switch (other_concepts[j]) {
+			case 1:
+				deposits = deposits_c1;
+				other_types = deposits;
+				break;
+			case 2:
+				deposits = deposits_c2;
+				other_types = deposits;
+				break;
+			case 0:
+				deposits = deposits_c0;
+				other_types = deposits;
+				break;
+			}
+
+			bool vector_contained = check_other_concepts;
+
+			for (size_t a = 0; a < lookup_vector.size(); ++a) {// loop over deposit vector
+
+				if (!(find(deposits.begin(), deposits.end(), cur_type) != deposits.end())) {
+					vector_contained = false;
+				}
+			}
+
+			if (vector_contained) {
+				// change the concept type:
+				NOMAD::Point y = x;
+				y[1] = other_concepts[j];
+
+				add_extended_poll_point(y, *_s3);
+				extended.push_back(y);
+			}
+
+		}
 
 	}
 
@@ -1704,6 +1805,44 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 		}
 
 		shuffle_padding(x, &extended);
+
+		// check if all deposits are common with another concept
+		for (size_t j = 0; j < other_concepts.size(); ++j) {
+
+			switch (other_concepts[j]) {
+			case 1:
+				deposits = deposits_c1;
+				other_types = deposits;
+				break;
+			case 2:
+				deposits = deposits_c2;
+				other_types = deposits;
+				break;
+			case 0:
+				deposits = deposits_c0;
+				other_types = deposits;
+				break;
+			}
+
+			bool vector_contained = check_other_concepts;
+
+			for (size_t a = 0; a < lookup_vector.size(); ++a) {// loop over deposit vector
+
+				if (!(find(deposits.begin(), deposits.end(), cur_type) != deposits.end())) {
+					vector_contained = false;
+				}
+			}
+
+			if (vector_contained) {
+				// change the concept type:
+				NOMAD::Point y = x;
+				y[1] = other_concepts[j];
+
+				add_extended_poll_point(y, *_s4);
+				extended.push_back(y);
+			}
+
+		}
 
 	}
 
@@ -1755,6 +1894,45 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 
 		shuffle_padding(x, &extended);
 
+		// check if all deposits are common with another concept
+		for (size_t j = 0; j < other_concepts.size(); ++j) {
+
+			switch (other_concepts[j]) {
+			case 1:
+				deposits = deposits_c1;
+				other_types = deposits;
+				break;
+			case 2:
+				deposits = deposits_c2;
+				other_types = deposits;
+				break;
+			case 0:
+				deposits = deposits_c0;
+				other_types = deposits;
+				break;
+			}
+
+			bool vector_contained = check_other_concepts;
+
+			for (size_t a = 0; a < lookup_vector.size(); ++a) {// loop over deposit vector
+
+				if (!(find(deposits.begin(), deposits.end(), lookup_vector[a]) != deposits.end())) {
+					vector_contained = false;
+				}
+			}
+
+			if (vector_contained) {
+				// change the concept type:
+				NOMAD::Point y = x;
+				y[1] = other_concepts[j];
+
+				add_extended_poll_point(y, *_s5);
+				extended.push_back(y);
+			}
+
+		}
+
+
 	}
 
 	// 6 deposits:
@@ -1775,6 +1953,45 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 		//extended.push_back(y);
 		shuffle_padding(y, &extended);
 		shuffle_padding(x, &extended);
+
+		// check if all deposits are common with another concept
+		for (size_t j = 0; j < other_concepts.size(); ++j) {
+
+			switch (other_concepts[j]) {
+			case 1:
+				deposits = deposits_c1;
+				other_types = deposits;
+				break;
+			case 2:
+				deposits = deposits_c2;
+				other_types = deposits;
+				break;
+			case 0:
+				deposits = deposits_c0;
+				other_types = deposits;
+				break;
+			}
+
+			bool vector_contained = check_other_concepts;
+
+			for (size_t a = 0; a < lookup_vector.size(); ++a) {// loop over deposit vector
+
+				if (!(find(deposits.begin(), deposits.end(), cur_type) != deposits.end())) {
+					vector_contained = false;
+				}
+			}
+
+			if (vector_contained) {
+				// change the concept type:
+				NOMAD::Point y = x;
+				y[1] = other_concepts[j];
+
+				add_extended_poll_point(y, *_s6);
+				extended.push_back(y);
+			}
+
+		}
+
 	}
 
 	//// display extended poll points
