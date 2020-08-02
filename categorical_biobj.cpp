@@ -303,14 +303,14 @@ int main(int argc, char ** argv)
 		// initial point
 		NOMAD::Point x0(3, 1);
 		x0[0] = 1;   // 1 deposit
-		x0[1] = 0;   // wave concept
+		x0[1] = 1;   // wave concept
 		x0[2] = 1;   // deposit type 1
 		p.set_X0(x0);
 
 		NOMAD::Point lb(3);
 		NOMAD::Point ub(3);
 		// Categorical variables don't need bounds
-		lb[1] = 0; ub[1] = 1;
+		lb[1] = 0; ub[1] = 2;
 		lb[2] = 0; ub[2] = 4;
 
 		//p.set_DISPLAY_DEGREE ( NOMAD::FULL_DISPLAY );
@@ -335,7 +335,7 @@ int main(int argc, char ** argv)
 		p.set_MULTI_NB_MADS_RUNS(20);
 
 		// extended poll trigger:
-		p.set_EXTENDED_POLL_TRIGGER(10, false);
+		p.set_EXTENDED_POLL_TRIGGER(1, false);
 
 		// parameters validation:
 		p.check();
@@ -720,102 +720,78 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 	// number of deposits:
 	int n = static_cast<int> (x[0].value());
 	vector<NOMAD::Point> extended;
+	
+	// current type of concept:
+	int c = static_cast<int> (x[1].value());
+
+	// current type of deposit
+	size_t n_var = x.size(); // Accessing last element 
+	int cur_type = static_cast<int> (x[n_var - 1].value());
+
+	// list of concepts
+	vector<int> concepts = { 0,1,2 };
+	vector<int> deposits_c2 = { 0,1,2,3 };
+	vector<int> deposits_c1 = { 0,1,2,3,4 };
+	vector<int> deposits_c0 = { 0,1,2 };
+	vector<int> deposits;
+	// this vector contains the types of the other deposits:
+	vector<int> other_types, other_concepts, other_types_change, other_types_add;
+
+
+	// types of deposits available to each concept
+	switch (c) {
+	case 0:
+		deposits = deposits_c0;
+		other_concepts.push_back(1);
+		other_concepts.push_back(2);
+		break;
+
+	case 1:
+		deposits = deposits_c1;
+		other_concepts.push_back(0);
+		other_concepts.push_back(2);
+		break;
+
+	case 2:
+		deposits = deposits_c2;
+		other_concepts.push_back(0);
+		other_concepts.push_back(1);
+		break;
+	}
+
+	// remove existing deposits from available choices:
+	for (size_t k = 0; k < (x.size() - 2); ++k) {
+		deposits.erase(remove(deposits.begin(), deposits.end(), x[k + 2]), deposits.end());
+	}
+
+	other_types = deposits;
+
+	other_types_change = other_types; // do not change into same deposit type
+	other_types_change.erase(
+		remove(other_types_change.begin(), other_types_change.end(), cur_type),
+		other_types_change.end());
+
+	other_types_add = other_types;
+
+	// Extract design vector from decision vector (strip the -1 decisions)
+	vector<int> input_deposits; // extract different deposit types
+	input_deposits.push_back(int(x[1].value())); // push back concept type
+
+	for (size_t k = 0; k < (x.size() - 2); ++k) {
+		input_deposits.push_back(int(x[k + 2].value())); // get input vector
+	}
+
+	// remove -1 deposits from input (in MSSP code):
+	vector<int> lookup_vector;
+	for (size_t m = 0; m < input_deposits.size(); ++m) {
+			lookup_vector.push_back(input_deposits[m]);
+	}
+
+	bool check_other_concepts = true; // Added other equivalent concepts to extended pool
+
 	// 1 deposit:
 	// --------
 	if (n == 1) {
-
-		// current type of deposit
-		int cur_type = static_cast<int> (x[2].value());
-
-		// current type of concept:
-		int c = static_cast<int> (x[1].value());
-
-		// list of concepts
-		vector<int> concepts = { 0,1,2 };
-		vector<int> deposits_c2 = { 0,1,2,3 };
-		vector<int> deposits_c1 = { 0,1,2,3,4 };
-		vector<int> deposits_c0 = { 0,1,2 };
-		vector<int> deposits;
-
-		// this vector contains the types of the other deposits:
-		vector<int> other_types_c0, other_types_c1, other_types_c2, other_types, other_concepts;
-
-		switch (cur_type) {
-		case 0:
-			other_types_c0.push_back(1);
-			other_types_c0.push_back(2);
-
-			other_types_c1.push_back(1);
-			other_types_c1.push_back(2);
-			other_types_c1.push_back(3);
-			other_types_c1.push_back(4);
-
-			other_types_c2.push_back(1);
-			other_types_c2.push_back(2);
-			other_types_c2.push_back(3);
-			break;
-		case 1:
-			other_types_c0.push_back(0);
-			other_types_c0.push_back(2);
-
-			other_types_c1.push_back(0);
-			other_types_c1.push_back(2);
-			other_types_c1.push_back(3);
-			other_types_c1.push_back(4);
-
-			other_types_c2.push_back(0);
-			other_types_c2.push_back(2);
-			other_types_c2.push_back(3);
-			break;
-		case 2:
-			other_types_c0.push_back(0);
-			other_types_c0.push_back(1);
-
-			other_types_c1.push_back(0);
-			other_types_c1.push_back(1);
-			other_types_c1.push_back(3);
-			other_types_c1.push_back(4);
-
-			other_types_c2.push_back(0);
-			other_types_c2.push_back(1);
-			other_types_c2.push_back(3);
-			break;
-		case 3:
-			other_types_c1.push_back(0);
-			other_types_c1.push_back(1);
-			other_types_c1.push_back(2);
-			other_types_c1.push_back(4);
-
-			other_types_c2.push_back(0);
-			other_types_c2.push_back(1);
-			other_types_c2.push_back(2);
-			break;
-		case 4:
-			other_types_c1.push_back(0);
-			other_types_c1.push_back(1);
-			other_types_c1.push_back(2);
-			other_types_c1.push_back(3);
-			break;
-		}
-
-		// types of deposits available to each concept
-		switch (c) {
-		case 0:
-			other_concepts.push_back(1);
-			other_concepts.push_back(2);
-			other_types = other_types_c0;
-			break;
-		case 1:
-			other_concepts.push_back(0);
-			other_concepts.push_back(2);
-			other_types = other_types_c1;
-			break;
-		case 2:
-			other_concepts.push_back(0);
-			other_concepts.push_back(1);
-			other_types = other_types_c2;
-			break;
-		}
 
 		// add 1 deposit (1 or 3 neighbors):
 		for (size_t k = 0; k < other_types.size(); ++k) {
@@ -840,60 +816,100 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			extended.push_back(y);
 		}
 
-		//// loop over concepts
-		//if (x[2] == 0 || x[2] == 1) { // change concept allowed
-		//	for (size_t j = 0; j < other_concepts.size(); ++j) {
+		
+		// loop over concepts
+		// Concept 0 is allowed to change to concept 1 or 2
+		if (find(deposits_c0.begin(), deposits_c0.end(), cur_type) != deposits_c0.end()) { // change concept allowed if a common deposit is found
+			for (size_t j = 0; j < other_concepts.size(); ++j) {
 
-		//		switch (other_concepts[j]) {
-		//		case 0:
-		//			other_types = { 0,1 };
-		//			break;
-		//		case 1:
-		//			other_types = { 0,1,2,3,4 };
-		//			break;
-		//		case 2:
-		//			other_types = { 0,1,2,3 };
-		//			break;
-		//		}
+				switch (other_concepts[j]) {
+				case 0:
+					deposits = deposits_c0;
+					other_types = deposits;
+					break;
+				case 1:
+					deposits = deposits_c1;
+					other_types = deposits;
+					break;
+				case 2:
+					deposits = deposits_c2;
+					other_types = deposits;
+					break;
+				}
 
-		//		// change the type of the deposit to the other types (1 or 3 neighbors):
-		//		for (size_t k = 0; k < other_types.size(); ++k)
-		//		{
-		//			NOMAD::Point y = x;
-		//			y[1] = other_concepts[j];
-		//			y[2] = other_types[k];
+				// change the type of the deposit to the other types (1 or 3 neighbors):
+				for (size_t k = 0; k < other_types.size(); ++k) {
+					NOMAD::Point y = x;
+					y[1] = other_concepts[j];
+					y[2] = other_types[k];
 
-		//			add_extended_poll_point(y, *_s1);
-		//			extended.push_back(y);
-		//		}
+					add_extended_poll_point(y, *_s1);
+					extended.push_back(y);
+				}
 
-		//	}
-		//}
+			}
+		}
 
+		bool exit_loop; // flag to check if invalid concept selected
+		// Concept 2 is allowed to change to concept 1 only
+		if (find(deposits_c2.begin(), deposits_c2.end(), cur_type) != deposits_c2.end()) { // change concept allowed if a common deposit is found
+			for (size_t j = 0; j < other_concepts.size(); ++j) {
+
+				switch (other_concepts[j]) {
+				case 1:
+					deposits = deposits_c1;
+					other_types = deposits;
+					break;
+				case 2:
+					deposits = deposits_c2;
+					other_types = deposits;
+					break;
+				case 0:
+					exit_loop = true;
+				}
+
+				if (exit_loop) {
+					break;
+				}
+				else {
+					// change the type of the deposit to the other types (1 or 3 neighbors):
+					for (size_t k = 0; k < other_types.size(); ++k) {
+						NOMAD::Point y = x;
+						y[1] = other_concepts[j];
+						y[2] = other_types[k];
+
+						add_extended_poll_point(y, *_s1);
+						extended.push_back(y);
+					}
+				}
+
+			}
+		}
+
+		
+
+		/*
 		// check if all deposits are common with another concept
 		for (size_t j = 0; j < other_concepts.size(); ++j) {
 
 			switch (other_concepts[j]) {
 			case 1:
 				deposits = deposits_c1;
+				other_types = deposits;
 				break;
 			case 2:
 				deposits = deposits_c2;
+				other_types = deposits;
 				break;
 			case 0:
 				deposits = deposits_c0;
+				other_types = deposits;
 				break;
 			}
 
-			bool vector_contained = true;
+			bool vector_contained = check_other_concepts;
 
-			vector<int> input_deposits; // extract different deposit types
-
-			for (size_t k = 0; k < (x.size() - 2); ++k) {
-				input_deposits.push_back(int(x[k + 2].value())); // get input vector
-			}
-
-			for (size_t a = 0; a < input_deposits.size(); ++a) {// loop over deposit vector
+			for (size_t a = 0; a < lookup_vector.size(); ++a) {// loop over deposit vector
 
 				if (!(find(deposits.begin(), deposits.end(), cur_type) != deposits.end())) {
 					vector_contained = false;
@@ -911,24 +927,13 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 
 		}
 
+		*/
 
 	}
 
 	// 2 deposits:
 	// --------
 	else if (n == 2) {
-
-		vector<int> deposits = { 0,1,2,3,4 };
-		vector<int> other_types;
-		deposits.erase(remove(deposits.begin(), deposits.end(), x[2]), deposits.end());
-		deposits.erase(remove(deposits.begin(), deposits.end(), x[3]), deposits.end());
-		other_types = deposits;
-
-		// current type of deposit
-		int cur_type = static_cast<int> (x[3].value());
-
-		// current type of concept:
-		int c = static_cast<int> (x[1].value());
 
 		// remove 1 deposit (1 neighbor):
 		{
@@ -941,33 +946,66 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			extended.push_back(y);
 		}
 
-		if (c == 1) {
-			// change the type of one deposit (2 neighbors):
-			for (size_t k = 0; k < other_types.size(); ++k)
-			{
+		// change the type of one deposit (2 neighbors):
+		for (size_t k = 0; k < other_types_change.size(); ++k) {
+			NOMAD::Point y = x;
+			y[3] = other_types_change[k];
+
+			add_extended_poll_point(y, *_s2);
+			extended.push_back(y);
+		}
+
+		// add one deposit (2 neighbors):
+		for (size_t k = 0; k < other_types.size(); ++k) {
+			NOMAD::Point y(5);
+			y[0] = 3;
+			y[1] = c;
+			y[2] = x[2];
+			y[3] = cur_type;
+			y[4] = other_types[k];
+
+			add_extended_poll_point(y, *_s3);
+			extended.push_back(y);
+		}
+
+
+		// check if all deposits are common with another concept
+		for (size_t j = 0; j < other_concepts.size(); ++j) {
+
+			switch (other_concepts[j]) {
+			case 1:
+				deposits = deposits_c1;
+				other_types = deposits;
+				break;
+			case 2:
+				deposits = deposits_c2;
+				other_types = deposits;
+				break;
+			case 0:
+				deposits = deposits_c0;
+				other_types = deposits;
+				break;
+			}
+
+			bool vector_contained = check_other_concepts;
+
+			for (size_t a = 0; a < lookup_vector.size(); ++a) {// loop over deposit vector
+
+				if (!(find(deposits.begin(), deposits.end(), cur_type) != deposits.end())) {
+					vector_contained = false;
+				}
+			}
+
+			if (vector_contained) {
+				// change the concept type:
 				NOMAD::Point y = x;
-				y[3] = other_types[k];
+				y[1] = other_concepts[j];
 
 				add_extended_poll_point(y, *_s2);
 				extended.push_back(y);
 			}
 
-			// add one deposit (2 neighbors):
-			for (size_t k = 0; k < other_types.size(); ++k)
-			{
-				NOMAD::Point y(5);
-				y[0] = 3;
-				y[1] = c;
-				y[2] = x[2];
-				y[3] = cur_type;
-				y[4] = other_types[k];
-
-				add_extended_poll_point(y, *_s3);
-				extended.push_back(y);
-			}
 		}
-
-
 
 	}
 
@@ -975,19 +1013,6 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 	// ---------
 	else if (n == 3)
 	{
-
-		vector<int> deposits = { 0,1,2,3,4 };
-		vector<int> other_types;
-		deposits.erase(remove(deposits.begin(), deposits.end(), x[2]), deposits.end());
-		deposits.erase(remove(deposits.begin(), deposits.end(), x[3]), deposits.end());
-		deposits.erase(remove(deposits.begin(), deposits.end(), x[4]), deposits.end());
-		other_types = deposits;
-
-		// current type of deposit
-		int cur_type = static_cast<int> (x[4].value());
-
-		// current type of concept:
-		int c = static_cast<int> (x[1].value());
 
 		// remove 1 deposit (1 neighbor):
 		{
@@ -1026,26 +1051,50 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			extended.push_back(y);
 		}
 
+		// check if all deposits are common with another concept
+		for (size_t j = 0; j < other_concepts.size(); ++j) {
+
+			switch (other_concepts[j]) {
+			case 1:
+				deposits = deposits_c1;
+				other_types = deposits;
+				break;
+			case 2:
+				deposits = deposits_c2;
+				other_types = deposits;
+				break;
+			case 0:
+				deposits = deposits_c0;
+				other_types = deposits;
+				break;
+			}
+
+			bool vector_contained = check_other_concepts;
+
+			for (size_t a = 0; a < lookup_vector.size(); ++a) {// loop over deposit vector
+
+				if (!(find(deposits.begin(), deposits.end(), cur_type) != deposits.end())) {
+					vector_contained = false;
+				}
+			}
+
+			if (vector_contained) {
+				// change the concept type:
+				NOMAD::Point y = x;
+				y[1] = other_concepts[j];
+
+				add_extended_poll_point(y, *_s3);
+				extended.push_back(y);
+			}
+
+		}
+
 	}
 
 	// 4 deposits:
 	// ---------
 	else if (n == 4)
 	{
-
-		vector<int> deposits = { 0,1,2,3,4 };
-		vector<int> other_types;
-		deposits.erase(remove(deposits.begin(), deposits.end(), x[2]), deposits.end());
-		deposits.erase(remove(deposits.begin(), deposits.end(), x[3]), deposits.end());
-		deposits.erase(remove(deposits.begin(), deposits.end(), x[4]), deposits.end());
-		deposits.erase(remove(deposits.begin(), deposits.end(), x[5]), deposits.end());
-		other_types = deposits;
-
-		// current type of deposit
-		int cur_type = static_cast<int> (x[5].value());
-
-		// current type of concept:
-		int c = static_cast<int> (x[1].value());
 
 		// remove 1 deposit (1 neighbor):
 		{
@@ -1086,16 +1135,49 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 			extended.push_back(y);
 		}
 
+		// check if all deposits are common with another concept
+		for (size_t j = 0; j < other_concepts.size(); ++j) {
+
+			switch (other_concepts[j]) {
+			case 1:
+				deposits = deposits_c1;
+				other_types = deposits;
+				break;
+			case 2:
+				deposits = deposits_c2;
+				other_types = deposits;
+				break;
+			case 0:
+				deposits = deposits_c0;
+				other_types = deposits;
+				break;
+			}
+
+			bool vector_contained = check_other_concepts;
+
+			for (size_t a = 0; a < lookup_vector.size(); ++a) {// loop over deposit vector
+
+				if (!(find(deposits.begin(), deposits.end(), cur_type) != deposits.end())) {
+					vector_contained = false;
+				}
+			}
+
+			if (vector_contained) {
+				// change the concept type:
+				NOMAD::Point y = x;
+				y[1] = other_concepts[j];
+
+				add_extended_poll_point(y, *_s4);
+				extended.push_back(y);
+			}
+
+		}
+
 	}
 
 	// 5 deposits:
 	// ---------
 	else if (n == 5) {
-		// current type of deposit
-		int cur_type = static_cast<int> (x[6].value());
-
-		// current type of concept:
-		int c = static_cast<int> (x[1].value());
 
 		// remove one deposit (1 neighbor):
 		NOMAD::Point y(6);
@@ -1108,6 +1190,45 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 
 		add_extended_poll_point(y, *_s4);
 		extended.push_back(y);
+
+		// check if all deposits are common with another concept
+		for (size_t j = 0; j < other_concepts.size(); ++j) {
+
+			switch (other_concepts[j]) {
+			case 1:
+				deposits = deposits_c1;
+				other_types = deposits;
+				break;
+			case 2:
+				deposits = deposits_c2;
+				other_types = deposits;
+				break;
+			case 0:
+				deposits = deposits_c0;
+				other_types = deposits;
+				break;
+			}
+
+			bool vector_contained = check_other_concepts;
+
+			for (size_t a = 0; a < lookup_vector.size(); ++a) {// loop over deposit vector
+
+				if (!(find(deposits.begin(), deposits.end(), cur_type) != deposits.end())) {
+					vector_contained = false;
+				}
+			}
+
+			if (vector_contained) {
+				// change the concept type:
+				NOMAD::Point y = x;
+				y[1] = other_concepts[j];
+
+				add_extended_poll_point(y, *_s5);
+				extended.push_back(y);
+			}
+
+		}
+
 	}
 
 	//for (size_t k = 0; k < extended.size(); k++) {

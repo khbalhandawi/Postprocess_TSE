@@ -1610,7 +1610,6 @@ void My_Extended_Poll::construct_extended_points(const NOMAD::Eval_Point & x) {
 		}
 
 		// change the type of one deposit (2 neighbors):
-
 		for (size_t k = 0; k < other_types_change.size(); ++k) {
 			NOMAD::Point y = x;
 			y[3] = other_types_change[k];
