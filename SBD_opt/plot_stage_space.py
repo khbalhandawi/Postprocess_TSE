@@ -91,9 +91,9 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
         ax2.fill_between([x + 0.5 for x in x_data], 0.0, e_data, step="pre", facecolor="none", hatch="//", edgecolor=colors[branch_id-1], linewidth=0.0 , alpha=trans[branch_id-1])
     
         # legend label generation
-        label = ''.join(['$c = %i' %(ds[1]),
+        label = ''.join(['\{$c = %i' %(ds[1]),
                          '~\mathbf{S} = [', 
-                         '~'.join(map(str,s_data)),']$'])
+                         '~'.join(map(str,s_data)),']\}$'])
 
         legend_labels += [label]
 
@@ -101,7 +101,7 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
     
     # Figure 2 settings
     ax2.tick_params(axis='both', which='major', labelsize=14) 
-    ax2.set_xlabel('Epoch number (m)', fontsize=14)
+    ax2.set_xlabel('Epoch number ($k$)', fontsize=14)
     ax2.set_ylabel('Volume of excess ($V_E$)', fontsize=14)
     ax2.set_xticks(list(range(6+1)), list(map(str,['']+list(range(1,6+1)))))
     ax2.set_xlim((-0.4,6.7))
@@ -125,7 +125,7 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
     
     # ax1.fill_between(x_data, 0.0, req_thresh, facecolor="none", hatch="XX", edgecolor="g", linewidth=0.0)
     ax1.tick_params(axis='both', which='major', labelsize=14) 
-    ax1.set_xlabel('Epoch number (m)', fontsize=14)
+    ax1.set_xlabel('Epoch number ($k$)', fontsize=14)
     ax1.set_ylabel(attribute_label, fontsize=14)
     ax1.set_xticks(list(range(6+1)), list(map(str,['']+list(range(1,6+1)))))
     ax1.set_xlim((-0.4,6.7))
@@ -153,11 +153,11 @@ if __name__ == "__main__":
 
     attribute = ['Reliability ($\mathbb{P}(\mathbf{p} \in C)$)']
 
-    weight_file = 'varout_opt_log.log'
-    res_ip_file = 'resiliance_ip.log'
-    excess_ip_file = 'excess_ip.log'
-    res_th_file = 'resiliance_th.log'
-    excess_th_file = 'excess_th.log'
+    weight_file = 'varout_opt_log_R4.log'
+    res_ip_file = 'resiliance_ip_R4.log'
+    excess_ip_file = 'excess_ip_R4.log'
+    res_th_file = 'resiliance_th_R4.log'
+    excess_th_file = 'excess_th_R4.log'
 
     # plot 1
     plot_id = 1

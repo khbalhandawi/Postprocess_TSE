@@ -80,15 +80,17 @@ def plot_tradespace_reduced(attribute):
                                            r'\usepackage{amssymb}']
     rcParams['font.family'] = 'serif'
     my_dpi = 100
-    magnify = 1.0 # 1.75
+    magnify = 1.0
     fig = plt.figure(figsize=(magnify * 700/my_dpi, magnify * 500/my_dpi), dpi=my_dpi)
     
     ax = plt.gca() 
     ax.tick_params(axis='both', which='major', labelsize=14 * magnify) 
-    # ax.set_xlim([3.2040081632482553, 27.85608911395347]) # used
-    # ax.set_ylim([-0.05000000000000002, 1.0500000000000003]) # used
-    ax.set_xlim([3.2040081632482553, 17.5]) # used
-    ax.set_ylim([-0.05000000000000002, 1.0500000000000003]) # used
+
+    ax.set_xlim([3.2040081632482553, 27.85608911395347]) # used for excess
+    ax.set_ylim([-0.05000000000000002, 1.0500000000000003]) # used for excess
+
+    # ax.set_xlim([3.2040081632482553, 16]) # used for weight
+    # ax.set_ylim([0.3, 1.0500000000000003]) # used for weight
 
     # plt.title("Tradespace", fontsize=20 * magnify)
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14 * magnify)
@@ -115,11 +117,21 @@ def plot_tradespace_reduced(attribute):
     #                    [1, 1, 0, 3],
     #                    [1, 1, 0, 2, 3],
     #                    [1, 1, 0, 2, 4]]
+
     reduced_designs = [[1, 1, 0],
-                       [1, 3],
+                       [1, 1, 0, 2, 4],
                        [1, 0, 1],
-                       [1, 0, 1, 4],
-                       [1, 2, 0, 1]]
+                       [1, 3, 1, 4, 0],
+                       [1, 2, 1, 0, 4],
+                       [1, 2, 1, 0]] # for Excess
+
+    # reduced_designs = [[0, 2],
+    #                    [1, 1, 0],
+    #                    [1, 4, 1, 0],
+    #                    [1, 1, 0, 4],
+    #                    [0, 2, 1],
+    #                    [2, 0, 3]] # for Weight
+
     pt_labels = ['.'] * len(reduced_designs)
     marker_sizes = [8] * len(reduced_designs)
     marker_widths = [ 2 ] * len(reduced_designs)
@@ -175,7 +187,7 @@ def plot_tradespace_reduced(attribute):
                          ',~'.join(map(str,design[1::])),']$'])
 
         legend_labels += [label]
-        ax.legend(legend_handles, legend_labels, loc = 'lower right', fontsize=10 * magnify )
+        ax.legend(legend_handles, legend_labels, loc = 'lower right', fontsize=9 * magnify )
 
         d_i += 1
         # fig.savefig('progress/tradespace_%i.pdf' %d_i, format='pdf', dpi=100,bbox_inches='tight')

@@ -16,7 +16,7 @@ def plot_tradespace(attribute):
     import random
     from itertools import permutations 
     
-    filename = 'varout_opt_log_5D_R50_th0_2.8_th1_2.8_th2_2.8_Rv_approx.log'
+    filename = 'varout_opt_log_5D_R50_th0_2.2_th1_2.8_th2_2.2.log'
     current_path = os.getcwd()
     filepath = os.path.join(current_path,'Optimization_studies',filename)
     

@@ -154,7 +154,7 @@ def plot_tradespace(attribute,filename_opt,filename_res,filename_weight,plot_tru
             
             branch_id += 1
             
-            if branch_id == 1000000 + 1:
+            if branch_id == 100000 + 1:
                 break
       
     if plot_true:
@@ -423,7 +423,7 @@ def color_generator(new_colors,color_file,indices = [],histogram = []):
         colors = pickle.load(fid)
         fid.close()
 
-    return colors
+    return colors,colors_default
 
 #==============================================================================
 # MAIN CALL
@@ -444,14 +444,35 @@ if __name__ == "__main__":
     
     plt.close('all')
 
-    # filename_opt = 'req_opt_E_log_R0.log'
-    filename_opt = 'req_opt_log_R0.log'
-    filename_res = 'resiliance_th_R0.log'
-    filename_excess = 'excess_th_R0.log'
-    filename_res_ip = 'resiliance_ip_R0.log'
-    filename_excess_ip = 'excess_ip_R0.log'
-    filename_weight = 'varout_opt_log_R0.log'
-    filename_feas = 'feasiblity_log_R0.log'
+    filename_opt = 'req_opt_E_log_R0.log'
+    filename_feas = 'feasiblity_log_R4.log'
+    # filename_opt = 'req_opt_E_log_R4.log' # optimize with respect to excess
+    filename_opt = 'req_opt_log_R4.log' # optimize with respect to weight
+    filename_res = 'resiliance_th_R4.log'
+    filename_excess = 'excess_th_R4.log'
+    filename_res_ip = 'resiliance_ip_R4.log'
+    filename_excess_ip = 'excess_ip_R4.log'
+    filename_weight = 'varout_opt_log_R4.log'
+
+    # filename_feas = 'feasiblity_log_R5.log'
+    # filename_opt = 'req_opt_E_log_R5.log' # optimize with respect to excess
+    # # filename_opt = 'req_opt_log_R5.log' # optimize with respect to weight
+    # filename_res = 'resiliance_th_R5.log'
+    # filename_excess = 'excess_th_R5.log'
+    # filename_res_ip = 'resiliance_ip_R5.log'
+    # filename_excess_ip = 'excess_ip_R5.log'
+    # filename_weight = 'varout_opt_log_R5.log'
+
+    # filename_feas = 'feasiblity_log_R6.log'
+    # filename_opt = 'req_opt_E_log_R6.log' # optimize with respect to excess
+    # # filename_opt = 'req_opt_log_R6.log' # optimize with respect to weight
+    # filename_res = 'resiliance_th_R6.log'
+    # filename_excess = 'excess_th_R6.log'
+    # filename_res_ip = 'resiliance_ip_R6.log'
+    # filename_excess_ip = 'excess_ip_R6.log'
+    # filename_weight = 'varout_opt_log_R6.log'
+
+    run_opt_pareto = False # run Bi-OBJ NOMAD to find Pareto front
 
     #attribute = ['n_f_th','Safety factor ($n_{safety}$)']
     attribute = ['Reliability ($\mathbb{P}(\mathbf{p} \in C)$)']
@@ -535,7 +556,7 @@ if __name__ == "__main__":
 
     new_colors = False
     color_file = 'colors_histogram.pkl'
-    colors = color_generator(new_colors,color_file,indices,histogram)
+    colors,colors_default = color_generator(new_colors,color_file,indices,histogram)
 
     #==========================================================================
     # Histogram plot for robust designs
@@ -546,7 +567,7 @@ if __name__ == "__main__":
     y = yR[:n_bins]
     design_indices = [i + 1 for i in indices_robust[:n_bins]]
     # design_colors = [colors[i] for i in indices_robust[:n_bins]] # Colored bars
-    design_colors = [1,1,1] # Black and white bars
+    design_colors = colors_default[0] # blue bars
     # design_indices = list(range(1,21)
 
     mpl.rc('text', usetex = True)
@@ -581,7 +602,7 @@ if __name__ == "__main__":
     y = yF[:n_bins]
     design_indices = [i + 1 for i in indices_flexible[:n_bins]]
     # design_colors = [colors[i] for i in indices_robust[:n_bins]] # Colored bars
-    design_colors = [1,1,1] # Black and white bars
+    design_colors = colors_default[0] # blue bars
 
     # design_indices = list(range(1,21)
 
@@ -613,10 +634,11 @@ if __name__ == "__main__":
 
     n_bins = 15
     x = xS[:n_bins]
+    print('Total frequency : %f' %(sum(yS)))
     y = yS[:n_bins]/(sum(yS)*0.01)
     design_indices = [i + 1 for i in indices[:n_bins]]
     # design_colors = [colors[i] for i in indices_robust[:n_bins]] # Colored bars
-    design_colors = [1,1,1] # Black and white bars
+    design_colors = colors_default[0] # blue bars
 
     # design_indices = list(range(1,21)
 
@@ -637,7 +659,7 @@ if __name__ == "__main__":
         bar_i += 1
 
     plt.xlabel('Design arc index ($\lambda$)', fontsize=14)
-    plt.ylabel('Relative frequency as optimizer', fontsize=14) 
+    plt.ylabel('Relative frequency ($\%$)', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
 
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE.pdf'), format='pdf', dpi=1000,bbox_inches=tight_bbox)
@@ -646,7 +668,7 @@ if __name__ == "__main__":
     # Tradespace plot
     # data for plotting Pareto front
     [x_data, y_data] = NOMAD_call_BIOBJ(req_index,filename_weight,filename_res_ip,filename_excess_ip,
-                                        filename_res,filename_excess,P_analysis_strip,attribute,cost,False) # get Pareto optimal points
+                                        filename_res,filename_excess,P_analysis_strip,attribute,cost,run_opt_pareto) # get Pareto optimal points
 
     my_dpi = 100
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
@@ -858,6 +880,7 @@ if __name__ == "__main__":
     ax.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
             shadow=False, startangle=90)
     ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    fig.savefig(os.path.join(os.getcwd(),'DOE_results','Concept_pie_chart.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
     
     #==========================================================================
     plt.show()

@@ -217,7 +217,7 @@ def main():
     for d_i in range(len(P_analysis)):
         design_titles += ['D_index_%i' %(d_i+1)]
 
-    index = 0
+    index = 95282 # points completed
     points = points[index::]
     
     for point in points:
