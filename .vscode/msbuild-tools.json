@@ -1,0 +1,39 @@
+{
+    "solution": "C:/Users/Khalil/Desktop/nomad.3.9.1_Personal/VisualStudio/categorical_MSSP.sln",
+    "variables": {
+        "MSBUILD": "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/MSBuild/15.0/Bin/MSBuild.exe",
+        "DEVENV": "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/Common7/IDE/devenv.com"
+    },
+    "buildConfigurations": [
+        "Debug",
+        "Release"
+    ],
+    "platformConfigurations": [
+        "x64",
+        "x86"
+    ],
+    "preBuildTasks": [
+        {
+            "name": "Print a message",
+            "program": "cmd",
+            "args": [ "/c", "echo [pre-build task]: MESSAGE" ],
+            "cwd": "${workspaceRoot}"
+        }
+    ],
+    "postBuildTasks": [
+        {
+            "name": "Print another message",
+            "program": "cmd",
+            "args": [ "/c", "echo [post-build task]: ANOTHER MESSAGE" ],
+            "cwd": "${workspaceRoot}"
+        }
+    ],
+    "debugConfigurations": [
+        {
+            "name": "test",
+            "cwd": "${workspaceRoot}",
+            "program": "C:/Users/Khalil/Desktop/nomad.3.9.1_Personal/bin/categorical_MSSP.exe",
+            "args": ["0","1","varout_opt_log_R4.log","resiliance_ip_R4.log","excess_ip_R4.log","resiliance_th_R4.log","excess_th_R4.log","16","13","18","44","30","7","0.01","0.1","0.3","0.3","0.8","0.9","6","1","1","-1","-1","-1","-1","0"]
+        }
+    ]
+}
