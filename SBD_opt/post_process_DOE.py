@@ -8,7 +8,8 @@ Created on Tue Mar 10 18:06:53 2020
 #==============================================================================
 # Acquire requirements DOE design results and 
 # get dictionary data from design log and resiliance log
-def plot_tradespace(attribute,filename_opt,filename_res,filename_weight,plot_true):
+def plot_tradespace(attribute,filename_opt,filename_res,filename_weight,
+    plot_true = True, n_points = 100000 ):
     
     import numpy as np
     import random
@@ -154,7 +155,7 @@ def plot_tradespace(attribute,filename_opt,filename_res,filename_weight,plot_tru
             
             branch_id += 1
             
-            if branch_id == 100000 + 1:
+            if branch_id == n_points + 1:
                 break
       
     if plot_true:
@@ -209,6 +210,8 @@ def filtered_outdegree(dictionary_weight):
             FO += [2 - sum(d != -1 for d in deposits)]
         elif data[0] == 1: # hatched stiffener
             FO += [5 - sum(d != -1 for d in deposits)]
+        elif data[0] == 2: # tubular stiffener
+            FO += [3 - sum(d != -1 for d in deposits)]
 
     return FO
     
@@ -429,16 +432,32 @@ def color_generator(new_colors,color_file,indices = [],histogram = []):
 # MAIN CALL
 if __name__ == "__main__":
     
-    import os
+    import sys, os
     import random
     import pickle
     import numpy as np
     import matplotlib as mpl
     import matplotlib.pyplot as plt
+    import matplotlib.lines as mlines
     from matplotlib import rcParams
     from matplotlib.ticker import MaxNLocator
     from scipy.spatial import ConvexHull, convex_hull_plot_2d
     from sample_requirements import scaling
+
+    #==============================================================================
+    # Read system arguments
+
+    if len(sys.argv) == 3:
+        n_points = int(float(sys.argv[1]))
+        plot_index = int(float(sys.argv[2]))
+    else:
+        n_points = 100000
+        plot_index = 1
+
+    # plot_option = "DPSRF"
+    plot_option = "DPSRF"; display_points = True; display_CH = False; display_centroid = False
+    #==============================================================================
+    # Read DOE results from file
 
     mpl.rcParams['font.size'] = 14.0
     
@@ -478,7 +497,8 @@ if __name__ == "__main__":
     attribute = ['Reliability ($\mathbb{P}(\mathbf{p} \in C)$)']
     
     # [fig, ax, dictionary, plot_h, designs] = plot_tradespace(attribute,True)
-    [dictionary, dictionary_res, dictionary_weight, designs, designs_padded] = plot_tradespace(attribute,filename_opt,filename_res,filename_weight,False)
+    [dictionary, dictionary_res, dictionary_weight, designs, designs_padded] = plot_tradespace(attribute,filename_opt,filename_res,filename_weight,plot_true=False,
+        n_points=n_points)
     [histogram,P_analysis_strip] = rank_designs(designs)
     design_list = []
     for data in zip(dictionary_weight['concept'],
@@ -488,7 +508,7 @@ if __name__ == "__main__":
         design_list += [[int(x) for x in data]]
     
     alpha = 10 # number of top designs to analyze
-
+    alpha_F = 5 # number of top flexible designs to analyze
     #==============================================================================
     # Set based sorting
 
@@ -497,7 +517,7 @@ if __name__ == "__main__":
     indices = [x for _,x in sorted(zip(histogram,xS),reverse = True)]
     sorted_designs = [x for _,x in sorted(zip(histogram,design_list),reverse = True)]
     
-    print('Top 5 designs:')
+    print('Top %i SBD designs:' %(alpha))
     for design in sorted_designs[:alpha]:
         print(design)
     # data for constructing tradespace of feasible designs
@@ -520,7 +540,7 @@ if __name__ == "__main__":
     indices_robust = [x for _,x in sorted(zip(robustness,xR),reverse = True)]
     sorted_designs_robust = [x for _,x in sorted(zip(robustness,design_list),reverse = True)]
     
-    print('Top 5 robust designs:')
+    print('Top %i robust designs:' %(alpha))
     for design in sorted_designs_robust[:alpha]:
         print(design)
     # data for constructing tradespace of feasible designs
@@ -540,8 +560,8 @@ if __name__ == "__main__":
     indices_flexible = [x for _,x in sorted(zip(FO,xF),reverse = True)]
     sorted_designs_flexible = [x for _,x in sorted(zip(FO,design_list),reverse = True)]
     
-    print('Top 5 flexible designs:')
-    for design in sorted_designs_flexible[:alpha]:
+    print('Top %i flexible designs:' %(alpha_F))
+    for design in sorted_designs_flexible[:alpha_F]:
         print(design)
     # data for constructing tradespace of feasible designs
     # req_index = 50
@@ -557,7 +577,9 @@ if __name__ == "__main__":
     new_colors = False
     color_file = 'colors_histogram.pkl'
     colors,colors_default = color_generator(new_colors,color_file,indices,histogram)
-
+    highlight_on = True
+    colored_bars = False
+    bar_hl_list = [82,86,17,240,167,164,94,84,279,278] # top 10 designs to track
     #==========================================================================
     # Histogram plot for robust designs
     # data for plotting histogram feasibility
@@ -566,8 +588,10 @@ if __name__ == "__main__":
     x = xR[:n_bins]
     y = yR[:n_bins]
     design_indices = [i + 1 for i in indices_robust[:n_bins]]
-    # design_colors = [colors[i] for i in indices_robust[:n_bins]] # Colored bars
-    design_colors = colors_default[0] # blue bars
+    if colored_bars:
+        design_colors = [colors[i] for i in indices_robust[:n_bins]] # Colored bars
+    else:
+        design_colors = colors_default[0] # blue bars
     # design_indices = list(range(1,21)
 
     mpl.rc('text', usetex = True)
@@ -578,7 +602,7 @@ if __name__ == "__main__":
     barlist = plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
     bar_i = 0
     for bar in barlist: # set color of first five bars
-        if bar_i < alpha:
+        if bar_i < alpha and highlight_on:
             bar.set_edgecolor('r')
             bar.set_linewidth(2.3)
         else:
@@ -586,7 +610,8 @@ if __name__ == "__main__":
             bar.set_linewidth(1.0)
         bar_i += 1
 
-    plt.xlabel('Design arc index ($\lambda$)', fontsize=14)
+    plt.xlabel('Design arc index $\lambda$', fontsize=14)
+    # plt.xlabel('Unique design solution', fontsize=14)
     plt.ylabel('$\%$ of requirement arcs satisfied', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
 
@@ -601,8 +626,10 @@ if __name__ == "__main__":
     x = xF[:n_bins]
     y = yF[:n_bins]
     design_indices = [i + 1 for i in indices_flexible[:n_bins]]
-    # design_colors = [colors[i] for i in indices_robust[:n_bins]] # Colored bars
-    design_colors = colors_default[0] # blue bars
+    if colored_bars:
+        design_colors = [colors[i] for i in indices_robust[:n_bins]] # Colored bars
+    else:
+        design_colors = colors_default[0] # blue bars
 
     # design_indices = list(range(1,21)
 
@@ -614,7 +641,7 @@ if __name__ == "__main__":
     barlist = plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
     bar_i = 0
     for bar in barlist: # set color of first five bars
-        if bar_i < alpha:
+        if bar_i < alpha_F and highlight_on:
             bar.set_edgecolor('r')
             bar.set_linewidth(2.3)
         else:
@@ -622,8 +649,9 @@ if __name__ == "__main__":
             bar.set_linewidth(1.0)
         bar_i += 1
 
-    plt.xlabel('Design arc index ($\lambda$)', fontsize=14)
-    plt.ylabel('Filtered outdegree ($FO$)', fontsize=14) 
+    plt.xlabel('Design arc index $\lambda$', fontsize=14)
+    # plt.xlabel('Unique design solution', fontsize=14)
+    plt.ylabel('Filtered outdegree $O_F$', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
     plt.yticks(list(range(max(yF)+1)), list(map(str,range(max(yF)+1)))) # Force integer ticks
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE_F.pdf'), format='pdf', dpi=1000,bbox_inches=tight_bbox)
@@ -631,14 +659,17 @@ if __name__ == "__main__":
     #==========================================================================
     # Histogram plot
     # data for plotting histogram SBD
+    alpha = 10 # number of top designs to analyze
 
     n_bins = 15
     x = xS[:n_bins]
     print('Total frequency : %f' %(sum(yS)))
     y = yS[:n_bins]/(sum(yS)*0.01)
     design_indices = [i + 1 for i in indices[:n_bins]]
-    # design_colors = [colors[i] for i in indices_robust[:n_bins]] # Colored bars
-    design_colors = colors_default[0] # blue bars
+    if colored_bars:
+        design_colors = [colors[i] for i in indices_robust[:n_bins]] # Colored bars
+    else:
+        design_colors = colors_default[0] # blue bars
 
     # design_indices = list(range(1,21)
 
@@ -650,7 +681,7 @@ if __name__ == "__main__":
     barlist = plt.bar(x, y, width=0.8, bottom=None, align='center', data=None, color=design_colors )
     bar_i = 0
     for bar in barlist: # set color of first five bars
-        if bar_i < alpha:
+        if bar_i < alpha and highlight_on and design_indices[bar_i] in bar_hl_list:
             bar.set_edgecolor('r')
             bar.set_linewidth(2.3)
         else:
@@ -658,12 +689,18 @@ if __name__ == "__main__":
             bar.set_linewidth(1.0)
         bar_i += 1
 
-    plt.xlabel('Design arc index ($\lambda$)', fontsize=14)
+    plt.xlabel('Design arc index $\lambda$', fontsize=14)
+    # plt.xlabel('Unique design solution', fontsize=14)
     plt.ylabel('Relative frequency ($\%$)', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
+    plt.gca().set_ylim((0,9.9))
 
-    fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE.pdf'), format='pdf', dpi=1000,bbox_inches=tight_bbox)
+    fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE_E_%i.pdf'%(plot_index)), format='pdf', dpi=1000,bbox_inches=tight_bbox)
     
+    print("==============================")
+    print("Percentage of R space dominated: %f" %(sum(y[:10])))
+    print("==============================")
+
     #==========================================================================
     # Tradespace plot
     # data for plotting Pareto front
@@ -675,20 +712,56 @@ if __name__ == "__main__":
     
     markersizes = [ (1/20)*(n**4) for n in reversed(range(3,len(cost_SBD[:10])+3)) ]
 
-    feasible, = plt.plot(cost, attribute, 'x', color = [0,0,0], linewidth = 1, markersize = 6 )
-    pareto, = plt.plot(x_data, y_data, '-d', color = 'm', linewidth = 4.0, markersize = 7.0 )
-    Robust_design = plt.scatter( cost_robust[:alpha], attribute_robust[:alpha], s = 600, color = [0,0,1], marker = '.', zorder=3)
-    flexible_design = plt.scatter( cost_flexible[:alpha], attribute_flexible[:alpha], s = 300, color = [34/256,139/256,34/256], marker = '.', zorder=4 )
-    SBD_design = plt.scatter( cost_SBD[:alpha], attribute_SBD[:alpha], s = 150, color = [1,0,0], marker = '.', zorder=5 )
-    plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14)
+    l_D = '$\{c,\mathbf{D}\} \in \Omega_{cD}$'
+    l_P = 'Pareto optimal design arcs'
+    l_R = 'Robust design arcs'
+    l_F = 'Flexible design arcs'
+    l_S = 'Set-based design arcs'
+
+    legend_h = []; legend_labels = [];
+    if "D" in plot_option:
+
+        if display_points:
+            feasible, = plt.plot(cost, attribute, '.', color = [0,0,0], linewidth = 1, markersize = 3 )
+        else:
+            feasible = mlines.Line2D([], [], color='black', marker='x', markersize=5, linestyle='')
+        legend_h += [feasible]; legend_labels += [l_D]
+
+    if "P" in plot_option:
+        pareto, = plt.plot(x_data, y_data, '-d', color = 'm', linewidth = 4.0, markersize = 7.0 )
+        legend_h += [pareto]; legend_labels += [l_P]
+    if "R" in plot_option:
+        
+        if display_points:
+            Robust_design = plt.scatter( cost_robust[:alpha], attribute_robust[:alpha], s = 600, color = [0,0,1], marker = '.', zorder=3)
+        else:
+            Robust_design = mlines.Line2D([], [], color='blue', marker='.', markersize=7, linestyle='')
+        legend_h += [Robust_design]; legend_labels += [l_R]
+
+    if "F" in plot_option:
+
+        if display_points:
+            flexible_design = plt.scatter( cost_flexible[:alpha_F], attribute_flexible[:alpha_F], s = 300, color = [34/256,139/256,34/256], marker = '.', zorder=4 )
+        else:
+            flexible_design = mlines.Line2D([], [], color='green', marker='.', markersize=5, linestyle='')
+        legend_h += [flexible_design]; legend_labels += [l_F]
+
+    if "S" in plot_option:
+
+        if display_points:
+            SBD_design = plt.scatter( cost_SBD[:alpha], attribute_SBD[:alpha], s = 150, color = [1,0,0], marker = '.', zorder=5 )
+        else:
+            SBD_design = mlines.Line2D([], [], color='red', marker='.', markersize=5, linestyle='')
+        legend_h += [SBD_design]; legend_labels += [l_S]
+
+    plt.xlabel('Weight of stiffener $W$ (kg)', fontsize=14)
     # plt.ylabel('Requirement satisfaction ratio ($V_{{C}\cap{R}}/V_{R}$)', fontsize=14)
-    plt.ylabel('Volume of capability set ($V_c$)', fontsize=14)
-    
+    plt.ylabel('Volume of capability set $V_c$', fontsize=14)
 
     # Convert data into a nx2 array
     pts_FE = np.hstack((np.reshape(cost, (-1, 1)), np.reshape(attribute, (-1, 1))))
     pts_R = np.hstack((np.reshape(cost_robust[:alpha], (-1, 1)), np.reshape(attribute_robust[:alpha], (-1, 1))))
-    pts_F = np.hstack((np.reshape(cost_flexible[:alpha], (-1, 1)), np.reshape(attribute_flexible[:alpha], (-1, 1))))
+    pts_F = np.hstack((np.reshape(cost_flexible[:alpha_F], (-1, 1)), np.reshape(attribute_flexible[:alpha_F], (-1, 1))))
     pts_SBD = np.hstack((np.reshape(cost_SBD[:alpha], (-1, 1)), np.reshape(attribute_SBD[:alpha], (-1, 1))))
     
     lb = np.array([min(cost),min(attribute)])
@@ -727,7 +800,7 @@ if __name__ == "__main__":
     HV_R = get_HP_volume(cost_robust[:alpha],attribute_robust[:alpha],lb,ub)
     print('Robust set hyper rectangle volume: %f' %(HV_R))
     
-    # get set-based convex hull data
+    # get flexible convex hull data
     hull_F = ConvexHull(pts_F)
     CV_F = hull_F.volume
     # Get centroid
@@ -736,9 +809,9 @@ if __name__ == "__main__":
     cx_F = scaling(cx_F_n,lb[0],ub[0],2)
     cy_F = scaling(cy_F_n,lb[1],ub[1],2)
     print('Flexible set: Centroid: (%f, %f), Area: %f' %(cx_F,cy_F,CV_F))
-    print('Flexible set: LB: (%f, %f), UB: (%f, %f)' %(min(cost_flexible[:alpha]),min(attribute_flexible[:alpha]),
-                                                       max(cost_flexible[:alpha]),max(attribute_flexible[:alpha])))
-    HV_F = get_HP_volume(cost_flexible[:alpha],attribute_flexible[:alpha],lb,ub)
+    print('Flexible set: LB: (%f, %f), UB: (%f, %f)' %(min(cost_flexible[:alpha_F]),min(attribute_flexible[:alpha_F]),
+                                                       max(cost_flexible[:alpha_F]),max(attribute_flexible[:alpha_F])))
+    HV_F = get_HP_volume(cost_flexible[:alpha_F],attribute_flexible[:alpha_F],lb,ub)
     print('Flexible set hyper rectangle volume: %f' %(HV_F))
 
     # get set-based convex hull data
@@ -769,35 +842,61 @@ if __name__ == "__main__":
     print('F set shortest: %f' %(dp_F))
     print('SBD set shortest: %f' %(dp_SBD))
 
-    # # Show convex hull (robust)
-    # plt.plot(hull_R.points[hull_R.vertices,0], hull_R.points[hull_R.vertices,1], 'b--', lw=2)
-    # plt.plot(hull_R.points[hull_R.vertices[0],0], hull_R.points[hull_R.vertices[0],1], 'bo')
-    # # Show convex hull (flexible)
-    # plt.plot(hull_F.points[hull_F.vertices,0], hull_F.points[hull_F.vertices,1], 'g--', lw=2)
-    # plt.plot(hull_F.points[hull_F.vertices[0],0], hull_F.points[hull_F.vertices[0],1], 'go')
-    # # Show convex hull (SBD)
-    # plt.plot(hull_SBD.points[hull_SBD.vertices,0], hull_SBD.points[hull_SBD.vertices,1], 'r--', lw=2)
-    # plt.plot(hull_SBD.points[hull_SBD.vertices[0],0], hull_SBD.points[hull_SBD.vertices[0],1], 'ro')
-
     ax = plt.gca() 
-    ax.tick_params(axis='both', which='major', labelsize=14)
-    # ax.legend((feasible, pareto), 
-    #           ('Feasible designs $\in \Omega$', 'Pareto optimal designs'), loc = 'lower right',
-    #            fontsize = 9.0) 
-    # ax.legend((feasible, pareto, Robust_design), 
-    #           ('Feasible designs $\in \Omega$', 'Pareto optimal designs', 
-    #            'Robust designs'), loc = 'lower right',
-    #            fontsize = 9.0)
-    # ax.legend((feasible, pareto, Robust_design, flexible_design), 
-    #           ('Feasible designs $\in \Omega$', 'Pareto optimal designs', 
-    #            'Robust designs', 'Flexible designs'), loc = 'lower right',
-    #            fontsize = 9.0)
-    ax.legend((feasible, pareto, Robust_design, flexible_design, SBD_design), 
-              ('$\{c,\mathbf{D}\} \in \Omega_{cD}$', 'Pareto optimal design arcs', 
-               'Robust design arcs', 'Flexible design arcs', 'Set-based design arcs'), loc = 'lower right',
-               fontsize = 9.0)
+    if display_CH:
+        if "R" in plot_option:
+            # Show convex hull (robust)
+            start_x = hull_R.points[hull_R.vertices[0],0]; start_y = hull_R.points[hull_R.vertices[0],1]
+            points_x = hull_R.points[hull_R.vertices,0]; points_y = hull_R.points[hull_R.vertices,1]
+            points_x = np.append(points_x,start_x); points_y = np.append(points_y, start_y)
+            
+            Chull_unscaled_x = scaling(points_x,lb[0],ub[0],2) 
+            Chull_unscaled_y = scaling(points_y,lb[1],ub[1],2) 
 
-    fig.savefig(os.path.join(os.getcwd(),'DOE_results','tradespace_pareto.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
+            ax.plot(Chull_unscaled_x, Chull_unscaled_y, 'b--', lw=2)
+        
+        if "F" in plot_option:
+            # Show convex hull (flexible)
+            start_x = hull_F.points[hull_F.vertices[0],0]; start_y = hull_F.points[hull_F.vertices[0],1]
+            points_x = hull_F.points[hull_F.vertices,0]; points_y = hull_F.points[hull_F.vertices,1]
+            points_x = np.append(points_x, start_x); points_y = np.append(points_y, start_y)
+
+            Chull_unscaled_x = scaling(points_x,lb[0],ub[0],2) 
+            Chull_unscaled_y = scaling(points_y,lb[1],ub[1],2) 
+
+            ax.plot(Chull_unscaled_x, Chull_unscaled_y, 'g--', lw=2)
+            
+        if "S" in plot_option:
+            # Show convex hull (SBD)
+            start_x = hull_SBD.points[hull_SBD.vertices[0],0]; start_y = hull_SBD.points[hull_SBD.vertices[0],1]
+            points_x = hull_SBD.points[hull_SBD.vertices,0]; points_y = hull_SBD.points[hull_SBD.vertices,1]
+            points_x = np.append(points_x, start_x); points_y = np.append(points_y, start_y)
+
+            Chull_unscaled_x = scaling(points_x,lb[0],ub[0],2) 
+            Chull_unscaled_y = scaling(points_y,lb[1],ub[1],2) 
+
+            ax.plot(Chull_unscaled_x, Chull_unscaled_y, 'r--', lw=2)
+            
+    if display_centroid:
+        if "R" in plot_option:
+            # Show centroid (robust)
+            ax.plot(cx_R, cy_R, 'xb', lw=2)
+        
+        if "F" in plot_option:
+            # Show centroid (flexible)
+            ax.plot(cx_F, cy_F, 'xg', lw=2)
+            
+        if "S" in plot_option:
+            # Show centroid (SBD)
+            ax.plot(cx_SBD, cy_SBD, 'xr', lw=2)
+
+    ax.tick_params(axis='both', which='major', labelsize=14)
+    ax.legend(legend_h, legend_labels, loc = 'lower right', fontsize = 9.0)
+
+    ax.set_xlim([3.2040081632482553, 27.85608911395347]) # used for excess
+    ax.set_ylim([-0.05000000000000002, 1.0500000000000003]) # used for excess
+
+    fig.savefig(os.path.join(os.getcwd(),'DOE_results','tradespace_pareto_%s.pdf'%(plot_option)), format='pdf', dpi=1000,bbox_inches='tight')
     
     print(ax.get_xlim())
     print(ax.get_ylim())
@@ -883,4 +982,4 @@ if __name__ == "__main__":
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','Concept_pie_chart.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
     
     #==========================================================================
-    plt.show()
+    # plt.show()

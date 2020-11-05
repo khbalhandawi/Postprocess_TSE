@@ -45,7 +45,7 @@ class PlotOptimizationProgress():
         """Calculates the length of the route."""
         ind = self.P_analysis_strip.index(self.state)
         x_data = self.dictionary['weight'][ind]
-        y_data = self.dictionary['n_f_th'][ind]
+        y_data = self.dictionary[attribute[0]][ind]
         
         e = -y_data
         self.n_fcalls += 1
@@ -53,8 +53,10 @@ class PlotOptimizationProgress():
         #=====================================================================#
         # Plot progress
         
-        x_data = [0.0]; y_data = [2.378925]; # initial point
+        # x_data = [0.0]; y_data = [2.378925]; # initial point
         # x_data = [0.0]; y_data = [0.0] # initial point
+        x_data = []; y_data = [] # initial point
+
         for it in range(len(self.state)):
             ind = self.P_analysis_strip.index(self.state[0:it+2])
             x_data += [dictionary['weight'][ind]]
@@ -66,9 +68,10 @@ class PlotOptimizationProgress():
         
         self.line = ax.plot(x_data, y_data, 's-', color = 'm', linewidth = 3.0, markersize = 7.5 )
         current_path = os.getcwd()
-        fig.savefig(os.path.join(current_path,'progress','tradespace_%i.png' %(self.n_fcalls)), 
-                    format='png', dpi=100)
-        
+        fig.savefig(os.path.join(current_path,'progress','tradespace_%i.svg' %(self.n_fcalls)), 
+                    format='svg', dpi=1000,bbox_inches='tight')
+    
+
         plt.pause(0.0005)
         
         #=====================================================================#
@@ -82,16 +85,17 @@ from plot_reduced_TS import plot_tradespace_reduced
 P_analysis = loadmat('DOE_permutations.mat')['P_analysis']
 #P_analysis = P_analysis[0:44]
 
-attribute = ['n_f_th','Safety factor ($n_{safety}$)']
+# attribute = ['n_f_th','Safety factor ($n_{safety}$)']
 # attribute = ['resiliance_th_gau','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$']
-    
+attribute = ['capability_th_uni','Volume of capability set ($V_c$)']
+
 [fig, ax, dictionary, P_analysis_strip] = plot_tradespace_reduced(attribute)
 
 # %% Begin combinatorial optimization
 
 # read MADS log file
 bb_evals = []
-with open('MADS_output/mads_bb_calls.log') as csv_file:
+with open('mads_bb_calls.log') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     line_count = 0
     for row in csv_reader:
@@ -104,7 +108,7 @@ with open('MADS_output/mads_bb_calls.log') as csv_file:
         bb_evals += [row_strip]
         line_count += 1
 
-
+print(bb_evals)
 # iterate through MADS bb evals
 current_path = os.getcwd()
 optproblem = PlotOptimizationProgress(bb_evals[0],P_analysis_strip, dictionary, bb_evals, attribute, fig)

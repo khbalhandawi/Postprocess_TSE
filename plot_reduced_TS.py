@@ -16,7 +16,7 @@ def plot_tradespace_reduced(attribute):
     import matplotlib.pyplot as plt
     from matplotlib import rcParams
     import random
-    
+    import os
     
     plt.close('all')
     attribute_name = attribute[0]
@@ -86,14 +86,14 @@ def plot_tradespace_reduced(attribute):
     ax = plt.gca() 
     ax.tick_params(axis='both', which='major', labelsize=14 * magnify) 
 
-    ax.set_xlim([3.2040081632482553, 27.85608911395347]) # used for excess
-    ax.set_ylim([-0.05000000000000002, 1.0500000000000003]) # used for excess
+    # ax.set_xlim([3.2040081632482553, 27.85608911395347]) # used for excess
+    # ax.set_ylim([-0.05000000000000002, 1.0500000000000003]) # used for excess
 
-    # ax.set_xlim([3.2040081632482553, 16]) # used for weight
-    # ax.set_ylim([0.3, 1.0500000000000003]) # used for weight
+    ax.set_xlim([3.2040081632482553, 16]) # used for weight
+    ax.set_ylim([0.3, 1.0500000000000003]) # used for weight
 
     # plt.title("Tradespace", fontsize=20 * magnify)
-    plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14 * magnify)
+    plt.xlabel('Weight of stiffener $W$ (kg)', fontsize=14 * magnify)
     plt.ylabel(attribute_label, fontsize=14 * magnify)
 
     #reduced_designs = [sorted_designs[n] for n in [60, 58,-1, 3]]
@@ -118,19 +118,105 @@ def plot_tradespace_reduced(attribute):
     #                    [1, 1, 0, 2, 3],
     #                    [1, 1, 0, 2, 4]]
 
-    reduced_designs = [[1, 1, 0],
-                       [1, 1, 0, 2, 4],
-                       [1, 0, 1],
-                       [1, 3, 1, 4, 0],
-                       [1, 2, 1, 0, 4],
-                       [1, 2, 1, 0]] # for Excess
+    # reduced_designs = [[1, 1, 0],
+    #                    [1, 1, 0, 2, 4],
+    #                    [1, 0, 1],
+    #                    [1, 3, 1, 4, 0],
+    #                    [1, 2, 1, 0, 4],
+    #                    [1, 2, 1, 0]] # for Excess
 
-    # reduced_designs = [[0, 2],
-    #                    [1, 1, 0],
-    #                    [1, 4, 1, 0],
+    reduced_designs = [[0, 2],
+                       [1, 1, 0],
+                       [1, 4, 1, 0],
+                       [1, 1, 0, 4],
+                       [0, 2, 1],
+                       [2, 0, 3]] # for Weight
+
+    # reduced_designs = [[1, 1, 0],
+    #                    [1, 3, 4, 2]] # for excess example
+
+    # reduced_designs = [[1, 1, 0],
+    #                    [1, 1, 0, 2, 4],
+    #                    [1, 1, 0, 4, 2],
+    #                    [1, 3, 4, 2]] # for excess example
+
+    # reduced_designs = [[1, 1, 0],
+    #                    [1, 3, 4, 2]] # for robust example
+
+    # reduced_designs = [[1, 1, 0],
+    #                    [1, 3, 4, 2],
+    #                    [1, 3, 4, 2, 1, 0]] # for robust example
+
+    # reduced_designs = [[1, 1, 0],
+    #                    [1, 3, 4, 2],
+    #                    [1, 1]] # for flexibility example
+
+    # reduced_designs = [[1, 1, 0],
+    #                    [1, 3, 4, 2],
+    #                    [1, 1],
+    #                    [1, 1, 0, 2],
+    #                    [1, 1, 0, 2, 3],
+    #                    [1, 1, 0, 2, 3, 4],
+    #                    [1, 1, 0, 2, 4],
+    #                    [1, 1, 0, 2, 4, 3],
+    #                    [1, 1, 0, 3],
+    #                    [1, 1, 0, 3, 2],
+    #                    [1, 1, 0, 3, 2, 4],
+    #                    [1, 1, 0, 3, 4],
+    #                    [1, 1, 0, 3, 4, 2],
     #                    [1, 1, 0, 4],
-    #                    [0, 2, 1],
-    #                    [2, 0, 3]] # for Weight
+    #                    [1, 1, 0, 4, 2],
+    #                    [1, 1, 0, 4, 2, 3],
+    #                    [1, 1, 0, 4, 3],
+    #                    [1, 1, 0, 4, 3, 2],
+    #                    [1, 1, 2],
+    #                    [1, 1, 2, 0],
+    #                    [1, 1, 2, 0, 3],
+    #                    [1, 1, 2, 0, 3, 4],
+    #                    [1, 1, 2, 0, 4],
+    #                    [1, 1, 2, 0, 4, 3],
+    #                    [1, 1, 2, 3],
+    #                    [1, 1, 2, 3, 0],
+    #                    [1, 1, 2, 3, 0, 4],
+    #                    [1, 1, 2, 3, 4],
+    #                    [1, 1, 2, 3, 4, 0],
+    #                    [1, 1, 2, 4],
+    #                    [1, 1, 2, 4, 0],
+    #                    [1, 1, 2, 4, 0, 3],
+    #                    [1, 1, 2, 4, 3],
+    #                    [1, 1, 2, 4, 3, 0],
+    #                    [1, 1, 3],
+    #                    [1, 1, 3, 0],
+    #                    [1, 1, 3, 0, 2],
+    #                    [1, 1, 3, 0, 2, 4],
+    #                    [1, 1, 3, 0, 4],
+    #                    [1, 1, 3, 0, 4, 2],
+    #                    [1, 1, 3, 2],
+    #                    [1, 1, 3, 2, 0],
+    #                    [1, 1, 3, 2, 0, 4],
+    #                    [1, 1, 3, 2, 4],
+    #                    [1, 1, 3, 2, 4, 0],
+    #                    [1, 1, 3, 4],
+    #                    [1, 1, 3, 4, 0],
+    #                    [1, 1, 3, 4, 0, 2],
+    #                    [1, 1, 3, 4, 2],
+    #                    [1, 1, 3, 4, 2, 0],
+    #                    [1, 1, 4],
+    #                    [1, 1, 4, 0],
+    #                    [1, 1, 4, 0, 2],
+    #                    [1, 1, 4, 0, 2, 3],
+    #                    [1, 1, 4, 0, 3],
+    #                    [1, 1, 4, 0, 3, 2],
+    #                    [1, 1, 4, 2],
+    #                    [1, 1, 4, 2, 0],
+    #                    [1, 1, 4, 2, 0, 3],
+    #                    [1, 1, 4, 2, 3],
+    #                    [1, 1, 4, 2, 3, 0],
+    #                    [1, 1, 4, 3],
+    #                    [1, 1, 4, 3, 0],
+    #                    [1, 1, 4, 3, 0, 2],
+    #                    [1, 1, 4, 3, 2],
+    #                    [1, 1, 4, 3, 2, 0]] # for flexibility example
 
     pt_labels = ['.'] * len(reduced_designs)
     marker_sizes = [8] * len(reduced_designs)
@@ -140,22 +226,27 @@ def plot_tradespace_reduced(attribute):
 
     new_colors = False
     color_file = '.\SBD_opt\colors_histogram.pkl'
-    colors = color_generator(new_colors,color_file)
+    colors,colors_default = color_generator(new_colors,color_file)
 
     req_index = 0
     attribute = dictionary[attribute_name]
     cost = dictionary['weight']
 
-    filename_res = 'resiliance_th_5D_R50_th0_2.8_th1_2.8_th2_2.8_Rv_approx.log'
-    filename_excess = 'excess_th_5D_R50_th0_2.8_th1_2.8_th2_2.8_Rv_approx.log'
-    filename_res_ip = 'resiliance_ip_5D_R50_th0_2.8_th1_2.8_th2_2.8_Rv_approx.log'
-    filename_excess_ip = 'excess_ip_5D_R50_th0_2.8_th1_2.8_th2_2.8_Rv_approx.log'
-    filename_weight = 'varout_opt_log_5D_R50_th0_2.8_th1_2.8_th2_2.8_Rv_approx.log'
+    filename_res = 'resiliance_th_R4.log'
+    filename_excess = 'excess_th_R4.log'
+    filename_res_ip = 'resiliance_ip_R4.log'
+    filename_excess_ip = 'excess_ip_R4.log'
+    filename_weight = 'varout_opt_log_R4.log'
 
+    current_directory = os.getcwd()
+    exce_dir = os.path.join(current_directory,"SBD_opt")
+
+    os.chdir(exce_dir) # go to SBD_opt to excecute biobj exe
     [x_data, y_data] = NOMAD_call_BIOBJ(req_index,filename_weight,filename_res_ip,filename_excess_ip,
                                         filename_res,filename_excess,P_analysis_strip,
                                         attribute,cost,False) # get Pareto optimal points
-    
+    os.chdir(current_directory) # go back to tradespace_exploration
+
     pareto, = plt.plot(x_data, y_data, '-o', color = 'm', linewidth = 2.0, markersize = 5.0 )
 
     legend_handles += [pareto]
@@ -174,7 +265,6 @@ def plot_tradespace_reduced(attribute):
             y_data += [dictionary[attribute_name][ind]]
         
         print('plotting design: %i' %(ind+1))
-
         plt.plot(x_data, y_data, '-', color = [0,0,0], linewidth = 1 )
         plt.plot(x_data, y_data, 'o', color = [0,0,0], markersize = 2 )
         design_lg, = plt.plot( x_data[-1], y_data[-1], pt_label, markersize = e_size, markeredgewidth = e_width, color = colors[d_i] )
@@ -186,11 +276,12 @@ def plot_tradespace_reduced(attribute):
                          '~\mathbf{D} = [', 
                          ',~'.join(map(str,design[1::])),']$'])
 
-        legend_labels += [label]
-        ax.legend(legend_handles, legend_labels, loc = 'lower right', fontsize=9 * magnify )
+        if d_i <= 10:
+            legend_labels += [label]
+            ax.legend(legend_handles, legend_labels, loc = 'lower right', fontsize=9 * magnify )
 
         d_i += 1
-        # fig.savefig('progress/tradespace_%i.pdf' %d_i, format='pdf', dpi=100,bbox_inches='tight')
+        fig.savefig('progress/tradespace_%i.pdf' %d_i, format='pdf', dpi=100,bbox_inches='tight')
     
     # print(ax.get_xlim())
     # print(ax.get_ylim())
@@ -203,9 +294,10 @@ if __name__ == "__main__":
 
     # attribute = ['n_f_th','Safety factor ($n_{safety}$)']
     # attribute = ['resiliance_th_gau','Reliability $\mathbb{P}(\mathbf{p} \in C)$']
-    attribute = ['capability_th_uni','Volume of capability set ($V_c$)']
+    attribute = ['capability_th_uni','Volume of capability set $V_c$']
 
     [fig, ax, dictionary, P_analysis_strip] = plot_tradespace_reduced(attribute)
-    fig.savefig(os.path.join(os.getcwd(),'tradespace_pareto_reduced.pdf'), format='pdf')
+    fig.savefig(os.path.join(os.getcwd(),'tradespace_pareto_reduced.svg'), format='svg', 
+                dpi=1000,bbox_inches='tight')
 
     plt.show()

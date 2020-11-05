@@ -1,4 +1,3 @@
-
 *.pyc
 *.pdf
 animations/presentation_1.aux
@@ -37,3 +36,7 @@ MADS_output/
 SBD_opt/MADS_output/
 SBD_opt/DOE_results/
 SBD_opt/DOE_results/previous_runs/
+DOE_results/
+LHS_DOE/
+design_margins/
+progress/

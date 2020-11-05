@@ -996,7 +996,7 @@ def postprocess_DOE(index,base_name,current_path,DOE_folder,bounds,variable_lbls
     Y = outputs; S_n = scaling(DOE_inputs, lob, upb, 1)
     # fitting_names = ['KRIGING','LOWESS','KS','RBF','PRS','ENSEMBLE'];
     # fit_type = 1; run_type = 2; # use pre-optimized hyperparameters
-    fit_type = 5; run_type = 1 # optimize all hyperparameters
+    fit_type = 0; run_type = 1 # optimize all hyperparameters
     model,sgt_file = define_SGTE_model(fit_type,run_type)
     server = SGTE_server(model)
     server.sgtelib_server_start()
@@ -1019,8 +1019,9 @@ def postprocess_DOE(index,base_name,current_path,DOE_folder,bounds,variable_lbls
     return server, DOE_inputs, outputs
 
 def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,variable_lbls,
-                         threshold,resolution,plot_R_space,new_LHS_MCI,LHS_MCI_file,
-                         req_index,server,DOE_inputs,outputs,plt,compute_margins):
+                         threshold,LHS_MCI_file,req_index,server,DOE_inputs,outputs,
+                         plt,resolution=20,plot_R_space=False,new_LHS_MCI=False,compute_margins=True,
+                         plot_index=4,plot_2D=False):
     
     from abaqus_postprocess import hyperplane_SGTE_vis_norm
     from matplotlib import rc
@@ -1073,15 +1074,26 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
     #===========================================================================
     # Plot 2D projections
     if plot_R_space:
-        nominal = [0.5]*len(variable_lbls); nn = 50
+        nominal = [0.5]*len(variable_lbls); nn = 80
         fig = plt.figure()  # create a figure object
-        
+        if plot_2D:
+            fig_2D = plt.figure()  # create a figure object
+        else:
+            fig_2D = None
+
         hyperplane_SGTE_vis_norm(server,DOE_inputs,bounds,bounds_req,LHS_MCI_file,mu,Sigma,req_type,variable_lbls,
-                                 nominal,threshold,outputs,nn,fig,plt)
+                                 nominal,threshold,outputs,nn,fig,plt,plot_index=plot_index,plot_2D=plot_2D,fig_2D=fig_2D)
         
-        fig_name = '%i_req_%i_%s_RS.pdf' %(index,req_index,base_name[1])
+        fig_name = '%i_req_%i_%s_RS_pi_%i.pdf' %(index,req_index,base_name[1],plot_index)
         fig_file_name = os.path.join(current_path,'Job_results','Results_log',fig_name)
         fig.savefig(fig_file_name, bbox_inches='tight')
+        plt.close(fig)
+
+        if plot_2D:
+            fig_name = '%i_req_%i_%s_RS_2D_pi_%i.pdf' %(index,req_index,base_name[1],plot_index)
+            fig_file_name = os.path.join(current_path,'Job_results','Results_log',fig_name)
+            fig_2D.savefig(fig_file_name, bbox_inches='tight')
+            plt.close(fig_2D)
     
     if compute_margins:
         return resiliance, R_volume, capability, Buffer, Excess
@@ -1125,7 +1137,8 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                             ax_pos, st_thick, st_width, laser_power, scanning_speed,
                             power_density, layer_length, layer_width, layer_thick,
                             n_layers, n_deposit, mesh_size, mesh_AM_size,
-                            melting_T, b_thick, process_DOE_requirements, sampling, new_LHS_MCI, index):
+                            melting_T, b_thick, process_DOE_requirements, sampling, 
+                            new_LHS_MCI, index, plot_index=4,plot_2D=False,req_indices=None):
 
     import os, time
     import numpy as np
@@ -1252,14 +1265,15 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
         
         req_index += 1
         [req_type, mu, Sigma] = req
-        
+
+
         if process_IP:
             resiliance_ip, R_volume_ip, capability_ip, buffer_ip, excess_ip = process_requirements(
                 index,['DOE_ip_inputs','static_out_nominal'],
                 current_path,bounds_ip,
-                mu,Sigma,req_type,variable_lbls,threshold,
-                resolution,True,new_LHS_MCI,LHS_MCI_file,
-                req_index,server,DOE_inputs,outputs,plt,True)
+                mu,Sigma,req_type,variable_lbls,threshold,LHS_MCI_file,
+                req_index,server,DOE_inputs,outputs,plt,resolution=resolution,
+                plot_R_space=True,new_LHS_MCI=new_LHS_MCI)
         else:
             resiliance_ip = 0.0; R_volume_ip = 0.0; capability_ip = 0.0; buffer_ip = 0.0; excess_ip = 0.0
         
@@ -1356,7 +1370,8 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                     index,base_name,current_path,bounds_ip,
                     mu,Sigma,req_type,variable_lbls,threshold,
                     resolution,False,new_LHS_MCI,LHS_MCI_file,
-                    req_index,server,DOE_inputs,outputs,plt,True)
+                    req_index,server,DOE_inputs,outputs,plt,resolution=resolution,
+                    plot_R_space=False,new_LHS_MCI=new_LHS_MCI)
             else:
                 resiliance_ip = 0.0; buffer_ip = 0.0; excess_ip = 0.0
             
@@ -1397,7 +1412,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     # resolution = 50 # sampling resolution for capability calculation (must be a square number)!
     # threshold = 100000 # cutoff threshold for capability calculation
     # threshold = 4.0 # cutoff threshold for capability calculation
-    threshold = 2.2 # cutoff threshold for capability calculation
+    threshold = 2.8 # cutoff threshold for capability calculation
     
     DOE_folder = 'Thermal_DOE_results'; base_name = ['DOE_th_inputs','thermal_out']
     variable_lbls_pc = ['T1','T2','T3','T4']
@@ -1437,8 +1452,9 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                 index,['DOE_th_inputs','thermal_out_nominal'],
                 current_path,bounds_th,
                 mu,Sigma,req_type,variable_lbls,threshold,
-                resolution,False,new_LHS_MCI,LHS_MCI_file,
-                req_index,server,DOE_inputs,outputs,plt,True)
+                LHS_MCI_file,req_index,server,DOE_inputs,outputs,plt,resolution=resolution,
+                plot_R_space=True,new_LHS_MCI=new_LHS_MCI,plot_index=plot_index,
+                plot_2D=plot_2D)
         else:
             resiliance_th = 0.0; R_volume_th = 0.0; capability_th = 0.0; buffer_th = 0.0; excess_th = 0.0
 
@@ -1517,7 +1533,6 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
                 
                 line = [req_type,mu_lhs,Sigma_lhs_2]
                 req_combinations += [line]
-    
 
     if process_DOE_requirements:
         req_index = 0; resiliance_th_vec = []; buffer_th_vec = []; excess_th_vec = []
@@ -1526,12 +1541,18 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
             req_index += 1
             [req_type, mu, Sigma] = req
             
-            if process_TH:
+            if req_indices is not None: # None means process all requirements
+                process_this_req = req_index in req_indices
+            else:
+                process_this_req = True
+
+            if process_TH and process_this_req:
                 resiliance_th,_,_,buffer_th, excess_th = process_requirements(
                     index,base_name,current_path,bounds_th,
                     mu,Sigma,req_type,variable_lbls,threshold,
-                    resolution,False,new_LHS_MCI,LHS_MCI_file,
-                    req_index,server,DOE_inputs,outputs,plt,True)
+                    LHS_MCI_file,req_index,server,DOE_inputs,outputs,plt,
+                    resolution=resolution,plot_R_space=True,new_LHS_MCI=new_LHS_MCI,
+                    plot_index=plot_index,plot_2D=plot_2D)
             else:
                 resiliance_th = 0.0; buffer_th = 0.0; excess_th = 0.0
                 
@@ -1735,8 +1756,8 @@ def main():
     H_subs =         float(paramText[24])
     T_ref =          float(paramText[25])
     
-    run_base = 0; run_nominal = 1; new_LHS = False; process_DOE_requirements = True; sampling = 'fullfact'
-    new_LHS_MCI = True
+    run_base = 0; run_nominal = 1; new_LHS = False; process_DOE_requirements = False; sampling = 'fullfact'
+    new_LHS_MCI = True; plot_index = 3; plot_2D = True
 
     # %% Sampling
     #========================== REQUIREMENTS SPACE LHS ============================#
@@ -1819,13 +1840,44 @@ def main():
     # %% Processing
     #============================= MAIN EXECUTION =================================#
     
-    index = 0
-    # index = 110 - 1
-    # P_analysis = [P_analysis[110 - 1]] # for testing
-    index = 0
-    P_analysis = P_analysis[0:15] # for testing
-    for P_i in P_analysis:
-        index += 1
+    ##############################
+    # Presentation graphics
+    design_indices = [109, 110]
+    req_indices = [[None,],[None,]]
+    
+    # design_indices = [109, 110, 146, 163, 164, 167, 168]
+
+    # req_indices = [[1,], # D: 109
+    #               [15, 11, 37,], # D: 110
+    #               [36,], # D: 146
+    #               [50, 1,], # D: 163
+    #               [1,], # D: 164
+    #               [46, 13,], # D: 167
+    #               [31,]] # D: 168
+
+    # design_indices = [146, 163, 164, 167, 168]
+
+    # req_indices = [[36,], # D: 146
+    #                [50, 1,], # D: 163
+    #                [1,], # D: 164
+    #                [46, 13,], # D: 167
+    #                [31,]] # D: 168
+
+    ##############################
+
+    ##############################
+    # For a general DOE
+    # index = 0
+    # P_analysis = P_analysis[0:15] # for testing
+    # for P_i in P_analysis:
+    #     index += 1
+    ##############################
+
+    ##############################
+    for D_i, reqs in zip(design_indices,req_indices):
+        P_i = P_analysis[D_i - 1]
+        index = D_i
+    ##############################
         print(P_i)
         concept = P_i[0]
         permutation_index = P_i[1::]
@@ -1834,11 +1886,15 @@ def main():
         print("|                         LOOP %04d                          |" %(index))
         print("+============================================================+\n")
         
+
+
         [design_data,resiliance_data] = DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal, 
                                               ax_pos, st_thick, st_width, laser_power, scanning_speed, 
                                               power_density, layer_length, layer_width, layer_thick, 
                                               n_layers, n_deposit, mesh_size, mesh_AM_size, 
-                                              melting_T, b_thick, process_DOE_requirements, sampling, new_LHS_MCI, index)
+                                              melting_T, b_thick, process_DOE_requirements, sampling, 
+                                              new_LHS_MCI, index, plot_index=plot_index,plot_2D=plot_2D,
+                                              req_indices=reqs)
         
         [resiliance_ip_vec, buffer_ip_vec, excess_ip_vec, 
          resiliance_th_vec, buffer_th_vec, excess_th_vec, n_reqs] = resiliance_data
