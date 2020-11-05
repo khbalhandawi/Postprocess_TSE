@@ -40,4 +40,11 @@ for Sigma in Sigmas:
     Sigma_2s += [Sigma_2]
 
 req_list = [[req_type_1, req_type_2], mus, Sigmas ]
-req_combinations = list(itertools.product(*req_list)) 
+req_combinations = list(itertools.product(*req_list))
+
+print(req_combinations[35])
+print(req_combinations[49])
+print(req_combinations[0])
+print(req_combinations[44])
+print(req_combinations[12])
+print(req_combinations[30])

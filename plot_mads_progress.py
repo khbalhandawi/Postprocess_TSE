@@ -45,7 +45,7 @@ class PlotOptimizationProgress():
         """Calculates the length of the route."""
         ind = self.P_analysis_strip.index(self.state)
         x_data = self.dictionary['weight'][ind]
-        y_data = self.dictionary['n_f_th'][ind]
+        y_data = self.dictionary[attribute[0]][ind]
         
         e = -y_data
         self.n_fcalls += 1
@@ -54,9 +54,10 @@ class PlotOptimizationProgress():
         # Plot progress
         # generate random color for branch
                 
-        x_data = [0.0]; y_data = [2.378925]; # initial point
+        # x_data = [0.0]; y_data = [2.378925]; # initial point
         # x_data = [0.0]; y_data = [0.0] # initial point
-        
+        x_data = []; y_data = [] # initial point
+
         for it in range(len(self.state[1::])):
             ind = self.P_analysis_strip.index(self.state[0:it+2])
             x_data += [dictionary['weight'][ind]]
@@ -84,10 +85,11 @@ from plot_tradespace import plot_tradespace
 P_analysis = loadmat('DOE_permutations.mat')['P_analysis']
 #P_analysis = P_analysis[0:44]
 
-attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-#attribute = ['resiliance_th_gau','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$]
+# attribute = ['n_f_th','Safety factor ($n_{safety}$)']
+# attribute = ['resiliance_th_gau','Probability of satisfying requirement $\mathbb{P}(\mathbf{T} \in C)$]
+attribute = ['capability_th_uni','Volume of capability set ($V_c$)']
 
-[fig, ax, dictionary, start, wave, cross] = plot_tradespace(attribute)
+[fig, ax, dictionary, start, wave, cross, tube] = plot_tradespace(attribute)
 
 # Append initial base design to dictionary
 # Creating a Dictionary  
@@ -119,7 +121,7 @@ for c,i1,i2,i3,i4,i5 in zip(dictionary['concept'],dictionary['i1'],dictionary['i
 
 # read MADS log file
 bb_evals = []
-with open('MADS_output/mads_bb_calls.log') as csv_file:
+with open('mads_bb_calls.log') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     line_count = 0
     for row in csv_reader:
@@ -143,7 +145,7 @@ print('\nNumber of function calls: %i' %(optproblem.n_fcalls))
 
 # read MADS log file
 opt_points = []
-with open('MADS_output/mads_x_opt.log') as csv_file:
+with open('mads_x_opt.log') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=' ')
     line_count = 0
     for row in csv_reader:
@@ -161,4 +163,4 @@ for it in range(len(opt_points[0][1::])):
 
 optproblem.line[0].remove()
 ax.plot(x_data, y_data, '-', color = 'r', linewidth = 4.0 )
-fig.savefig(os.path.join(current_path,'progress','tradespace_%i.png' %(optproblem.n_fcalls)), format='png', dpi=100,bbox_inches='tight')
+fig.savefig(os.path.join(current_path,'progress','tradespace_%i.svg' %(optproblem.n_fcalls)), format='svg', dpi=100,bbox_inches='tight')
