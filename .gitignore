@@ -1,6 +1,12 @@
-
 *.db
-.vs/basic_lib_single_obj/v15/.suo
 *.log
 *.in
+visual_studio/x64/
+visual_studio/.vs/
+
 Makefile
+*.exe
+*.ipdb
+*.iobj
+bin/MADS_output
+bin/Input_files
