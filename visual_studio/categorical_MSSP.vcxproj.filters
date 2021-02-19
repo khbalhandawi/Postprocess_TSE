@@ -4,10 +4,39 @@
     <Filter Include="source files">
       <UniqueIdentifier>{84b4eff2-1c74-476d-b74c-5dfaa52cb256}</UniqueIdentifier>
     </Filter>
+    <Filter Include="header">
+      <UniqueIdentifier>{d5fb1781-25f6-445d-9ece-c5ec4e2324d3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\categorical_MSSP.cpp">
       <Filter>source files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\user_functions.cpp">
+      <Filter>source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lookup_function.cpp">
+      <Filter>source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\My_Evaluator.cpp">
+      <Filter>source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\My_Extended_Poll.cpp">
+      <Filter>source files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\header\user_functions.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\header\lookup_function.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\header\My_Evaluator.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\header\My_Extended_Poll.h">
+      <Filter>header</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

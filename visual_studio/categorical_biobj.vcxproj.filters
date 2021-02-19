@@ -4,10 +4,36 @@
     <Filter Include="source files">
       <UniqueIdentifier>{84b4eff2-1c74-476d-b74c-5dfaa52cb256}</UniqueIdentifier>
     </Filter>
+    <Filter Include="header">
+      <UniqueIdentifier>{6fe79b6f-ebdc-4b85-a746-9ebe1272e1c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{c4ed1957-781c-41c0-b0d9-247c91ba1a44}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\examples\advanced\categorical\single_obj\categorical_biobj.cpp">
+    <ClCompile Include="..\categorical_biobj.cpp">
       <Filter>source files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\My_Evaluator_biobj.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\My_Extended_Poll_biobj.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\user_functions.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\header\My_Extended_Poll_biobj.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\header\My_Evaluator_biobj.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\header\user_functions.h">
+      <Filter>header</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

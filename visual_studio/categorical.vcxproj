@@ -7,7 +7,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\examples\advanced\categorical\single_obj\categorical.cpp" />
+    <ClCompile Include="..\categorical.cpp" />
+    <ClCompile Include="..\src\My_Evaluator_singleobj.cpp" />
+    <ClCompile Include="..\src\My_Extended_Poll_singleobj.cpp" />
+    <ClCompile Include="..\src\user_functions.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\header\lookup_function.h" />
+    <ClInclude Include="..\header\My_Evaluator_singleobj.h" />
+    <ClInclude Include="..\header\My_Extended_Poll_singleobj.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B1AC271C-84AD-456E-A23B-AEF568CB0199}</ProjectGuid>
@@ -44,7 +52,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>x64;NDEBUG;_CONSOLE;MATPLOTLIBCPP_PYTHON_HEADER=Python.h;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\src;$(SolutionDir)\..\ext\sgtelib\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(NOMAD_HOME_PERSONAL)\src\;$(NOMAD_HOME_PERSONAL)\ext\sgtelib\src\;$(SolutionDir)..\header\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -52,7 +60,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Users\Khalil\Desktop\nomad.3.9.1_Personal\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(NOMAD_HOME_PERSONAL)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>nomad.lib;sgtelib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

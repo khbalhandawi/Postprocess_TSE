@@ -7,7 +7,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\examples\advanced\categorical\single_obj\categorical_biobj.cpp" />
+    <ClCompile Include="..\categorical_biobj.cpp" />
+    <ClCompile Include="..\src\My_Evaluator_biobj.cpp" />
+    <ClCompile Include="..\src\My_Extended_Poll_biobj.cpp" />
+    <ClCompile Include="..\src\user_functions.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\header\My_Evaluator_biobj.h" />
+    <ClInclude Include="..\header\My_Extended_Poll_biobj.h" />
+    <ClInclude Include="..\header\user_functions.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B1AC271C-84AD-456E-A23B-AEF568CB0199}</ProjectGuid>
@@ -44,7 +52,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>x64;NDEBUG;_CONSOLE;MATPLOTLIBCPP_PYTHON_HEADER=Python.h;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\src;$(SolutionDir)\..\ext\sgtelib\src;C:\ProgramData\Anaconda2\include;C:\ProgramData\Anaconda2\Lib\site-packages\numpy\core\include;C:\Users\Khalil\Desktop\State_estimation\libs_external\matplotlib-cpp-master\matplotlib-cpp-master</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(NOMAD_HOME_PERSONAL)\src\;$(NOMAD_HOME_PERSONAL)\ext\sgtelib\src\;$(SolutionDir)..\header\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -52,7 +60,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Users\Khalil\Desktop\nomad.3.9.1_Personal\bin;C:/ProgramData/Anaconda2/libs;C:/ProgramData/Anaconda2/libs/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(NOMAD_HOME_PERSONAL)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>nomad.lib;sgtelib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
