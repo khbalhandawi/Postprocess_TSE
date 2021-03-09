@@ -7,6 +7,8 @@ __pycache__/
 *.sgt
 *.svg
 *.prefs
+*.iobj
+*.ipdb
 .project
 .pydevproject
 flag_pong
@@ -24,3 +26,10 @@ progress/
 visual_studio/.vs/
 visual_studio/x64/
 visual_studio/Debug/
+SBD_opt/
+Job_results/Thermal_DOE_results/
+Job_results/Results_log/
+graphics/
+Optimization_studies/
+SGTE_matlab_server/
+*.vsdx

@@ -1,0 +1,54 @@
+git add -u
+git commit -- amend -- no-edit
+git push -f origin master
+REM https://stackoverflow.com/questions/7527982/applying-gitignore-to-committed-files/7528016
+for /F "tokens=*" %a in ('git ls-files -ci --exclude-standard') do @git rm --cached "%a"
+
+# delete last commit
+git reset --hard HEAD~1 
+
+# delete a branch locally
+git branch -d master
+
+# untrack previously tracked files
+git rm --cached categorical.iobj
+git rm --cached categorical.ipdb
+git rm --cached categorical_biobj.iobj
+git rm --cached categorical_biobj.ipdb
+git rm --cached categorical_MSSP.iobj
+git rm --cached categorical_MSSP.ipdb
+
+# DUPLICATION
+git clone --bare https://github.com/khbalhandawi/cpp_corona_simulation
+cd cpp_corona_simulation.git
+git push --mirror https://github.com/khbalhandawi/COVID_SIM
+
+# DUPLICATION
+git clone --bare https://github.com/khbalhandawi/CUDA_agent_based
+cd CUDA_agent_based.git
+git push --mirror https://github.com/khbalhandawi/CUDA_ABM
+
+# first delete duplicate files in repo B and commit
+# delete backups/
+# add libs/ to .gitignore
+
+# rename a directory
+git mv include tmp
+git mv tmp Include
+# modify project file accordingly
+
+# make sure master is the default branch in repo A
+
+# Merge REPO A into REPO B (onto other branch with --no-ff):
+git remote rm origin
+git remote add origin https://github.com/khbalhandawi/Postprocess_TSE
+git checkout master
+git branch -m Categorical_optimization
+git fetch
+git checkout Categorical_optimization
+git push -u origin Categorical_optimization
+git checkout DM_toolbox
+git merge --no-ff Categorical_optimization --allow-unrelated-histories
+git add -A
+git commit -m "Merged Categorical_optimization"
+git push -f origin DM_toolbox

@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "x64",
+            "includePath": [
+                "C:/Users/Khalil/Desktop/nomad.3.9.1_Personal/src/**",
+                "C:/Users/Khalil/Desktop/nomad.3.9.1_Personal/ext/sgtelib/src/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.17763.0",
+            "compilerPath": "${VC_ExcecutablePath_x64}/cl.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "msvc-x64"
+        }
+    ],
+    "version": 4
+}

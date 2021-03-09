@@ -223,7 +223,7 @@ def postprocess_DOE(index,base_name,current_path,bounds,variable_lbls_pc,
 
     # Import DOE outputs from pickle file
     backup_file = '%i_%s_DOE_out.pkl' %(index,base_name[1])
-    backup_filepath = os.path.join(os.getcwd(),'Job_results','Results_log',backup_file) 
+    backup_filepath = os.path.join(os.getcwd(),'Job_results','Results_log_EX',backup_file) 
     backupfile=open(backup_filepath,'rb')
     backup_results = pickle.load(backupfile)
     DOE_inputs = pickle.load(backupfile)
@@ -429,7 +429,7 @@ def Design_margin_evaluation(concept, permutation_index, run_base, run_nominal,
     # Get volume results
     print("------------------------- %s -------------------------\n" %('VOLUME'))
     filename = "%i_volume_out_file.log" %(index)
-    body_full_name = os.path.join(current_path,'Job_results','Results_log',filename)
+    body_full_name = os.path.join(current_path,'Job_results','Results_log_EX',filename)
      
     # Read data from fatigue analysis result and output minimum fatigue life
     fileID = open(body_full_name,'r') # Open file
