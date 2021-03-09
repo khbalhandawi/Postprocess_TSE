@@ -40,3 +40,6 @@ DOE_results/
 LHS_DOE/
 design_margins/
 progress/
+
+# But not these files...
+!images/*.png

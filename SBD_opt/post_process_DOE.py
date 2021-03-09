@@ -465,8 +465,8 @@ if __name__ == "__main__":
 
     filename_opt = 'req_opt_E_log_R0.log'
     filename_feas = 'feasiblity_log_R4.log'
-    # filename_opt = 'req_opt_E_log_R4.log' # optimize with respect to excess
-    filename_opt = 'req_opt_log_R4.log' # optimize with respect to weight
+    filename_opt = 'req_opt_E_log_R4.log' # optimize with respect to excess
+    # filename_opt = 'req_opt_log_R4.log' # optimize with respect to weight
     filename_res = 'resiliance_th_R4.log'
     filename_excess = 'excess_th_R4.log'
     filename_res_ip = 'resiliance_ip_R4.log'
@@ -610,7 +610,7 @@ if __name__ == "__main__":
             bar.set_linewidth(1.0)
         bar_i += 1
 
-    plt.xlabel('Design arc index $\lambda$', fontsize=14)
+    plt.xlabel('Design index $\lambda$', fontsize=14)
     # plt.xlabel('Unique design solution', fontsize=14)
     plt.ylabel('$\%$ of requirement arcs satisfied', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
@@ -649,7 +649,7 @@ if __name__ == "__main__":
             bar.set_linewidth(1.0)
         bar_i += 1
 
-    plt.xlabel('Design arc index $\lambda$', fontsize=14)
+    plt.xlabel('Design index $\lambda$', fontsize=14)
     # plt.xlabel('Unique design solution', fontsize=14)
     plt.ylabel('Filtered outdegree $O_F$', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
@@ -689,11 +689,11 @@ if __name__ == "__main__":
             bar.set_linewidth(1.0)
         bar_i += 1
 
-    plt.xlabel('Design arc index $\lambda$', fontsize=14)
+    plt.xlabel('Design index $\lambda$', fontsize=14)
     # plt.xlabel('Unique design solution', fontsize=14)
     plt.ylabel('Relative frequency ($\%$)', fontsize=14) 
     plt.xticks(list(range(n_bins)), list(map(str,design_indices)))
-    plt.gca().set_ylim((0,9.9))
+    # plt.gca().set_ylim((0,9.9))
 
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','histogram_DOE_E_%i.pdf'%(plot_index)), format='pdf', dpi=1000,bbox_inches=tight_bbox)
     
@@ -713,10 +713,10 @@ if __name__ == "__main__":
     markersizes = [ (1/20)*(n**4) for n in reversed(range(3,len(cost_SBD[:10])+3)) ]
 
     l_D = '$\{c,\mathbf{D}\} \in \Omega_{cD}$'
-    l_P = 'Pareto optimal design arcs'
-    l_R = 'Robust design arcs'
-    l_F = 'Flexible design arcs'
-    l_S = 'Set-based design arcs'
+    l_P = 'Pareto optimal designs'
+    l_R = 'Robust designs'
+    l_F = 'Flexible designs'
+    l_S = 'Set-based designs'
 
     legend_h = []; legend_labels = [];
     if "D" in plot_option:
@@ -982,4 +982,4 @@ if __name__ == "__main__":
     fig.savefig(os.path.join(os.getcwd(),'DOE_results','Concept_pie_chart.pdf'), format='pdf', dpi=1000,bbox_inches='tight')
     
     #==========================================================================
-    # plt.show()
+    plt.show()

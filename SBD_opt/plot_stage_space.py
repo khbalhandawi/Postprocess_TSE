@@ -97,7 +97,7 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
         # legend label generation
         label = ''.join(['\{$c = %i' %(ds[1]),
                         '~\mathbf{S} = [', 
-                        '~'.join(map(str,s_data)),']\}$'])
+                        ',~'.join(map(str,s_data)),']\}$'])
 
         if not plot_thresh_only: 
             legend_labels += [label]
