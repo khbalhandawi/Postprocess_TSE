@@ -7,7 +7,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\categorical_biobj.cpp" />
+    <ClCompile Include="..\src\categorical_biobj.cpp" />
     <ClCompile Include="..\src\My_Evaluator_biobj.cpp" />
     <ClCompile Include="..\src\My_Extended_Poll_biobj.cpp" />
     <ClCompile Include="..\src\user_functions.cpp" />
@@ -40,7 +40,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)..\bin\</OutDir>
+    <OutDir>$(SolutionDir)..\</OutDir>
     <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>

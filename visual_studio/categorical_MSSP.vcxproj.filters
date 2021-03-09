@@ -9,9 +9,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\categorical_MSSP.cpp">
-      <Filter>source files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\user_functions.cpp">
       <Filter>source files</Filter>
     </ClCompile>
@@ -22,6 +19,9 @@
       <Filter>source files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\My_Extended_Poll.cpp">
+      <Filter>source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\categorical_MSSP.cpp">
       <Filter>source files</Filter>
     </ClCompile>
   </ItemGroup>

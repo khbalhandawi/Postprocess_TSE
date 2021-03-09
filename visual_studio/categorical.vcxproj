@@ -7,7 +7,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\categorical.cpp" />
+    <ClCompile Include="..\src\categorical.cpp" />
     <ClCompile Include="..\src\My_Evaluator_singleobj.cpp" />
     <ClCompile Include="..\src\My_Extended_Poll_singleobj.cpp" />
     <ClCompile Include="..\src\user_functions.cpp" />
@@ -40,7 +40,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)..\bin\</OutDir>
+    <OutDir>$(SolutionDir)..\</OutDir>
     <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
@@ -51,7 +51,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>x64;NDEBUG;_CONSOLE;MATPLOTLIBCPP_PYTHON_HEADER=Python.h;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>x64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(NOMAD_HOME_PERSONAL)\src\;$(NOMAD_HOME_PERSONAL)\ext\sgtelib\src\;$(SolutionDir)..\header\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>

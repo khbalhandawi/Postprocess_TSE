@@ -7,7 +7,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\categorical_MSSP.cpp" />
+    <ClCompile Include="..\src\categorical_MSSP.cpp" />
     <ClCompile Include="..\src\lookup_function.cpp" />
     <ClCompile Include="..\src\My_Evaluator.cpp" />
     <ClCompile Include="..\src\My_Extended_Poll.cpp" />
@@ -42,7 +42,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)..\bin\</OutDir>
+    <OutDir>$(SolutionDir)..\</OutDir>
     <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
