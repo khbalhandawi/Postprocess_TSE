@@ -9,9 +9,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\categorical.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\My_Evaluator_singleobj.cpp">
       <Filter>source</Filter>
     </ClCompile>
@@ -19,6 +16,9 @@
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="..\src\user_functions.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\categorical.cpp">
       <Filter>source</Filter>
     </ClCompile>
   </ItemGroup>
