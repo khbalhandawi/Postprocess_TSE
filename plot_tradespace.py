@@ -16,9 +16,9 @@ def plot_tradespace(attribute):
     import random
     from itertools import permutations 
     
-    filename = 'varout_opt_log_5D_R50_th0_2.2_th1_2.8_th2_2.2.log'
+    filename = 'varout_opt_log.log'
     current_path = os.getcwd()
-    filepath = os.path.join(current_path,'Optimization_studies',filename)
+    filepath = os.path.join(current_path,'Input_files',filename)
     
     data = []
     
@@ -53,7 +53,7 @@ def plot_tradespace(attribute):
     rcParams['font.family'] = 'serif'
     my_dpi = 100
     fig = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
-    
+
     # CROSS CONCEPT
     l = list(permutations(range(0, 5))) # permutate indices
     branch_id = 0
@@ -88,7 +88,7 @@ def plot_tradespace(attribute):
         b = random.random()
         rgb = [r,g,b]
         
-        plt.plot(x_data, y_data, ':', color = rgb, linewidth = 2.5 )
+        # plt.plot(x_data, y_data, ':', color = rgb, linewidth = 2.5 )
         plt.plot(x_data, y_data, 'o', markersize=10, markevery=len(x_data), color = [0,0,0])
         cross, = plt.plot(x_data, y_data, 'o', color = [0,0,1], markersize=6 )
         branch_id += 1
@@ -127,7 +127,7 @@ def plot_tradespace(attribute):
         b = random.random()
         rgb = [r,g,b]
         
-        plt.plot(x_data, y_data, '-', color = rgb, linewidth = 2.5 )
+        # plt.plot(x_data, y_data, '-', color = rgb, linewidth = 2.5 )
         start, = plt.plot(x_data, y_data, 'o', markersize=10, markevery=len(x_data), color = [0,0,0])
         wave, = plt.plot(x_data, y_data, 'o', color = [1,0,0], markersize=6 )
         branch_id += 1
@@ -166,25 +166,25 @@ def plot_tradespace(attribute):
         b = random.random()
         rgb = [r,g,b]
         
-        plt.plot(x_data, y_data, '--', color = rgb, linewidth = 1.5 )
+        # plt.plot(x_data, y_data, '--', color = rgb, linewidth = 1.5 )
         start, = plt.plot(x_data, y_data, 'o', markersize=10, markevery=len(x_data), color = [0,0,0])
         tube, = plt.plot(x_data, y_data, 'o', color = [0,1,0], markersize=6 )
         branch_id += 1
 
     ax = plt.gca() 
     ax.tick_params(axis='both', which='major', labelsize=14) 
-    
+
     plt.title("Tradespace", fontsize=20)
     plt.xlabel('Weight of stiffener ($W$) - kg', fontsize=14)
     plt.ylabel(attribute_label, fontsize=14)
-    
+
     return fig, ax, dictionary, start, wave, cross, tube
 
 if __name__ == "__main__":
     
     # attribute = ['n_f_th','Safety factor ($n_{safety}$)']
-    # attribute = ['resiliance_th_gau','Reliability $\mathbb{P}(\mathbf{p} \in C)$']
-    attribute = ['capability_th_uni','Volume of capability set ($V_c$)']
+    attribute = ['resiliance_th_gau','Reliability $\mathbb{P}(\mathbf{p} \in C)$']
+    # attribute = ['capability_th_uni','Volume of capability set ($V_c$)']
 
     [fig, ax, dictionary, start, wave, cross, tube] = plot_tradespace(attribute)
     plt.show()

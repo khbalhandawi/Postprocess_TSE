@@ -1,0 +1,7 @@
+categorical 0 0 0.99 varout_opt_log.log resiliance_th.log excess_th.log
+categorical_biobj 0 varout_opt_log.log resiliance_ip.log excess_ip.log resiliance_th.log excess_th.log
+categorical_MSSP 0 1 varout_opt_log.log resiliance_ip.log resiliance_ip.log resiliance_th.log excess_th.log 36 50 1 46 13 31 0.01 0.1 0.3 0.3 0.8 0.9
+categorical_MSSP 1 1 varout_opt_log.log resiliance_ip.log resiliance_ip.log resiliance_th.log excess_th.log 36 50 1 46 13 31 0.01 0.1 0.3 0.3 0.8 0.9 6 1 4 1 0 2 -1 3
+categorical_MSSP 2 1 varout_opt_log.log resiliance_ip.log resiliance_ip.log resiliance_th.log excess_th.log 36 50 1 46 13 31 0.01 0.1 0.3 0.3 0.8 0.9 6 1 4 1 0 2 -1 3
+
+

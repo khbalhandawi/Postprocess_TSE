@@ -5,28 +5,15 @@ Created on Fri Nov 24 02:58:15 2017
 @author: Khalil
 """
 
-import os, imageio
+import glob
+from PIL import Image
 
-frame_dumpfile = 'frame_names_Magnitude_Detail.pkl'
-
-def create_gif( filenames,duration,current_path,GIF_folder ):
-    images = []
-    for filename in filenames:
-        print(filename)
-        filename = os.path.join(current_path,GIF_folder,filename)
-        img = imageio.imread(filename)
-#        img = imageio.imwrite(filename,img,optimize=False)
-        images.append(img)
-    output_file = '%s.gif' %(GIF_folder)
-    output_file = os.path.join(current_path,GIF_folder,output_file)
-    imageio.mimsave(output_file, images, duration=duration)
-
-current_path = os.getcwd() # Working directory of file
 GIF_folder = 'progress'
+# filepaths
+fp_in = "./%s/tradespace_*.png" %(GIF_folder)
+fp_out = "./%s/tradespace.gif" %(GIF_folder)
 
-filenames = [];
-for i in range(59):
-    filenames += ['tradespace_%i.png' %(i+1)]
-
-duration = 0.5
-create_gif(filenames, duration,current_path,GIF_folder)
+# https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif
+img, *imgs = [Image.open(f) for f in sorted(glob.glob(fp_in))]
+img.save(fp=fp_out, format='GIF', append_images=imgs,
+         save_all=True, duration=200, loop=0)
