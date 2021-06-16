@@ -189,7 +189,7 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 		ax = fig.add_subplot(gs[iteraton]) # subplot
 		cf = ax.contourf( X1, X2, YX_obj, cmap=plt.cm.jet) # plot contour
 		# cf = ax.contourf( X1, X2, YX_obj, vmin = cmin, vmax = cmax, cmap=plt.cm.jet); # plot contour
-		ax.contour(cf, colors='k')
+		ax.contour(cf, colors='k', zorder=1)
 		
 		cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
 		cbar.set_array(YX_obj)
@@ -211,7 +211,7 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 		if plot_index >= 1:
 			c1 = ax.contourf( X1, X2, YX_cstr, alpha=0.0, levels=[-20, 0, 20], colors=['#FF0000','#FF0000'], 
 							hatches=['//', None])
-			ax.contour(c1, colors='#FF0000', linewidths = 2.0, zorder=1)
+			ax.contour(c1, colors='#FF0000', linewidths = 2.0, zorder=2)
 			a1 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#FF0000', facecolor='none', fill='None', hatch='///')
 		else:
 			a1 = patches.Rectangle((20,20), 20, 20, linewidth=1.5, edgecolor='#FFFFFF', facecolor='#FFFFFF', fill='#FFFFFF', hatch=None)
@@ -228,10 +228,10 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 			
 			YX_req[cond] = 1
 			if plot_index >= 2:
-				c2 = ax.contourf( X1, X2, YX_req, alpha=0.1, levels=[-10, 0, 10], colors=['#39FFF2','#39FFF2'], 
+				c2 = ax.contourf( X1, X2, YX_req, alpha=0.1, levels=[-10, 0, 10], colors=['#1EAA37','#1EAA37'], 
 									hatches=[None, None])
-				ax.contour(c2, colors='#39FFF2', linewidths = 5.0, zorder=2)
-				a2 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#39FFF2', facecolor='none', fill='None', hatch=None)
+				ax.contour(c2, colors='#1EAA37', linewidths = 3.0, zorder=3)
+				a2 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#1EAA37', facecolor='none', fill='None', hatch=None)
 			else:
 				a2 = patches.Rectangle((20,20), 20, 20, linewidth=1.5, edgecolor='#FFFFFF', facecolor='#FFFFFF', fill='#FFFFFF', hatch=None)
 	
@@ -266,64 +266,13 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 				L += [LN]
 
 			if plot_index >= 2:
-				# c2 = ax.contourf( X1, X2, Z, colors=['#39FFF2'], alpha=0.0);
+				# c2 = ax.contourf( X1, X2, Z, colors=['#1EAA37'], alpha=0.0);
 				c2 = ax.contourf( X1, X2, Z, alpha=0.25, cmap=plt.cm.Blues)
 				
-				ax.contour(c2, colors='#39FFF2', levels=L, linewidths = 4.5)
-				a2 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#39FFF2', facecolor='none', fill='None', hatch=None)
+				ax.contour(c2, colors='#1EAA37', levels=L, linewidths = 4.5)
+				a2 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#1EAA37', facecolor='none', fill='None', hatch=None)
 			else:
 				a2 = patches.Rectangle((20,20), 20, 20, linewidth=1.5, edgecolor='#FFFFFF', facecolor='#FFFFFF', fill='#FFFFFF', hatch=None)
-	
-	#========================= REGION OF INTEREST =============================#	
-	# %% Requirements
-
-		if req_type == 'uniform':	
-
-			YX_req = np.zeros(X1.shape)
-
-			cond1 = (X1 >= bounds_req[i[0],0]) & (X1 <= bounds_req[i[0],1]) # x-axis
-			cond2 = (X2 >= bounds_req[i[1],0]) & (X2 <= bounds_req[i[1],1]) # y-axis
-			cond3 = (YX_cstr >= 0) # z-axis
-			cond = (cond1) & (cond2) & (cond3)
-			
-			YX_req[cond] = 1
-			if plot_index >= 3:
-				c3 = ax.contourf( X1, X2, YX_req, alpha=0.0, levels=[-10, 0, 10], colors=['#1E7C37','#1E7C37'], 
-								hatches=[None, '+'])
-				ax.contour(c3, colors='#1E7C37', linewidths = 2.0, zorder = 3)
-
-				#=======================================================================
-				# artists, labels = c3.legend_elements()
-				# a3 = artists[1];
-				#=======================================================================
-				a3 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#1E7C37', facecolor='none', fill='None', hatch='++')
-			else:
-				a3 = patches.Rectangle((20,20), 20, 20, linewidth=1.5, edgecolor='#FFFFFF', facecolor='#FFFFFF', fill='#FFFFFF', hatch=None)
-	
-		elif req_type == 'guassian':
-			
-			# Mean vector and covariance matrix
-			mu_sp = np.array([ mu[i[0]], mu[i[1]] ])
-			Sigma_sp = Sigma[np.ix_([i[0],i[1]],[i[0],i[1]])] # pick corresponding row and column
-			Sigma_sp = Sigma_sp
-			
-			# Pack X1 and X2 into a single 3-dimensional array
-			pos = np.empty(X1_norm.shape + (2,))
-			pos[:, :, 0] = X1_norm
-			pos[:, :, 1] = X2_norm
-			
-			Z = multivariate_gaussian(pos, mu_sp, Sigma_sp)
-			cond = (YX_cstr < 0) # z-axis
-			Z[cond] = 0.0
-
-			if plot_index >= 3:
-				# c2 = ax.contourf( X1, X2, Z, colors=['#39FFF2'], alpha=0.0);
-				c3 = ax.contourf( X1, X2, Z, alpha=0.25, cmap=plt.cm.Greens)
-				
-				ax.contour(c3, colors='#1E7C37', levels=L, linewidths = 1.5)
-				a3 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#1E7C37', facecolor='none', fill='None', hatch='None')
-			else:
-				a3 = patches.Rectangle((20,20), 20, 20, linewidth=1.5, edgecolor='#FFFFFF', facecolor='#FFFFFF', fill='#FFFFFF', hatch=None)
 	
 	#========================= MONTE CARLO POINTS =============================#
 
@@ -331,7 +280,7 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 
 		ax.axis([lob[i[0]],upb[i[0]],lob[i[1]],upb[i[1]]]) # fix the axis limits
 		
-		if plot_index >= 4:
+		if plot_index >= 3:
 			ax.plot(dFF[:50,i[0]],dFF[:50,i[1]],'.k', markersize = 3) # plot DOE points for surrogate (first 50 only)
 			a_MCI = mlines.Line2D([], [], color='black', marker='.', markersize=5, linestyle='')
 			# ax.plot(S[:,i[0]],S[:,i[1]],'.k') # plot DOE points for surrogate
@@ -343,6 +292,37 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 		ax.set_xlabel(variable_lbls[i[0]], labelpad=-1)
 		ax.set_ylabel(variable_lbls[i[1]], labelpad=-16)
 	
+	#============================= SET LABELS =================================#
+		# Set labels (OPTIONAL)
+		if iteraton == 1:
+
+			ax.annotate("$\mathrm{Buffer}~B$", fontsize=12, xy =(25, 0), xytext =(50, 75), 
+				arrowprops=dict(arrowstyle="simple,tail_width=0.2,head_width=0.5,head_length=0.7",
+                                facecolor='#d9d9d9',
+								edgecolor='#d9d9d9',
+								color='#d9d9d9',
+								shrinkA=5,
+                                shrinkB=5,
+                                fc="k", ec="k",
+                                connectionstyle="arc3,rad=-0.05",
+                                ),
+				bbox=dict(edgecolor='white', facecolor='white', alpha=1.0),)
+
+			ax.annotate("$\mathrm{Danger~zone}~D$", fontsize=12, xy =(-75, 0), xytext =(-70, 75), 
+				arrowprops=dict(arrowstyle="simple,tail_width=0.2,head_width=0.5,head_length=0.7",
+                                facecolor='#d9d9d9',
+								edgecolor='#d9d9d9',
+								color='#d9d9d9',
+								shrinkA=5,
+                                shrinkB=5,
+                                fc="k", ec="k",
+                                connectionstyle="arc3,rad=-0.05",
+                                ),
+				bbox=dict(edgecolor='white', facecolor='white', alpha=1.0),)
+
+			ax.text(25, -75, "$\mathrm{Excess}~E$", fontsize=12, 
+				bbox=dict(edgecolor='white', facecolor='white', alpha=1.0), zorder = 21) # Danger zone
+
 	# handles, labels = [[a1], ["C':~$\hat{g}_{f1}(\mathbf{p}) - t_1 > 0$", ]]
 	# fig.legend(handles, labels, loc='upper center', ncol=1, fontsize = 14)
 
@@ -360,11 +340,10 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 	# 									  "$F_{\mathbf{X}}(\mathbf{p}) | \mathbf{p} \in C$",
 	# 									  "Monte Carlo samples" ]] # for mathematical notation
 
-	handles, labels = [[a1,a2,a3,a_MCI], ["Compliment of Capability ($C'$)", 
-										  "Requirement PDF: $F_{\mathbf{X}}$",
-										  "Reliability and Buffer ($B$)",
-										  "Monte Carlo samples" ]] # for presentation
-	lx = fig.legend(handles, labels, loc='upper center', ncol=4, fontsize = 14)
+	handles, labels = [[a1,a2,a_MCI], ["$C'$: Compliment of capability", 
+										"R: Requirement set",
+										"Monte Carlo samples" ]] # for presentation
+	lx = fig.legend(handles, labels, loc='upper center', ncol=3, fontsize = 14)
 
 	l_index = 0
 	for item in lx.get_texts():

@@ -336,7 +336,7 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
         hyperplane_SGTE_vis_norm(server,DOE_inputs,bounds,bounds_req,LHS_MCI_file,mu,Sigma,req_type,variable_lbls,
                                  nominal,threshold,outputs,nn,fig,plt,plot_index=plot_index,plot_2D=plot_2D,fig_2D=fig_2D)
         
-        fig_name = '%i_req_%i_%s_RS_pi_%i.png' %(index,req_index,base_name[1],plot_index)
+        fig_name = '%i_req_%i_%s_RS_pi_%i.pdf' %(index,req_index,base_name[1],plot_index)
         fig_file_name = os.path.join(current_path,'design_margins',fig_name)
         fig.savefig(fig_file_name, bbox_inches='tight')
     
@@ -433,7 +433,7 @@ def Design_margin_evaluation(concept, permutation_index, run_base, run_nominal,
      
     # Read data from fatigue analysis result and output minimum fatigue life
     fileID = open(body_full_name,'r') # Open file
-    InputText = np.loadtxt(fileID, delimiter = '\n', dtype=np.str) # \n is the delimiter
+    InputText = np.loadtxt(fileID, delimiter = '\n', dtype=str) # \n is the delimiter
     volume = float(InputText)
     fileID.close()
     
@@ -468,8 +468,8 @@ def main():
     #============================= MAIN EXECUTION =================================#
 
     ##############################
-    P_i = P_analysis[109 - 1]
-    index = 109
+    P_i = P_analysis[110 - 1]
+    index = 110
     ##############################
     print(P_i)
     concept = P_i[0]
