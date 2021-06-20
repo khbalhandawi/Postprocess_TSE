@@ -334,12 +334,17 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
             fig_2D = None
 
         hyperplane_SGTE_vis_norm(server,DOE_inputs,bounds,bounds_req,LHS_MCI_file,mu,Sigma,req_type,variable_lbls,
-                                 nominal,threshold,outputs,nn,fig,plt,plot_index=plot_index,plot_2D=plot_2D,fig_2D=fig_2D)
+                                 nominal,threshold,outputs,nn,fig,plt,plot_index=plot_index,plot_2D=plot_2D,fig_2D=fig_2D,reliability=resiliance)
         
         fig_name = '%i_req_%i_%s_RS_pi_%i.pdf' %(index,req_index,base_name[1],plot_index)
         fig_file_name = os.path.join(current_path,'design_margins',fig_name)
         fig.savefig(fig_file_name, bbox_inches='tight')
     
+        if plot_2D:
+            fig_name = '%i_req_%i_%s_RS_2D_pi_%i.pdf' %(index,req_index,base_name[1],plot_index)
+            fig_file_name = os.path.join(current_path,'design_margins',fig_name)
+            fig_2D.savefig(fig_file_name, bbox_inches='tight')
+
     if compute_margins:
         return resiliance, R_volume, capability, Buffer, Excess
     else:
@@ -475,7 +480,7 @@ def main():
     concept = P_i[0]
     permutation_index = P_i[1::]
     
-    design_data = Design_margin_evaluation(concept, permutation_index, run_base, run_nominal, new_LHS_MCI, index, plot_index=plot_index, plot_2D=False)
+    design_data = Design_margin_evaluation(concept, permutation_index, run_base, run_nominal, new_LHS_MCI, index, plot_index=plot_index, plot_2D=True)
 
     # %% Postprocessing
     [weight, resiliance_th_vec_nominal, R_volume_th_vec_nominal, 

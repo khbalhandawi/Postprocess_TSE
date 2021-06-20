@@ -20,7 +20,8 @@ from matplotlib import rcParams
 # get dictionary data from design log and resiliance log
 def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
                     weight_file, res_ip_file, excess_ip_file, res_th_file, 
-                    excess_th_file, colors = [[1,0,0],[0,1,0],[0,0,1]],
+                    excess_th_file, colors = [[1,0,0],[0,1,0],[0,0,1]], 
+                    linestyles = [(5,(5,5,5,5)), (1,(3,2,1,2)), (5,(1,5,1,5))],
                     trans = [0.9, 0.4, 0.1], output_dir='Stagespace_output',
                     plot_thresh_only=False):
 
@@ -70,9 +71,9 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
         print(w_data)
         print(e_data)
         if not plot_thresh_only:
-            plot_h1, = ax1.plot(x_data, R_data, ':', color = colors[branch_id-1], linewidth = 2.5 )
+            plot_h1, = ax1.plot(x_data, R_data, linestyle=linestyles[branch_id-1], color = colors[branch_id-1], linewidth = 1.5 )
             # plt.plot(x_data, y_data, 'o', markersize=10, markevery=len(x_data), color = [0,0,0])
-            plot_h2, = ax1.plot(x_data, R_data, 'o', color = [0,0,0], markersize=6 )
+            # plot_h2, = ax1.plot(x_data, R_data, linestyle=(5,(5,10,5,10)), color = [0,0,0], markersize=6 )
             legend_h_f1 += [plot_h1]
         else:
             legend_h_f1 = []
@@ -83,13 +84,13 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
         # legend_h_f2 += [plot_h1]
         
         if not plot_thresh_only:
-            plot_h1, = ax2.plot([x + 0.5 for x in x_data], e_data, ':', drawstyle="steps", 
-                color = colors[branch_id-1], linewidth = 2.5)
+            plot_h1, = ax2.plot([x + 0.5 for x in x_data], e_data, linestyle=linestyles[branch_id-1], drawstyle="steps", 
+                color = colors[branch_id-1], linewidth = 1.5)
             # plt.plot(x_data, y_data, 'o', markersize=10, markevery=len(x_data), color = [0,0,0])
-            plot_h2, = ax2.plot(x_data, e_data, 'o', color = [0,0,0], markersize=6 )
+            # plot_h2, = ax2.plot(x_data, e_data, 'o', color = [0,0,0], markersize=6 )
             legend_h_f2 += [plot_h1]
-            ax2.fill_between([x + 0.5 for x in x_data], 0.0, e_data, step="pre", facecolor="none", 
-                hatch="//", edgecolor=colors[branch_id-1], linewidth=0.0 , alpha=trans[branch_id-1])
+            # ax2.fill_between([x + 0.5 for x in x_data], 0.0, e_data, step="pre", facecolor="none", 
+            #     hatch="//", edgecolor=colors[branch_id-1], linewidth=0.0 , alpha=trans[branch_id-1])
         else:
             legend_h_f2 = []
 
@@ -113,10 +114,10 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
     ax2.set_ylim((0,1.15))
     ax2.legend(legend_h_f2, legend_labels, loc='lower right', fontsize = 10)
 
-    fig_file_name = '%i_stagespace_obj.png' %(plot_id)
+    fig_file_name = '%i_stagespace_obj.eps' %(plot_id)
     save_folder = 'DOE_results'
     save_directory = os.path.join(current_path,save_folder,output_dir,fig_file_name)
-    fig2.savefig(save_directory, bbox_inches='tight', format='png', dpi=300)
+    fig2.savefig(save_directory, bbox_inches='tight', format='eps', dpi=300)
 
     # Figure 1 settings
     # req_thresh = [0.0] + req_thresh # design stage 0
@@ -136,10 +137,10 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
     ax1.set_ylim((0.0,1.15))
     ax1.legend(legend_h_f1, legend_labels, loc='lower right', fontsize = 10)
 
-    fig_file_name = '%i_stagespace_res.png' %(plot_id)
+    fig_file_name = '%i_stagespace_res.eps' %(plot_id)
     save_folder = 'DOE_results'
     save_directory = os.path.join(current_path,save_folder,output_dir,fig_file_name)
-    fig1.savefig(save_directory, bbox_inches='tight', format='png', dpi=300)
+    fig1.savefig(save_directory, bbox_inches='tight', format='eps', dpi=300)
 
     return fig1, fig2
 
@@ -174,7 +175,7 @@ if __name__ == "__main__":
              [6 , 1 , 4 , 1 , 0 , 2 , -1 , 3 ],
              [6 , 1 , 2 , 1 , 0 , 4 , -1 , 3 ] ]
     req_vec = [36, 50,  1, 46, 13, 31]
-    trans = [0.1, 0.9, 0.1]
+    trans = [0.3, 0.3, 0.3]
 
     plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
                     weight_file, res_ip_file, excess_ip_file, res_th_file, 
