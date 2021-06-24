@@ -1082,7 +1082,7 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
             fig_2D = None
 
         hyperplane_SGTE_vis_norm(server,DOE_inputs,bounds,bounds_req,LHS_MCI_file,mu,Sigma,req_type,variable_lbls,
-                                 nominal,threshold,outputs,nn,fig,plt,plot_index=plot_index,plot_2D=plot_2D,fig_2D=fig_2D)
+                                 nominal,threshold,outputs,nn,fig,plt,plot_index=plot_index,plot_2D=plot_2D,fig_2D=fig_2D,reliability=resiliance)
         
         fig_name = '%i_req_%i_%s_RS_pi_%i.pdf' %(index,req_index,base_name[1],plot_index)
         fig_file_name = os.path.join(current_path,'Job_results','Results_log',fig_name)
@@ -1582,7 +1582,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
      
     # Read data from fatigue analysis result and output minimum fatigue life
     fileID = open(body_full_name,'r') # Open file
-    InputText = np.loadtxt(fileID, delimiter = '\n', dtype=np.str) # \n is the delimiter
+    InputText = np.loadtxt(fileID, delimiter = '\n', dtype=str) # \n is the delimiter
     volume = float(InputText)
     fileID.close()
     
@@ -1599,7 +1599,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
 
     InputText = np.loadtxt(inputfile,
                            delimiter = ',',
-                           dtype=np.float) # \n is the delimiter
+                           dtype=float) # \n is the delimiter
     InputText = np.atleast_1d(InputText) # convert to 1d array
 
     t_max = []
@@ -1614,7 +1614,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     temp_full_name = os.path.join(current_path,'Job_results','Results_log',filename)
     inputfile=open(temp_full_name,'r') # Read temperature file
 
-    InputText = np.loadtxt(inputfile,delimiter = ',',dtype=np.float) # \n is the delimiter
+    InputText = np.loadtxt(inputfile,delimiter = ',',dtype=float) # \n is the delimiter
     InputText = np.atleast_1d(InputText) # convert to 1d array
 
     p_n = []
@@ -1629,7 +1629,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
     temp_full_name = os.path.join(current_path,'Job_results','Results_log',filename)
     inputfile=open(temp_full_name,'r') # Read temperature file
 
-    InputText = np.loadtxt(inputfile,delimiter = ',',dtype=np.float) # \n is the delimiter
+    InputText = np.loadtxt(inputfile,delimiter = ',',dtype=float) # \n is the delimiter
     InputText = np.atleast_1d(InputText) # convert to 1d array
 
     a_n = []
@@ -1647,7 +1647,7 @@ def DED_blackbox_evaluation(concept, permutation_index, run_base, run_nominal,
 
     # Read data from fatigue analysis result and output minumum fatigue life
     fileID = open(btime_full_name,'r') # Open file
-    InputText = np.loadtxt(fileID, delimiter = '\n', dtype=np.str) # \n is the delimiter
+    InputText = np.loadtxt(fileID, delimiter = '\n', dtype=str) # \n is the delimiter
     btime = float(InputText)
     fileID.close()
 
@@ -1708,7 +1708,7 @@ def main():
     
     InputText = np.loadtxt(inputfile,
        delimiter = ' ',
-       dtype=np.str) # \n is the delimiter
+       dtype=str) # \n is the delimiter
     
     ax_pos =       float(InputText[0])
     st_height =    float(InputText[1])
@@ -1725,7 +1725,7 @@ def main():
     
     paramText = np.loadtxt(paramfile,
        delimiter = ' ',
-       dtype=np.str) # \n is the delimiter
+       dtype=str) # \n is the delimiter
     
     index = int(float(paramText[0]))
     
@@ -1756,8 +1756,8 @@ def main():
     H_subs =         float(paramText[24])
     T_ref =          float(paramText[25])
     
-    run_base = 0; run_nominal = 1; new_LHS = False; process_DOE_requirements = False; sampling = 'fullfact'
-    new_LHS_MCI = True; plot_index = 3; plot_2D = True
+    run_base = 0; run_nominal = 0; new_LHS = False; process_DOE_requirements = True; sampling = 'fullfact'
+    new_LHS_MCI = True; plot_index = 6; plot_2D = True
 
     # %% Sampling
     #========================== REQUIREMENTS SPACE LHS ============================#
@@ -1842,26 +1842,24 @@ def main():
     
     ##############################
     # Presentation graphics
-    design_indices = [109, 110]
-    req_indices = [[None,],[None,]]
+    # process_DOE_requirements to None
+    # design_indices = [109, 110]  # these are trained with Kriging models
+    # req_indices = [[None,],[None,]]
     
-    # design_indices = [109, 110, 146, 163, 164, 167, 168]
+    design_indices = [109, 110]
+    req_indices = [[1,], # D: 109 # these are trained with Kriging models
+                  [15, 11, 37,]] # D: 110 # these are trained with Kriging models
 
-    # req_indices = [[1,], # D: 109
-    #               [15, 11, 37,], # D: 110
-    #               [36,], # D: 146
-    #               [50, 1,], # D: 163
-    #               [1,], # D: 164
-    #               [46, 13,], # D: 167
-    #               [31,]] # D: 168
-
-    # design_indices = [146, 163, 164, 167, 168]
+    # design_indices = [146, 163, 164, 167, 168] # these are trained with ensemble models
 
     # req_indices = [[36,], # D: 146
     #                [50, 1,], # D: 163
     #                [1,], # D: 164
     #                [46, 13,], # D: 167
     #                [31,]] # D: 168
+
+    # design_indices = [164,] # these are trained with ensemble models ( set max reliability for plotting to 0.26)
+    # req_indices = [[1,],] # D: 164
 
     ##############################
 

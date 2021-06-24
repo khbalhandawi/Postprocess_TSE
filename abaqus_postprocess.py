@@ -520,7 +520,7 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 		l_index += 1
 
 def plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_type,lob,upb,LHS_f,d,
-					   	  nominal,threshold,nn,S,server,variable_lbls,plt,fig,plot_index=4):
+					   	  nominal,threshold,nn,S,server,variable_lbls,plt,fig,plot_index=4,reliability=None):
 	
 	from DED_Blackbox_opt import scaling
 	from DED_Blackbox_opt import multivariate_gaussian
@@ -583,7 +583,7 @@ def plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_t
 	ax = fig.gca() # plot axis
 	cf = ax.contourf( X1, X2, YX_obj, cmap=plt.cm.jet) # plot contour
 	# cf = ax.contourf( X1, X2, YX_obj, vmin = cmin, vmax = cmax, cmap=plt.cm.jet); # plot contour
-	ax.contour(cf, colors='k')
+	ax.contour(cf, colors='k', zorder=1)
 	
 	cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
 	cbar.set_array(YX_obj)
@@ -593,7 +593,7 @@ def plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_t
 	# cbar_h = fig.colorbar(cbar)
 	cbar_h = fig.colorbar(cbar, boundaries=boundaries)
 	cbar_h.set_label('$g_{f1}(\mathbf{p})$', rotation=90, labelpad=3, fontsize=18)
-	cbar_h.ax.tick_params(labelsize=14)  # set your label size here
+	cbar_h.ax.tick_params(labelsize=16) 
 	# cbar_h.set_label('$n_{safety}(\mathbf{T})$', rotation=90, labelpad=3)
 	
 	artists, labels = cf.legend_elements()
@@ -606,7 +606,7 @@ def plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_t
 	if plot_index >= 1:
 		c1 = ax.contourf( X1, X2, YX_cstr, alpha=0.0, levels=[-20, 0, 20], colors=['#FF0000','#FF0000'], 
 						hatches=['//', None])
-		ax.contour(c1, colors='#FF0000', linewidths = 2.0, zorder=1)
+		ax.contour(c1, colors='#FF0000', linewidths = 2.0, zorder=2)
 		a1 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#FF0000', facecolor='none', fill='None', hatch='///')
 	else:
 		a1 = patches.Rectangle((20,20), 20, 20, linewidth=1.5, edgecolor='#FFFFFF', facecolor='#FFFFFF', fill='#FFFFFF', hatch=None)
@@ -623,10 +623,10 @@ def plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_t
 		
 		YX_req[cond] = 1
 		if plot_index >= 2:
-			c2 = ax.contourf( X1, X2, YX_req, alpha=0.1, levels=[-10, 0, 10], colors=['#39FFF2','#39FFF2'], 
+			c2 = ax.contourf( X1, X2, YX_req, alpha=0.1, levels=[-10, 0, 10], colors=['#1EAA37','#1EAA37'], 
 								hatches=[None, None])
-			ax.contour(c2, colors='#39FFF2', linewidths = 5.0, zorder=2)
-			a2 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#39FFF2', facecolor='none', fill='None', hatch=None)
+			ax.contour(c2, colors='#1EAA37', linewidths = 3.0, zorder=3)
+			a2 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#1EAA37', facecolor='none', fill='None', hatch=None)
 		else:
 			a2 = patches.Rectangle((20,20), 20, 20, linewidth=1.5, edgecolor='#FFFFFF', facecolor='#FFFFFF', fill='#FFFFFF', hatch=None)
 
@@ -661,83 +661,105 @@ def plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_t
 			L += [LN]
 
 		if plot_index >= 2:
-			# c2 = ax.contourf( X1, X2, Z, colors=['#39FFF2'], alpha=0.0);
+			# c2 = ax.contourf( X1, X2, Z, colors=['#1EAA37'], alpha=0.0);
 			c2 = ax.contourf( X1, X2, Z, alpha=0.25, cmap=plt.cm.Blues)
 			
-			ax.contour(c2, colors='#39FFF2', levels=L, linewidths = 4.5)
-			a2 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#39FFF2', facecolor='none', fill='None', hatch=None)
+			ax.contour(c2, colors='#1EAA37', levels=L, linewidths = 4.5)
+			a2 = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#1EAA37', facecolor='none', fill='None', hatch=None)
 		else:
 			a2 = patches.Rectangle((20,20), 20, 20, linewidth=1.5, edgecolor='#FFFFFF', facecolor='#FFFFFF', fill='#FFFFFF', hatch=None)
-
-	#========================= REGION OF INTEREST =============================#	
-	# %% Requirements
-
-	if req_type == 'uniform':	
-
-		YX_req = np.zeros(X1.shape)
-
-		cond1 = (X1 >= bounds_req[i[0],0]) & (X1 <= bounds_req[i[0],1]) # x-axis
-		cond2 = (X2 >= bounds_req[i[1],0]) & (X2 <= bounds_req[i[1],1]) # y-axis
-		cond3 = (YX_cstr >= 0) # z-axis
-		cond = (cond1) & (cond2) & (cond3)
-		
-		YX_req[cond] = 1
-		if plot_index >= 3:
-			c3 = ax.contourf( X1, X2, YX_req, alpha=0.0, levels=[-10, 0, 10], colors=['#1E7C37','#1E7C37'], 
-							hatches=[None, '+'])
-			ax.contour(c3, colors='#1E7C37', linewidths = 2.0, zorder = 3)
-
-			#=======================================================================
-			# artists, labels = c3.legend_elements()
-			# a3 = artists[1];
-			#=======================================================================
-			a3 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#1E7C37', facecolor='none', fill='None', hatch='++')
-		else:
-			a3 = patches.Rectangle((20,20), 20, 20, linewidth=1.5, edgecolor='#FFFFFF', facecolor='#FFFFFF', fill='#FFFFFF', hatch=None)
-
-	elif req_type == 'guassian':
-		
-		# Mean vector and covariance matrix
-		mu_sp = np.array([ mu[i[0]], mu[i[1]] ])
-		Sigma_sp = Sigma[np.ix_([i[0],i[1]],[i[0],i[1]])] # pick corresponding row and column
-		Sigma_sp = Sigma_sp
-		
-		# Pack X1 and X2 into a single 3-dimensional array
-		pos = np.empty(X1_norm.shape + (2,))
-		pos[:, :, 0] = X1_norm
-		pos[:, :, 1] = X2_norm
-		
-		Z = multivariate_gaussian(pos, mu_sp, Sigma_sp)
-		cond = (YX_cstr < 0) # z-axis
-		Z[cond] = 0.0
-
-		if plot_index >= 3:
-			# c2 = ax.contourf( X1, X2, Z, colors=['#39FFF2'], alpha=0.0);
-			c3 = ax.contourf( X1, X2, Z, alpha=0.25, cmap=plt.cm.Greens)
-			
-			ax.contour(c3, colors='#1E7C37', levels=L, linewidths = 1.5)
-			a3 = patches.Rectangle((20,20), 20, 20, linewidth=1, edgecolor='#1E7C37', facecolor='none', fill='None', hatch='None')
-		else:
-			a3 = patches.Rectangle((20,20), 20, 20, linewidth=1.5, edgecolor='#FFFFFF', facecolor='#FFFFFF', fill='#FFFFFF', hatch=None)
-
+	
 	#========================= MONTE CARLO POINTS =============================#
 
 	import matplotlib.lines as mlines
 
 	ax.axis([lob[i[0]],upb[i[0]],lob[i[1]],upb[i[1]]]) # fix the axis limits
 	
-	if plot_index >= 4:
-		ax.plot(dFF[:50,i[0]],dFF[:50,i[1]],'.k', markersize = 8) # plot DOE points for surrogate (first 50 only)
+	if plot_index >= 6:
+		ax.plot(dFF[:50,i[0]],dFF[:50,i[1]],'.k', markersize = 10) # plot DOE points for surrogate (first 50 only)
 		a_MCI = mlines.Line2D([], [], color='black', marker='.', markersize=5, linestyle='')
 		# ax.plot(S[:,i[0]],S[:,i[1]],'.k') # plot DOE points for surrogate
 	else:
 		a_MCI = patches.Rectangle((20,20), 20, 20, linewidth=1.5, edgecolor='#FFFFFF', facecolor='#FFFFFF', fill='#FFFFFF', hatch=None)
-
+	
 	#============================ AXIS LABELS =================================#	
-
 	ax.set_xlabel(variable_lbls[i[0]], labelpad=-1, fontsize=18)
 	ax.set_ylabel(variable_lbls[i[1]], labelpad=-16, fontsize=18)
-	ax.tick_params(labelsize=14)
+
+	ax.tick_params(axis='x', labelsize=16)
+	ax.tick_params(axis='y', labelsize=16)
+
+	#============================= SET LABELS =================================#
+	# Set labels (OPTIONAL)
+
+	if reliability is not None:
+
+		if req_type =='guassian':
+			padding = 20
+		elif req_type =='uniform':
+			padding = 10
+		else:
+			padding = 10
+
+		if plot_index >= 3:
+
+			if reliability >= 0.04:
+
+				buffer_coordinates = (bounds_req[i[0],1]-padding,bounds_req[i[1],0]+padding+10)
+
+				ax.annotate("$\mathrm{Buffer}~B$", fontsize=18, xy = buffer_coordinates, xytext =(2.5, 85), 
+					arrowprops=dict(arrowstyle="simple,tail_width=0.2,head_width=0.5,head_length=0.7",
+									facecolor='#d9d9d9',
+									edgecolor='#d9d9d9',
+									shrinkA=5,
+									shrinkB=5,
+									fc="k", ec="k",
+									connectionstyle="arc3,rad=-0.05",
+									),
+					bbox=dict(edgecolor='white', facecolor='white', alpha=1.0),)
+				
+			else:
+				ax.text(2.5, 85, "$\mathrm{No~buffer~left}$", fontsize=18, color='#FF0000',
+					bbox=dict(edgecolor='white', facecolor='white', alpha=1.0), zorder = 21) # Danger zone
+
+		if plot_index >= 4:
+
+			if reliability <= 0.96:
+
+				Danger_coordinates = (bounds_req[i[0],0]+padding,bounds_req[i[1],1]-padding-30)
+
+				ax.annotate("$\mathrm{Danger~zone}~D$", fontsize=18, xy = Danger_coordinates, xytext =(-90, -90), 
+					arrowprops=dict(arrowstyle="simple,tail_width=0.2,head_width=0.5,head_length=0.7",
+									facecolor='#d9d9d9',
+									edgecolor='#d9d9d9',
+									shrinkA=5,
+									shrinkB=5,
+									fc="k", ec="k",
+									connectionstyle="arc3,rad=-0.05",
+									),
+					bbox=dict(edgecolor='white', facecolor='white', alpha=1.0),)
+			
+			else:
+				ax.text(-90, -90, "$\mathrm{No~danger}$", fontsize=18, color='#1EAA37',
+					bbox=dict(edgecolor='white', facecolor='white', alpha=1.0), zorder = 21) # Danger zone
+
+		if plot_index >= 5:
+
+			Excess_coordinates = (90, 60)
+
+			ax.annotate("$\mathrm{Excess}~E$", fontsize=18, xy = Excess_coordinates, xytext =(62.5, 85), 
+				arrowprops=dict(arrowstyle="simple,tail_width=0.2,head_width=0.5,head_length=0.7",
+								facecolor='#d9d9d9',
+								edgecolor='#d9d9d9',
+								shrinkA=5,
+								shrinkB=5,
+								fc="k", ec="k",
+								connectionstyle="arc3,rad=-0.05",
+								),
+				bbox=dict(edgecolor='white', facecolor='white', alpha=1.0),)
+
+			# ax.text(62.5, 85, "$\mathrm{Excess}~E$", fontsize=18, 
+			# 	bbox=dict(edgecolor='white', facecolor='white', alpha=1.0), zorder = 21) # Danger zone
 
 	# handles, labels = [[a1], ["C':~$\hat{g}_{f1}(\mathbf{p}) - t_1 > 0$", ]]
 	# fig.legend(handles, labels, loc='upper center', ncol=1, fontsize = 14)
@@ -751,16 +773,15 @@ def plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_t
 	# 								"$F_{\mathbf{X}}(\mathbf{p})$ | \mathbf{p} \in C$"]]
 	# fig.legend(handles, labels, loc='upper center', ncol=3, fontsize = 14)
 
-	# handles, labels = [[a1,a2,a3,a_MCI], ["$C'$: $\hat{g}_{f1}(\mathbf{p}) - t_1 > 0$", 
+	# handles, labels = [[a1,a2,a3,a_MCI], ["$C'$: $t_1 - \hat{g}_{f1}(\mathbf{p}) > 0$", 
 	# 									  "Joint PDF: $F_{\mathbf{X}}(\mathbf{p})$",
 	# 									  "$F_{\mathbf{X}}(\mathbf{p}) | \mathbf{p} \in C$",
-	# 									  "Monte Carlo samples" ]]
-	
-	handles, labels = [[a1,a2,a3,a_MCI], ["Compliment of Capability ($C'$)", 
-										  "Requirement PDF: $F_{\mathbf{X}}$",
-										  "Reliability and Buffer ($B$)",
-										  "Monte Carlo samples" ]] # for presentation
-	lx = fig.legend(handles, labels, loc='upper center', ncol=2, fontsize = 14)
+	# 									  "Monte Carlo samples" ]] # for mathematical notation
+
+	handles, labels = [[a1,a2,a_MCI], ["$C'$: Compliment of capability", 
+										"R: Requirement set",
+										"Monte Carlo samples" ]] # for presentation
+	lx = fig.legend(handles, labels, loc='upper center', ncol=2, fontsize = 16, bbox_to_anchor=(0.5,1.02))
 
 	l_index = 0
 	for item in lx.get_texts():
@@ -852,7 +873,7 @@ def plot_line_code(bounds,bounds_n,bounds_req,mu,Sigma,req_type,lob,upb,LHS_f,d,
 	ax.set_ylabel('$n_{safety}$')
 
 def hyperplane_SGTE_vis_norm(server,LHS_f,bounds,bounds_req,LHS_MCI_file,mu,Sigma,req_type,variable_lbls,
-							 nominal,threshold,objs,nn,fig,plt,plot_index=4,plot_2D=False,fig_2D=None):
+							 nominal,threshold,objs,nn,fig,plt,plot_index=4,plot_2D=False,fig_2D=None,reliability=None):
 	import numpy as np
 	from scipy.special import comb
 	from DED_Blackbox_opt import scaling
@@ -903,10 +924,10 @@ def hyperplane_SGTE_vis_norm(server,LHS_f,bounds,bounds_req,LHS_MCI_file,mu,Sigm
 		if plot_2D:
 			fig_2D.set_figheight(3*2); fig_2D.set_figwidth(4.67*2)
 			plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_type,lob,upb,LHS_f,d,
-							   	  nominal,threshold,nn,S,server,variable_lbls,plt,fig_2D,plot_index=plot_index)
-
-		plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_type,lob,upb,LHS_f,d,
-						   nominal,threshold,nn,S,server,variable_lbls,gs,plt,fig,plot_index=plot_index)
+							   	  nominal,threshold,nn,S,server,variable_lbls,plt,fig_2D,plot_index=plot_index,reliability=reliability)
+		else:
+			plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_type,lob,upb,LHS_f,d,
+							nominal,threshold,nn,S,server,variable_lbls,gs,plt,fig,plot_index=plot_index)
 	else:
 		plot_line_code(bounds,bounds_n,bounds_req,mu,Sigma,req_type,lob,upb,LHS_f,d,
 					   threshold,nn,S,Y,server,variable_lbls,gs,plt,fig)
