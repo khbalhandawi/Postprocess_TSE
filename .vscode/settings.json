@@ -1,3 +1,6 @@
 {
-    "python.pythonPath": "C:\\ProgramData\\Anaconda3\\python.exe"
+    "python.pythonPath": "C:\\ProgramData\\Anaconda3\\python.exe",
+    "terminal.integrated.env.windows": {
+        "Path": "${env:PATH};C:/MinGW/msys/1.0/bin;"
+    }
 }

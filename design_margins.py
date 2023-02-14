@@ -144,6 +144,42 @@ def resiliance_calculation(server,bounds_req,mu,Sigma,req_type,bounds,res,thresh
         
     return resiliance
 
+def resiliance_calculation_data(YX,n_dim,mu,Sigma,req_type,threshold,X):
+
+
+    if req_type == "guassian":
+        
+        #===================================================================#
+        # capability constraints
+         
+        YX_cstr = np.reshape(YX - threshold, np.shape(X)[0])
+        
+        # Evaluate multivariate guassian
+        res_sq = np.ceil(X.shape[0]**(0.5*n_dim)).astype(int) # size of equivalent square matrix
+        pos = np.empty((X.shape[0],1) + (n_dim,))
+           
+        for i in range(n_dim):
+            X_norm = np.reshape(X[:,i],(-1,1))
+            # Pack X1, X2 ... Xk into a single 3-dimensional array
+            pos[:, :, i] = X_norm
+         
+        Z = multivariate_gaussian(pos, mu, Sigma)
+        Z = np.reshape(Z, np.shape(X)[0])
+            
+        Z_feasible = copy.deepcopy(Z)
+        Z_feasible[YX_cstr < 0] = 0.0 # eliminate infeasible regions from MCS
+ 
+        # Design space volume
+        resiliance = np.sum(Z_feasible)/np.sum(Z)
+
+    elif req_type == "uniform":
+            
+        cond_req_feas = (YX - threshold) > 0
+
+        resiliance = len(cond_req_feas[cond_req_feas])/np.shape(X)[0]
+        
+    return resiliance
+
 def capability_calculation(server,bounds_req,bounds,res,threshold,
                            new_LHS_MCI,LHS_MCI_file):
     
@@ -280,7 +316,7 @@ def postprocess_DOE(index,base_name,current_path,bounds,variable_lbls_pc,
 def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,variable_lbls,
                          threshold,LHS_MCI_file,req_index,server,DOE_inputs,outputs,
                          plt,resolution=20,plot_R_space=False,new_LHS_MCI=False,compute_margins=True,
-                         plot_index=4,plot_2D=False):
+                         plot_index=4,plot_4D=False,plot_2D=False, save_name=None):
     
     rc('text', usetex=True)
     metric_label = ['Stress - $\sigma_{mises}$ (MPa)','Number of cycles - $N$','Safety factor - $n_f$', 'Displacement - $U$ (mm)']
@@ -326,22 +362,30 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
     #===========================================================================
     # Plot 2D projections
     if plot_R_space:
-        nominal = [0.5]*len(variable_lbls); nn = 80
-        fig = plt.figure()  # create a figure object
+        nominal = [0.5]*len(variable_lbls); nn = 100
+
+        if plot_4D:
+            fig = plt.figure()  # create a figure object
+        else:
+            fig = None
+
         if plot_2D:
             fig_2D = plt.figure()  # create a figure object
         else:
             fig_2D = None
 
         hyperplane_SGTE_vis_norm(server,DOE_inputs,bounds,bounds_req,LHS_MCI_file,mu,Sigma,req_type,variable_lbls,
-                                 nominal,threshold,outputs,nn,fig,plt,plot_index=plot_index,plot_2D=plot_2D,fig_2D=fig_2D,reliability=resiliance)
+                                 nominal,threshold,outputs,nn,plt,plot_index=plot_index,plot_4D=plot_4D,fig=fig,plot_2D=plot_2D,fig_2D=fig_2D,reliability=resiliance)
         
-        fig_name = '%i_req_%i_%s_RS_pi_%i.pdf' %(index,req_index,base_name[1],plot_index)
-        fig_file_name = os.path.join(current_path,'design_margins',fig_name)
-        fig.savefig(fig_file_name, bbox_inches='tight')
+        if save_name is None:
+            save_name = base_name
+        if plot_4D:
+            fig_name = '%i_req_%i_%s_RS_pi_%i.pdf' %(index,req_index,save_name[1],plot_index)
+            fig_file_name = os.path.join(current_path,'design_margins',fig_name)
+            fig.savefig(fig_file_name, bbox_inches='tight')
     
         if plot_2D:
-            fig_name = '%i_req_%i_%s_RS_2D_pi_%i.pdf' %(index,req_index,base_name[1],plot_index)
+            fig_name = '%i_req_%i_%s_RS_2D_pi_%i.pdf' %(index,req_index,save_name[1],plot_index)
             fig_file_name = os.path.join(current_path,'design_margins',fig_name)
             fig_2D.savefig(fig_file_name, bbox_inches='tight')
 
@@ -352,8 +396,8 @@ def process_requirements(index,base_name,current_path,bounds,mu,Sigma,req_type,v
 
 #==============================================================================#
 # MAIN FILE
-def Design_margin_evaluation(concept, permutation_index, run_base, run_nominal,
-                            new_LHS_MCI, index, plot_index=4,plot_2D=False,req_indices=None):
+def Design_margin_evaluation(concept, permutation_index, requirement_arcs, base_name, save_name,
+                             new_LHS_MCI, index, plot_index=4,plot_4D=False,plot_2D=False,req_indices=None):
     
     # plt.rc('text', usetex=True)
 
@@ -382,7 +426,7 @@ def Design_margin_evaluation(concept, permutation_index, run_base, run_nominal,
     resolution = 10000 # sampling resolution for capability calculation (must be a square number)!
     threshold = 2.8 # cutoff threshold for capability calculation
     
-    DOE_folder = 'Thermal_DOE_results'; base_name = ['DOE_th_inputs','thermal_out']
+    DOE_folder = 'Thermal_DOE_results'
     variable_lbls_pc = ['T1','T2','T3','T4']
     variable_lbls = ['$T_1$ ($^o$C)','$T_2$ ($^o$C)','$T_3$ ($^o$C)','$T_4$ ($^o$C)']
     
@@ -396,26 +440,20 @@ def Design_margin_evaluation(concept, permutation_index, run_base, run_nominal,
     # Sample the requierments space
     print("------------------------- %s -------------------------\n" %('RESILIANCE_TH'))
     #===========================================================================
-    # Thermal loadcase guassian parameters (nominal values)
-    req_type_1 = 'uniform'
-    req_type_2 = 'guassian'
-    mu_nominal = np.array([0.375, 0.5, 0.5, 0.625])
-    Sigma_nominal = np.array([(0.375/3)**2, (0.125/3)**2, (0.125/3)**2, (0.375/3)**2]) # sigma^2
-    
-    req_list = [[req_type_1, req_type_2], [mu_nominal], [Sigma_nominal] ]
-    req_combinations = list(itertools.product(*req_list)) 
-    
     req_index = 0; resiliance_th_vec_nominal = []; R_volume_th_vec_nominal = []; capability_th_vec_nominal = []
     buffer_th_vec_nominal = []; excess_th_vec_nominal = []
-    for req in req_combinations: # iterate over all combinations of requirements
+
+    if req_indices is None:
+        req_indices = list(range(1,len(requirement_arcs)+1))
+    for req,req_index in zip(requirement_arcs,req_indices): # iterate over all combinations of requirements
         
-        req_index += 1
         [req_type, mu, Sigma] = req
         
         resiliance_th,R_volume_th,capability_th,buffer_th, excess_th = process_requirements(
-            index, ['DOE_th_inputs','thermal_out_nominal'], current_path,bounds_th,
+            index, ['DOE_th_inputs','thermal_out'], current_path,bounds_th,
             mu,Sigma,req_type,variable_lbls,threshold,LHS_MCI_file,req_index,server,DOE_inputs,outputs,plt,
-            new_LHS_MCI=new_LHS_MCI,resolution=resolution,plot_R_space=True,plot_index=plot_index,plot_2D=plot_2D)
+            new_LHS_MCI=new_LHS_MCI,resolution=resolution,plot_R_space=True,plot_index=plot_index,plot_4D=plot_4D,
+            plot_2D=plot_2D, save_name=save_name)
 
         resiliance_th_vec_nominal += [resiliance_th]
         R_volume_th_vec_nominal += [R_volume_th]  
@@ -427,8 +465,6 @@ def Design_margin_evaluation(concept, permutation_index, run_base, run_nominal,
         print('Nominal capability: %f' %(capability_th))
         print('Nominal buffer: %f' %(buffer_th))
         print('Nominal excess: %f' %(excess_th))
-    
-    plt.show()
 
     #--------------------------------------------------------------------------#
     # Get volume results
@@ -438,7 +474,7 @@ def Design_margin_evaluation(concept, permutation_index, run_base, run_nominal,
      
     # Read data from fatigue analysis result and output minimum fatigue life
     fileID = open(body_full_name,'r') # Open file
-    InputText = np.loadtxt(fileID, delimiter = '\n', dtype=str) # \n is the delimiter
+    InputText = np.loadtxt(fileID, dtype=str) # \n is the delimiter
     volume = float(InputText)
     fileID.close()
     
@@ -455,32 +491,195 @@ def Design_margin_evaluation(concept, permutation_index, run_base, run_nominal,
 
     return design_data
 
+def get_reqiurments_samples(filepath,sampling='fullfact'):
+
+    resultsfile=open(filepath,'rb')
+    
+    if sampling == 'fullfact':
+
+        lob_req = pickle.load(resultsfile)
+        upb_req = pickle.load(resultsfile)
+        points = pickle.load(resultsfile)
+        points_us = pickle.load(resultsfile)
+
+        resultsfile.close()
+
+        req_type_1 = 'uniform'
+        req_type_2 = 'guassian'
+
+        #===========================================================================
+        # Thermal loadcase guassian parameters full factorial
+
+        mu_1 = lob_req[:4]
+        mu_2 = upb_req[:4]
+        
+        Sigma_1 = lob_req[4::] # Sigma^2
+        Sigma_2 = upb_req[4::] # Sigma^2
+
+        # # linearly interpolate between two vectors
+        from scipy.interpolate import interp1d
+
+        linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
+        mus = list(linfit([1,2,3,4,5]))
+        linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
+        Sigmas = list(linfit([1,2,3,4,5]))
+
+        # USE THIS IF YOU WANT TO PLOT A FEW CASES AS AN EXAMPLE
+        # linfit = interp1d([1,5], np.vstack([mu_1, mu_2]), axis=0)
+        # mus = list(linfit([2,4]))
+        # linfit = interp1d([1,5], np.vstack([Sigma_1, Sigma_2]), axis=0)
+        # Sigmas = list(linfit([2,5]))
+
+        Sigma_2s = []
+        for Sigma in Sigmas:
+            Sigma_2 = (Sigma/3)**2
+            Sigma_2s += [Sigma_2]
+
+        req_list = [[req_type_1, req_type_2], mus, Sigma_2s ]
+        req_combinations = list(itertools.product(*req_list)) 
+
+    elif sampling == 'LHS':
+    
+        req_combinations = []
+        for point in points_us:
+            
+            for req_type in [req_type_1,req_type_2]:
+                
+                mu_lhs = point[0:4]
+                Sigma_lhs = point[4::]
+                Sigma_lhs_2 = (Sigma_lhs/3)**2
+                
+                line = [req_type,mu_lhs,Sigma_lhs_2]
+                req_combinations += [line]
+
+    return req_combinations
+
+def presentation_example():
+    current_path = os.getcwd()
+
+    base_name = ['DOE_th_inputs','thermal_out']
+    save_name = ['DOE_th_inputs','thermal_out']
+    #===========================================================================
+    # Thermal loadcase guassian parameters (DOE values)
+    DOE_full_name = 'req_distribution_TH_LHS_data'+'.pkl'
+    DOE_filepath = os.path.join(current_path,'Optimization_studies',DOE_full_name)
+
+    req_combinations = get_reqiurments_samples(DOE_filepath,sampling='fullfact')
+
+    ##############################
+    # Presentation graphics
+    design_indices = [109, 110]
+    req_indices = [[1,], # D: 109 # these are trained with Kriging models
+                  [15, 11, 37,]] # D: 110 # these are trained with Kriging models
+
+    # design_indices = [146, 163, 164, 167, 168] # these are trained with ensemble models
+
+    # req_indices = [[36,], # D: 146
+    #                [50, 1,], # D: 163
+    #                [1,], # D: 164
+    #                [46, 13,], # D: 167
+    #                [31,]] # D: 168
+
+    # design_indices = [164,] # these are trained with ensemble models ( set max reliability for plotting to 0.26)
+    # req_indices = [[1,],] # D: 164
+
+    #============================ PERMUTATIONS ================================#
+    
+    # one-liner to read a single variable
+    P_analysis = loadmat('DOE_permutations.mat')['P_analysis']
+    
+    run_base = 0; run_nominal = 0; sampling = 'fullfact'
+    new_LHS_MCI = True; plot_index = 6; plot_2D = True; plot_4D = False
+
+    # %% Processing
+    #============================= MAIN EXECUTION =================================#
+
+    for D_i, reqs in zip(design_indices,req_indices):
+
+        requirement_arcs = [req_combinations[i-1] for i in reqs]
+        
+        ##############################
+        P_i = P_analysis[D_i - 1]
+        index = D_i
+        ##############################
+        print(P_i)
+        concept = P_i[0]
+        permutation_index = P_i[1::]
+        
+        print("\n+============================================================+")
+        print("|                         LOOP %04d                          |" %(index))
+        print("+============================================================+\n")
+
+        design_data = Design_margin_evaluation(concept, permutation_index, requirement_arcs, base_name, save_name, new_LHS_MCI, index, 
+                                               plot_index=plot_index, plot_4D=plot_4D, plot_2D=plot_2D, req_indices=reqs)
+
+        # %% Postprocessing
+        [weight, resiliance_th_vec_nominal, R_volume_th_vec_nominal, 
+            capability_th_vec_nominal, buffer_th_vec_nominal, excess_th_vec_nominal] = design_data
+
+        out_titles = ['weight','resiliance_th_uni','resiliance_th_gau','R_volume_th_uni','R_volume_th_gau',
+                        'capability_th_uni','capability_th_gau','buffer_th_uni','buffer_th_gau','excess_th_uni','excess_th_gau']
+        out_data = [weight,]
+
+        #========================== OUTPUT VARIABLES LOG ==============================#
+        filename = "varout_opt_log.log"
+        full_filename = os.path.join(current_path,'design_margins',filename)
+
+        resultsfile=open(full_filename,'w')
+        resultsfile.write('index'+','+'concept'+','+'i1'+','+'i2'+','+'i3'+','+'i4'+','+'i5'+','
+                            +','.join(out_titles)+'\n')
+        
+        resultsfile=open(full_filename,'a+')
+        resultsfile.write(str(index)+','+str(concept)+','+','.join(map(str,permutation_index))+','
+                            +','.join(map(str,out_data))+','
+                            +','.join(map(str,resiliance_th_vec_nominal))+','
+                            +','.join(map(str,R_volume_th_vec_nominal))+','
+                            +','.join(map(str,capability_th_vec_nominal))+','
+                            +','.join(map(str,buffer_th_vec_nominal))+','
+                            +','.join(map(str,excess_th_vec_nominal))+'\n')
+        resultsfile.close()
+        
+        print("\n--------------------------------------------------------------------------------\n")
+
+
 #------------------------------------------------------------------------------#
 # %% MAIN FILE
 def main():
     
     current_path = os.getcwd() # Working directory of file
+    base_name = ['DOE_th_inputs','thermal_out']
+    save_name = ['DOE_th_inputs_nominal','thermal_out_nominal']
+    #============================ REQUIREMENTS ================================#
+    # Thermal loadcase guassian parameters (nominal values)
+    req_type_1 = 'uniform'
+    req_type_2 = 'guassian'
+    mu_nominal = np.array([0.375, 0.5, 0.5, 0.625])
+    Sigma_nominal = np.array([(0.375/3)**2, (0.125/3)**2, (0.125/3)**2, (0.375/3)**2]) # sigma^2
     
+    req_list = [[req_type_1, req_type_2], [mu_nominal], [Sigma_nominal] ]
+    requirement_arcs = list(itertools.product(*req_list)) 
+
     #============================ PERMUTATIONS ================================#
     
     # one-liner to read a single variable
     P_analysis = loadmat('DOE_permutations.mat')['P_analysis']
     
     run_base = 0; run_nominal = 1; new_LHS = False; process_DOE_requirements = False; sampling = 'fullfact'
-    new_LHS_MCI = True; plot_index = 4
+    new_LHS_MCI = True; plot_index = 6
 
     # %% Processing
     #============================= MAIN EXECUTION =================================#
 
     ##############################
-    P_i = P_analysis[110 - 1]
-    index = 110
+    P_i = P_analysis[109 - 1]
+    index = 109
     ##############################
     print(P_i)
     concept = P_i[0]
     permutation_index = P_i[1::]
     
-    design_data = Design_margin_evaluation(concept, permutation_index, run_base, run_nominal, new_LHS_MCI, index, plot_index=plot_index, plot_2D=True)
+    design_data = Design_margin_evaluation(concept, permutation_index, requirement_arcs, base_name, save_name, new_LHS_MCI, index, 
+                                           plot_index=plot_index, plot_4D=False, plot_2D=True, req_indices=None)
 
     # %% Postprocessing
     [weight, resiliance_th_vec_nominal, R_volume_th_vec_nominal, 
@@ -512,3 +711,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # presentation_example()

@@ -33,3 +33,4 @@ graphics/
 Optimization_studies/
 SGTE_matlab_server/
 *.vsdx
+.env

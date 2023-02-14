@@ -24,23 +24,23 @@ def gridsamp(bounds, q):
 	
 	[mr,n] = np.shape(bounds);    dr = np.diff(bounds, axis=0)[0]; # difference across rows
 	if  mr != 2 or any([item < 0 for item in dr]):
-	  raise Exception('bounds must be an array with two rows and bounds(1,:) <= bounds(2,:)')
-	 
+		raise Exception('bounds must be an array with two rows and bounds(1,:) <= bounds(2,:)')
+		
 	if  q.ndim > 1 or any([item <= 0 for item in q]):
-	  raise Exception('q must be a vector with non-negative elements')
-	
+		raise Exception('q must be a vector with non-negative elements')
+
 	p = len(q);   
 	if  p == 1:
 		q = np.tile(q, (1, n))[0]; 
 	elif  p != n:
-	  raise Exception(sprintf('length of q must be either 1 or %d',n))
-	 
-	
+		raise Exception(sprintf('length of q must be either 1 or %d',n))
+		
+
 	# Check for degenerate intervals
 	i = np.where(dr == 0)[0]
 	if  i.size > 0:
 		q[i] = 0*q[i]; 
-	
+
 	# Recursive computation
 	if  n > 1:
 		A = gridsamp(bounds[:,1::], q[1::]);  # Recursive call
@@ -73,7 +73,7 @@ def get_SGTE_model(out_file):
 	NAMES = [];
 	fileID = open(filepath,'r'); # Open file
 	InputText = np.loadtxt(fileID,
-					   delimiter = '\n',
+					   delimiter = '\n', # TODO
 					   dtype=np.str); # \n is the delimiter
 
 	for n,line in enumerate(InputText): # Read line by line
@@ -150,22 +150,22 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 		nn_vec = nn*np.ones(len(LHS_f[0,:]),dtype=int)
 		fixed_value_lc = np.zeros((d,))
 		for n in range(len(bounds)):
-		    if n not in i:
-		        lm = nominal[n]
-		        fixed_value = scaling(lm,lob[n],upb[n],2) # Assign lambdas
-		        
-		        bounds_p[n,0] = fixed_value-0.0000001 # Set bounds equal to each other
-		        bounds_p[n,1] = fixed_value+0.0000001 # Set bounds equal to each other
-		        bounds_p_n[n,0] = lm # Nomalized bounds
-		        bounds_p_n[n,1] = lm+0.01 # Nomalized bounds
-		        nn_vec[n] = 1
-		        
-		        fixed_value_lc[n] = scaling(lm,lob[n],upb[n],2); # Assign lambdas
-		    else:
-		        bounds_p[n,0] = bounds[n,0]
-		        bounds_p[n,1] = bounds[n,1]
-		        bounds_p_n[n,0] = bounds_n[n,0]
-		        bounds_p_n[n,1] = bounds_n[n,1]
+			if n not in i:
+				lm = nominal[n]
+				fixed_value = scaling(lm,lob[n],upb[n],2) # Assign lambdas
+				
+				bounds_p[n,0] = fixed_value-0.0000001 # Set bounds equal to each other
+				bounds_p[n,1] = fixed_value+0.0000001 # Set bounds equal to each other
+				bounds_p_n[n,0] = lm # Nomalized bounds
+				bounds_p_n[n,1] = lm+0.01 # Nomalized bounds
+				nn_vec[n] = 1
+				
+				fixed_value_lc[n] = scaling(lm,lob[n],upb[n],2); # Assign lambdas
+			else:
+				bounds_p[n,0] = bounds[n,0]
+				bounds_p[n,1] = bounds[n,1]
+				bounds_p_n[n,0] = bounds_n[n,0]
+				bounds_p_n[n,1] = bounds_n[n,1]
 		
 		X = gridsamp(bounds_p_n.T, nn_vec)
 		# Prediction
@@ -300,7 +300,6 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 				arrowprops=dict(arrowstyle="simple,tail_width=0.2,head_width=0.5,head_length=0.7",
                                 facecolor='#d9d9d9',
 								edgecolor='#d9d9d9',
-								color='#d9d9d9',
 								shrinkA=5,
                                 shrinkB=5,
                                 fc="k", ec="k",
@@ -312,7 +311,6 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 				arrowprops=dict(arrowstyle="simple,tail_width=0.2,head_width=0.5,head_length=0.7",
                                 facecolor='#d9d9d9',
 								edgecolor='#d9d9d9',
-								color='#d9d9d9',
 								shrinkA=5,
                                 shrinkB=5,
                                 fc="k", ec="k",
@@ -343,7 +341,7 @@ def plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_ty
 	handles, labels = [[a1,a2,a_MCI], ["$C'$: Compliment of capability", 
 										"R: Requirement set",
 										"Monte Carlo samples" ]] # for presentation
-	lx = fig.legend(handles, labels, loc='upper center', ncol=3, fontsize = 14)
+	lx = fig.legend(handles, labels, loc='upper center', ncol=2, fontsize = 14)
 
 	l_index = 0
 	for item in lx.get_texts():
@@ -362,7 +360,7 @@ def plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_t
 	
 	# get LHS_MCI points distribution
 	DOE_full_name = LHS_MCI_file + '.pkl'
-	DOE_filepath = os.path.join(os.getcwd(),'Optimization_studies',DOE_full_name)
+	DOE_filepath = os.path.join(os.getcwd(),'design_margins',DOE_full_name)
 	resultsfile=open(DOE_filepath,'rb')
 	dFF = pickle.load(resultsfile)
 	dFF_n = pickle.load(resultsfile)
@@ -424,9 +422,9 @@ def plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_t
 	# boundaries = np.linspace(cmin, cmax, int(np.round(((cmax-cmin)/0.2)*6))-1) # (for plotting lambda = 109)
 	# cbar_h = fig.colorbar(cbar)
 	cbar_h = fig.colorbar(cbar, boundaries=boundaries)
-	cbar_h.set_label('$g_{f1}(\mathbf{p})$', rotation=90, labelpad=3, fontsize=18)
+	# cbar_h.set_label('$g_{f1}(\mathbf{p})$', rotation=90, labelpad=3, fontsize=18)
 	cbar_h.ax.tick_params(labelsize=16) 
-	# cbar_h.set_label('$n_{safety}(\mathbf{T})$', rotation=90, labelpad=3)
+	cbar_h.set_label('$n_\mathrm{safety}(\mathbf{T})$', rotation=90, labelpad=3, fontsize=18)
 	
 	artists, labels = cf.legend_elements()
 	af = artists[0]
@@ -526,49 +524,85 @@ def plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_t
 
 	if reliability is not None:
 
-		if reliability >= 0.001:
+		if req_type =='guassian':
+			padding = 15
+		elif req_type =='uniform':
+			padding = 10
+		else:
+			padding = 10
 
-			buffer_coordinates = (bounds_req[i[0],1]-10,bounds_req[i[1],0]+10)
+		if plot_index >= 3:
 
-			ax.annotate("$\mathrm{Buffer}~B$", fontsize=18, xy = buffer_coordinates, xytext =(12.5, 85), 
-				arrowprops=dict(arrowstyle="simple,tail_width=0.2,head_width=0.5,head_length=0.7",
-								facecolor='#d9d9d9',
-								edgecolor='#d9d9d9',
-								color='#d9d9d9',
-								shrinkA=5,
-								shrinkB=5,
-								fc="k", ec="k",
-								connectionstyle="arc3,rad=-0.05",
-								),
-				bbox=dict(edgecolor='white', facecolor='white', alpha=1.0),)
+			if reliability >= 0.04:
+
+				buffer_coordinates = (bounds_req[i[0],1]-padding,bounds_req[i[1],0]+padding+10)
+
+				ax.annotate("$\mathrm{Buffer}~B$", fontsize=18, xy = buffer_coordinates, xytext =(2.5, 85), 
+					arrowprops=dict(arrowstyle="simple,tail_width=0.2,head_width=0.5,head_length=0.7",
+									facecolor='#d9d9d9',
+									edgecolor='#d9d9d9',
+									shrinkA=5,
+									shrinkB=5,
+									fc="k", ec="k",
+									connectionstyle="arc3,rad=-0.05",
+									),
+					bbox=dict(edgecolor='white', facecolor='white', alpha=1.0),)
+				
+			else:
+				ax.text(2.5, 85, "$\mathrm{No~buffer~left}$", fontsize=18, color='#FF0000',
+					bbox=dict(edgecolor='white', facecolor='white', alpha=1.0), zorder = 21) # Danger zone
+
+		if plot_index >= 4:
+
+			if reliability <= 0.96:
+				
+				from design_margins import resiliance_calculation_data
+
+				mu_sp = np.array([ mu[i[0]], mu[i[1]] ])
+				Sigma_sp = Sigma[np.ix_([i[0],i[1]],[i[0],i[1]])] # pick corresponding row and column
+				resolution = 20
+				n_dim = 2
+				reliability_2D = resiliance_calculation_data(YX,n_dim,mu_sp,Sigma_sp,req_type, 
+															 threshold,X)
+				
+				if reliability_2D <= 0.9:
+					Danger_coordinates = (bounds_req[i[0],0]+padding,bounds_req[i[1],1]-padding-30)
+
+					ax.annotate("$\mathrm{Danger~zone}~D$", fontsize=18, xy = Danger_coordinates, xytext =(-90, -90), 
+						arrowprops=dict(arrowstyle="simple,tail_width=0.2,head_width=0.5,head_length=0.7",
+										facecolor='#d9d9d9',
+										edgecolor='#d9d9d9',
+										shrinkA=5,
+										shrinkB=5,
+										fc="k", ec="k",
+										connectionstyle="arc3,rad=-0.05",
+										),
+						bbox=dict(edgecolor='white', facecolor='white', alpha=1.0),)
+				else:
+					ax.text(-90, -90, "$\mathrm{No~danger~in~this~projection}$", fontsize=18, color='#1EAA37',
+						bbox=dict(edgecolor='white', facecolor='white', alpha=1.0), zorder = 21) # Danger zone
 			
-		else:
-			ax.text(12.5, 85, "$\mathrm{No~buffer~left}$", fontsize=18, 
-				bbox=dict(edgecolor='white', facecolor='white', alpha=1.0), zorder = 21) # Danger zone
+			else:
+				ax.text(-90, -90, "$\mathrm{No~danger}$", fontsize=18, color='#1EAA37',
+					bbox=dict(edgecolor='white', facecolor='white', alpha=1.0), zorder = 21) # Danger zone
 
-		if reliability <= 0.999:
+		if plot_index >= 5:
 
-			Danger_coordinates = (bounds_req[i[0],0]+10,bounds_req[i[1],1]-10)
+			Excess_coordinates = (90, 60)
 
-			ax.annotate("$\mathrm{Danger~zone}~D$", fontsize=18, xy = Danger_coordinates, xytext =(-90, -90), 
+			ax.annotate("$\mathrm{Excess}~E$", fontsize=18, xy = Excess_coordinates, xytext =(62.5, 85), 
 				arrowprops=dict(arrowstyle="simple,tail_width=0.2,head_width=0.5,head_length=0.7",
 								facecolor='#d9d9d9',
 								edgecolor='#d9d9d9',
-								color='#d9d9d9',
 								shrinkA=5,
 								shrinkB=5,
 								fc="k", ec="k",
 								connectionstyle="arc3,rad=-0.05",
 								),
 				bbox=dict(edgecolor='white', facecolor='white', alpha=1.0),)
-		
-		else:
-			ax.text(-90, -90, "$\mathrm{No~danger}$", fontsize=18, 
-				bbox=dict(edgecolor='white', facecolor='white', alpha=1.0), zorder = 21) # Danger zone
 
-
-		ax.text(62.5, 85, "$\mathrm{Excess}~E$", fontsize=18, 
-			bbox=dict(edgecolor='white', facecolor='white', alpha=1.0), zorder = 21) # Danger zone
+			# ax.text(62.5, 85, "$\mathrm{Excess}~E$", fontsize=18, 
+			# 	bbox=dict(edgecolor='white', facecolor='white', alpha=1.0), zorder = 21) # Danger zone
 
 	# handles, labels = [[a1], ["C':~$\hat{g}_{f1}(\mathbf{p}) - t_1 > 0$", ]]
 	# fig.legend(handles, labels, loc='upper center', ncol=1, fontsize = 14)
@@ -590,7 +624,7 @@ def plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_t
 	handles, labels = [[a1,a2,a_MCI], ["$C'$: Compliment of capability", 
 										"R: Requirement set",
 										"Monte Carlo samples" ]] # for presentation
-	lx = fig.legend(handles, labels, loc='upper center', ncol=3, fontsize = 16)
+	lx = fig.legend(handles, labels, loc='upper center', ncol=2, fontsize = 16, bbox_to_anchor=(0.5,1.02))
 
 	l_index = 0
 	for item in lx.get_texts():
@@ -599,7 +633,7 @@ def plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_t
 		l_index += 1
 
 def hyperplane_SGTE_vis_norm(server,LHS_f,bounds,bounds_req,LHS_MCI_file,mu,Sigma,req_type,variable_lbls,
-							 nominal,threshold,objs,nn,fig,plt,plot_index=4,plot_2D=False,fig_2D=None,reliability=None):
+							 nominal,threshold,objs,nn,plt,plot_index=4,plot_4D=False,fig=None,plot_2D=False,fig_2D=None,reliability=None):
 	import numpy as np
 	from scipy.special import comb
 	from design_margins import scaling
@@ -622,38 +656,40 @@ def hyperplane_SGTE_vis_norm(server,LHS_f,bounds,bounds_req,LHS_MCI_file,mu,Sigm
 	# %% Activate 2 out 4 variables up to 4 variables
 	d = len(LHS_f[0,:]); #<-------- Number of variables
 	if d > 4: # maximum of four variables allowed
-	    d = 4
-	    
-	if d == 1:
-		sp_shape = [1,1]; ax_h = -0.08; ax_bot = 0; ax_left = 0.0; ann_pos = 0.45;    #<-------- Edit as necessary to fit figure properl
-		fig.set_figheight(3); fig.set_figwidth(4.67)
-	elif d == 2:
-		sp_shape = [1,1]; ax_h = -0.08; ax_bot = 0; ax_left = 0.0; ann_pos = 0.45;    #<-------- Edit as necessary to fit figure properl
-		fig.set_figheight(3); fig.set_figwidth(4.67)
-	elif d == 3:
-		sp_shape = [1,3]; ax_h = -0.08; ax_bot = 0; ax_left = 0.0; ann_pos = 0.45;    #<-------- Edit as necessary to fit figure properl
-		fig.set_figheight(2.9); fig.set_figwidth(15)
-	elif d == 4:
-		sp_shape = [2,3]; ax_h = 0.1; ax_bot = 0.08; ax_left = 0.0; ann_pos = 0.45;   #<-------- Edit as necessary to fit figure properly
-		fig.set_figheight(5.8); fig.set_figwidth(15)
+		d = 4
 	
-	gs = gridspec.GridSpec(sp_shape[0],sp_shape[1], 
-						width_ratios = np.ones(sp_shape[1],dtype=int), 
-						height_ratios = np.ones(sp_shape[0],dtype=int),
-						left=0.15, right=0.85, wspace=0.2)
-	
-	
-	q = combinations(range(d),2); # choose 2 out d variables
-	ss = comb(d,2,exact=True)
+	if plot_4D:
+		if d == 1:
+			sp_shape = [1,1]; ax_h = -0.08; ax_bot = 0; ax_left = 0.0; ann_pos = 0.45;    #<-------- Edit as necessary to fit figure properl
+			fig.set_figheight(3); fig.set_figwidth(4.67)
+		elif d == 2:
+			sp_shape = [1,1]; ax_h = -0.08; ax_bot = 0; ax_left = 0.0; ann_pos = 0.45;    #<-------- Edit as necessary to fit figure properl
+			fig.set_figheight(3); fig.set_figwidth(4.67)
+		elif d == 3:
+			sp_shape = [1,3]; ax_h = -0.08; ax_bot = 0; ax_left = 0.0; ann_pos = 0.45;    #<-------- Edit as necessary to fit figure properl
+			fig.set_figheight(2.9); fig.set_figwidth(15)
+		elif d == 4:
+			sp_shape = [2,3]; ax_h = 0.1; ax_bot = 0.08; ax_left = 0.0; ann_pos = 0.45;   #<-------- Edit as necessary to fit figure properly
+			fig.set_figheight(5.8); fig.set_figwidth(15)
+		
+		gs = gridspec.GridSpec(sp_shape[0],sp_shape[1], 
+							width_ratios = np.ones(sp_shape[1],dtype=int), 
+							height_ratios = np.ones(sp_shape[0],dtype=int),
+							left=0.15, right=0.85, wspace=0.2)
+		
+		
+		q = combinations(range(d),2); # choose 2 out d variables
+		ss = comb(d,2,exact=True)
 	
 	if d != 1:
 		if plot_2D:
 			fig_2D.set_figheight(3*2); fig_2D.set_figwidth(4.67*2)
 			plot_countour_code_2D(bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_type,lob,upb,LHS_f,d,
 							   	  nominal,threshold,nn,S,server,variable_lbls,plt,fig_2D,plot_index=plot_index,reliability=reliability)
-									 
-		plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_type,lob,upb,LHS_f,d,
-						   nominal,threshold,nn,S,server,variable_lbls,gs,plt,fig,plot_index=plot_index)
+
+		if plot_4D:						 
+			plot_countour_code(q,bounds,bounds_n,bounds_req,LHS_MCI_file,mu,Sigma,req_type,lob,upb,LHS_f,d,
+							nominal,threshold,nn,S,server,variable_lbls,gs,plt,fig,plot_index=plot_index)
 	else:
 		plot_line_code(bounds,bounds_n,bounds_req,mu,Sigma,req_type,lob,upb,LHS_f,d,
 					   threshold,nn,S,Y,server,variable_lbls,gs,plt,fig)
