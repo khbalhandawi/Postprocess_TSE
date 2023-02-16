@@ -34,8 +34,7 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
     
     # This is not necessary if `text.usetex : True` is already set in `matplotlibrc`.    
     mpl.rc('text', usetex = True)
-    mpl.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}',
-                                           r'\usepackage{amssymb}']
+    mpl.rcParams['text.latex.preamble'] = r'\usepackage{amsmath} \usepackage{amssymb}'
     rcParams['font.family'] = 'serif'
     my_dpi = 100
     fig1 = plt.figure(figsize=(700/my_dpi, 500/my_dpi), dpi=my_dpi)
@@ -74,8 +73,10 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
             plot_h1, = ax1.plot(x_data, R_data, ':', color = colors[branch_id-1], linewidth = 2.5 )
             # plt.plot(x_data, y_data, 'o', markersize=10, markevery=len(x_data), color = [0,0,0])
             plot_h2, = ax1.plot(x_data, R_data, 'o', color = [0,0,0], markersize=6 )
+            ax1.vlines(x_data,0.0,1.15, colors='k', linestyles='--', linewidth=0.1)
             legend_h_f1 += [plot_h1]
         else:
+            # ax1.vlines(x_data,0.0,1.15, colors='k', linestyles='--', linewidth=0.1)
             legend_h_f1 = []
 
         # plot_h1, = ax2.plot(x_data, e_data, ':', color = colors[branch_id-1], linewidth = 2.5 )
@@ -96,7 +97,7 @@ def plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
 
         # legend label generation
         label = ''.join(['\{$c = %i' %(ds[1]),
-                        '~\mathbf{S} = [', 
+                        '~\mathbf{D} = [', 
                         ',~'.join(map(str,s_data)),']\}$'])
 
         if not plot_thresh_only: 
@@ -236,7 +237,7 @@ if __name__ == "__main__":
              [6 , 1 , 2 , 1 , 0 , 4 , -1 , 3 ] ]
     # req_vec = [5, 11, 10, 48, 32, 27]
     req_vec = [36, 50,  1, 46, 13, 31]
-    trans = [0.9, 0.1]
+    trans = [0.1, 0.9]
     colors = [[1,0,0],[0,0,1]]
 
     plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
@@ -267,6 +268,7 @@ if __name__ == "__main__":
     plot_stagespace(attribute,ds_s,req_vec,req_thresh,MADS_output_dir,plot_id,
                     weight_file, res_ip_file, excess_ip_file, res_th_file, 
                     excess_th_file, trans=trans, colors=colors,plot_thresh_only=False)
+                    excess_th_file, trans=trans, colors=colors,plot_thresh_only=True)
 
     plt.show()
     #===========================================================================

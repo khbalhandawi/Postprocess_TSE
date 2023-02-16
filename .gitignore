@@ -43,3 +43,4 @@ progress/
 
 # But not these files...
 !images/*.png
+*.env

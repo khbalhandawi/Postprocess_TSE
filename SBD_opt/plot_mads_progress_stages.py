@@ -15,7 +15,6 @@ from itertools import permutations
 import math
 import random
 from random import randrange
-from simanneal import Annealer
 import csv
 from sample_requirements import NOMAD_call
 
@@ -119,7 +118,7 @@ def main():
     from scipy.io import loadmat
     from plot_stage_space import plot_stagespace,check_folder
 
-    attribute = ['Reliability ($\mathbb{P}(\mathbf{p} \in C)$)']
+    attribute = ['Reliability $\mathbb{P}(\mathbf{p} \in C)$']
 
     current_path = os.getcwd()
     MADS_output_folder = 'MADS_output'

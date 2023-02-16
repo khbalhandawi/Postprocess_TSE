@@ -508,7 +508,7 @@ if __name__ == "__main__":
         design_list += [[int(x) for x in data]]
     
     alpha = 10 # number of top designs to analyze
-    alpha_F = 5 # number of top flexible designs to analyze
+    alpha_F = 10 # number of top flexible designs to analyze
     #==============================================================================
     # Set based sorting
 
@@ -712,11 +712,11 @@ if __name__ == "__main__":
     
     markersizes = [ (1/20)*(n**4) for n in reversed(range(3,len(cost_SBD[:10])+3)) ]
 
-    l_D = '$\{c,\mathbf{D}\} \in \Omega_{cD}$'
-    l_P = 'Pareto optimal designs'
-    l_R = 'Robust designs'
-    l_F = 'Flexible designs'
-    l_S = 'Set-based designs'
+    l_D = 'Feasible decisions'
+    l_P = 'Pareto optimal decisions'
+    l_R = 'Robust decisions'
+    l_F = 'Flexible decisions'
+    l_S = 'Set of decisions with optimal margins'
 
     legend_h = []; legend_labels = [];
     if "D" in plot_option:
